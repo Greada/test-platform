@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Phase 1 总结报告 — 测试平台</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif; max-width: 960px; margin: 0 auto; padding: 30px 20px; background: #f0f2f5; color: #333; }
+h1 { color: #1a73e8; border-bottom: 3px solid #1a73e8; padding-bottom: 12px; font-size: 28px; }
+.subtitle { color: #666; margin: 8px 0 24px 0; font-size: 14px; }
+h2 { color: #1a73e8; margin: 32px 0 12px 0; font-size: 20px; }
+h3 { color: #444; margin: 20px 0 8px 0; font-size: 16px; }
+pre { background: #1e1e1e; color: #d4d4d4; padding: 16px; border-radius: 8px; overflow-x: auto; font-size: 13px; line-height: 1.5; margin: 10px 0; }
+code { font-size: 13px; }
+.card { background: white; border-radius: 10px; padding: 20px; margin: 14px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+ul, ol { margin: 8px 0; padding-left: 24px; }
+li { margin: 4px 0; line-height: 1.6; }
+table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+th, td { border: 1px solid #ddd; padding: 10px 12px; text-align: left; font-size: 14px; }
+th { background: #f5f7fa; font-weight: 600; }
+tr:nth-child(even) { background: #fafafa; }
+.file-path { font-family: 'Consolas', monospace; background: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-size: 13px; color: #d63384; }
+.tag { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: normal; }
+.done { background: #e8f5e9; color: #2e7d32; }
+.tree { font-family: 'Consolas', monospace; background: #f8f9fa; padding: 14px 18px; border-radius: 6px; line-height: 1.8; font-size: 13px; border: 1px solid #e0e0e0; }
+.note { background: #e8f0fe; padding: 14px 16px; border-left: 4px solid #1a73e8; border-radius: 4px; margin: 14px 0; font-size: 14px; }
+</style>
+</head>
+<body>
+
+<h1>Phase 1：后端骨架搭建 — 总结报告</h1>
+<p class="subtitle">项目路径：E:\Java_all\code\test-platform\test-platform\</p>
+
+<div class="card">
+<h2>已完成文件清单</h2>
+<table>
+<tr><th>文件</th><th>路径</th><th>功能</th></tr>
+<tr><td>pom.xml (父)</td><td><span class="file-path">pom.xml</span></td><td>模块聚合，声明 backend 子模块</td></tr>
+<tr><td>pom.xml (子)</td><td><span class="file-path">backend/pom.xml</span></td><td>所有依赖：Spring Boot、MyBatis-Plus、MySQL、JWT、Lombok 等</td></tr>
+<tr><td>TestPlatformApplication.java</td><td><span class="file-path">backend/src/main/java/com/testplatform/TestPlatformApplication.java</span></td><td>启动类 @SpringBootApplication</td></tr>
+<tr><td>application.yml</td><td><span class="file-path">backend/src/main/resources/application.yml</span></td><td>端口 8080、MySQL 连接、MyBatis-Plus 配置</td></tr>
+<tr><td>Result.java</td><td><span class="file-path">backend/src/main/java/com/testplatform/common/Result.java</span></td><td>统一返回体 {code, message, data}</td></tr>
+<tr><td>GlobalExceptionHandler.java</td><td><span class="file-path">backend/src/main/java/com/testplatform/common/exception/GlobalExceptionHandler.java</span></td><td>全局异常拦截，返回友好信息</td></tr>
+<tr><td>CorsConfig.java</td><td><span class="file-path">backend/src/main/java/com/testplatform/config/CorsConfig.java</span></td><td>跨域配置，允许前端调用</td></tr>
+</table>
+</div>
+
+<div class="card">
+<h2>验证结果</h2>
+<p>启动 <code>TestPlatformApplication.main()</code>，控制台输出：</p>
+<pre>Tomcat started on port(s): 8080 (http)
+Started TestPlatformApplication in ~2.345 seconds</pre>
+<p style="color:#2e7d32;font-weight:600;">✅ 启动成功，Phase 1 完成。</p>
+</div>
+
+<div class="card">
+<h2>数据库</h2>
+<p>已创建 <code>test_platform</code> 库，字符集 utf8mb4。</p>
+</div>
+
+<div class="card">
+<h2>阶段概念速查</h2>
+<table>
+<tr><th>概念</th><th>一句话</th></tr>
+<tr><td><code>application.yml</code></td><td>Spring Boot 全局配置文件，配端口、数据库等</td></tr>
+<tr><td><code>Result&lt;T&gt;</code></td><td>所有接口统一返回 {code, message, data}</td></tr>
+<tr><td><code>@RestControllerAdvice</code></td><td>全局拦截 Controller 异常</td></tr>
+<tr><td><code>CorsFilter</code></td><td>允许跨域请求（前端 Vue 调用后端）</td></tr>
+<tr><td><code>@SpringBootApplication</code></td><td>@Configuration + @EnableAutoConfiguration + @ComponentScan</td></tr>
+</table>
+</div>
+
+<div class="card">
+<h2>项目目录结构</h2>
+<div class="tree">
+test-platform/<br>
+├── pom.xml<br>
+├── backend/<br>
+│   ├── pom.xml<br>
+│   └── src/main/<br>
+│       ├── java/com/testplatform/<br>
+│       │   ├── TestPlatformApplication.java<br>
+│       │   ├── common/<br>
+│       │   │   ├── Result.java<br>
+│       │   │   └── exception/<br>
+│       │   │       └── GlobalExceptionHandler.java<br>
+│       │   ├── config/<br>
+│       │   │   └── CorsConfig.java<br>
+│       │   ├── auth/<br>
+│       │   ├── user/<br>
+│       │   ├── project/<br>
+│       │   ├── testcase/<br>
+│       │   ├── testplan/<br>
+│       │   └── report/<br>
+│       └── resources/<br>
+│           └── application.yml
+</div>
+</div>
+
+<div class="note">
+<strong>下一步：</strong> Phase 2 — 用户认证模块：User 实体、Mapper、Service、JWT、Security 配置、登录接口
+</div>
+
+<p style="text-align:center;color:#999;margin-top:40px;font-size:13px;">生成于 2026-05-22</p>
+
+</body>
+</html>

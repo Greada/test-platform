@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>全功能测试平台 — 开发进度与学习指南</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei','PingFang SC',sans-serif;max-width:1060px;margin:0 auto;padding:30px 24px;background:#f0f2f5;color:#1e1e1e;font-size:15px;line-height:1.7}
+h1{color:#1a73e8;border-bottom:3px solid #1a73e8;padding-bottom:14px;font-size:30px}
+h2{color:#1a73e8;margin:36px 0 14px;font-size:22px;border-left:4px solid #1a73e8;padding-left:12px}
+h3{color:#2c3e50;margin:24px 0 10px;font-size:18px}
+h4{color:#444;margin:16px 0 6px;font-size:15px}
+p{margin:10px 0}
+pre{background:#1e1e1e;color:#d4d4d4;padding:16px 20px;border-radius:8px;overflow-x:auto;font-size:13.5px;line-height:1.6;margin:12px 0;font-family:'Consolas',monospace}
+code{font-size:13.5px;font-family:'Consolas',monospace}
+p>code,li>code{background:#e8e8e8;padding:1px 6px;border-radius:3px;color:#d63384}
+.tag{display:inline-block;padding:3px 12px;border-radius:12px;font-size:12px;font-weight:600;margin-left:8px;vertical-align:middle}
+.done{background:#e8f5e9;color:#2e7d32}
+.next{background:#fff3e0;color:#e65100}
+.pending{background:#e3f2fd;color:#1565c0}
+.note{background:#e8f0fe;padding:16px 20px;border-left:4px solid #1a73e8;border-radius:6px;margin:16px 0}
+.card{background:white;border-radius:12px;padding:24px;margin:16px 0;box-shadow:0 1px 4px rgba(0,0,0,0.08)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin:16px 0}
+.gi{background:white;border-radius:10px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,0.06);border-top:3px solid #1a73e8}
+.gi.g{border-top-color:#34a853}
+.gi.o{border-top-color:#fbbc04}
+.gi.p{border-top-color:#9334e6}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px}
+th,td{border:1px solid #ddd;padding:10px 14px;text-align:left}
+th{background:#f5f7fa;font-weight:600}
+tr:nth-child(even){background:#fafafa}
+.pbar{height:10px;background:#e0e0e0;border-radius:5px;margin:12px 0 6px;overflow:hidden}
+.pfill{height:100%;background:linear-gradient(90deg,#1a73e8,#4285f4);width:20%}
+.fp{font-family:'Consolas',monospace;background:#f0f0f0;padding:2px 8px;border-radius:4px;font-size:13px;color:#d63384;border:1px solid #ddd}
+.tree{font-family:'Consolas',monospace;background:#f8f9fa;padding:14px 18px;border-radius:6px;line-height:1.8;font-size:13px;border:1px solid #e0e0e0}
+td:first-child{white-space:nowrap}
+ul,ol{margin:8px 0;padding-left:24px}
+li{margin:5px 0}
+</style>
+</head>
+<body>
+
+<h1>全功能测试平台 &mdash; 开发进度与学习指南</h1>
+<p style="color:#666;">技术栈：Spring Boot 2.7.18 + MyBatis-Plus 3.5.5 + MySQL 5.7 + Vue 3 + Element Plus &nbsp;|&nbsp; 2026-05-21</p>
+<div class="pbar"><div class="pfill" style="width:25%"></div></div>
+<p style="text-align:right;color:#888;font-size:13px;">整体进度约 25%（Phase 1 已完成，Phase 2 进行中，共 8 个阶段）</p>
+
+<div class="card">
+<h3 style="margin-top:0;">目录</h3>
+<ol>
+<li><a href="#c1">项目总览</a></li>
+<li><a href="#c2">Phase 1：已完成内容详解</a></li>
+<li><a href="#c3">核心概念详解（学习笔记）</a></li>
+<li><a href="#c4">系统架构设计</a></li>
+<li><a href="#c5">数据库设计（完整规划）</a></li>
+<li><a href="#c6">API 接口设计（完整规划）</a></li>
+<li><a href="#c7">下一步详细指引</a></li>
+<li><a href="#c8">次日恢复指南</a></li>
+</ol>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="c1">1. 项目总览</h2>
+
+<div class="card">
+<h3>1.1 我们要做什么？</h3>
+<p>开发一个 <strong>B/S 架构</strong>（浏览器/服务器）的全功能测试平台，通过网页完成测试全流程管理：</p>
+<ul>
+<li>创建项目 &rarr; 管理测试用例 &rarr; 执行接口测试 &rarr; 制定测试计划 &rarr; 查看测试报告</li>
+</ul>
+
+<h3>1.2 整体技术架构</h3>
+<pre>
+浏览器 (Vue 3 + Element Plus)
+    | HTTP 请求 / JSON 响应
+后端 (Spring Boot 2.7.18)
+  |-- Controller 层  &rarr; 接收请求、返回结果
+  |-- Service 层     &rarr; 业务逻辑
+  |-- Mapper 层      &rarr; 数据库操作 (MyBatis-Plus)
+  |-- Security       &rarr; JWT 登录认证
+    | JDBC
+MySQL 5.7 数据库
+</pre>
+
+<h3>1.3 八个阶段总览</h3>
+<table>
+<tr><th>阶段</th><th>模块</th><th>核心产出</th><th>状态</th></tr>
+<tr><td>Phase 1</td><td>后端骨架</td><td>Maven 配置、启动类、统一返回体、异常处理、MySQL 连接、CORS</td><td><span class="tag done">已完成</span></td></tr>
+<tr><td>Phase 2</td><td>用户认证</td><td>注册登录、JWT Token、Spring Security 配置</td><td><span class="tag next">进行中</span></td></tr>
+<tr><td>Phase 3</td><td>项目管理</td><td>项目 CRUD、分页查询、前后端页面</td><td><span class="tag pending">待开始</span></td></tr>
+<tr><td>Phase 4</td><td>测试用例</td><td>目录树（无限级）、用例管理、富文本编辑器</td><td><span class="tag pending">待开始</span></td></tr>
+<tr><td>Phase 5</td><td>接口测试</td><td>HTTP 请求配置/发送/响应解析、断言</td><td><span class="tag pending">待开始</span></td></tr>
+<tr><td>Phase 6</td><td>测试计划</td><td>计划创建、批量选用例、一键执行</td><td><span class="tag pending">待开始</span></td></tr>
+<tr><td>Phase 7</td><td>测试报告</td><td>报告生成、图表统计、导出</td><td><span class="tag pending">待开始</span></td></tr>
+<tr><td>Phase 8</td><td>前端骨架 + 联调</td><td>Vue 项目搭建、路由布局、仪表盘</td><td><span class="tag pending">待开始</span></td></tr>
+</table>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="c2">2. Phase 1：已完成内容详解</h2>
+
+<div class="card">
+<h3>2.1 当前目录结构</h3>
+<div class="tree">
+test-platform/
++-- pom.xml                         &larr; 父工程 Maven 配置
++-- Phase1-总结报告.md
++-- backend/
+    +-- pom.xml                     &larr; 子模块 Maven 配置（所有依赖）
+    +-- src/main/java/com/testplatform/
+        +-- TestPlatformApplication.java  &larr; 启动类
+        +-- common/
+        |   +-- Result.java                &larr; 统一返回体 ✅
+        |   +-- exception/
+        |       +-- GlobalExceptionHandler.java  &larr; 全局异常处理 ✅
+        +-- config/
+        |   +-- CorsConfig.java           &larr; 跨域配置 ✅
+        +-- auth/                   &larr; 认证模块（Phase 2）
+        +-- user/                   &larr; 用户模块（Phase 2）
+        +-- project/                &larr; 项目模块（待创建）
+        +-- testcase/               &larr; 用例模块（待创建）
+        +-- testplan/               &larr; 计划模块（待创建）
+        +-- report/                 &larr; 报告模块（待创建）
+    +-- src/main/resources/
+        +-- application.yml         &larr; 全局配置文件 ✅
+</div>
+<p>已创建 <strong>7 个核心文件</strong>，Phase 1 全部完成。</p>
+</div>
+
+<div class="card">
+<h3>2.2 父工程 pom.xml <span class="tag done">已完成</span></h3>
+<p>路径：<span class="fp">D:\test-platform\pom.xml</span></p>
+<p><strong>什么是 Maven 父工程？</strong></p>
+<p>就像 npm workspace 的根 package.json，定义一个<em>容器</em>项目，不写代码，只声明有哪些子模块。后期可加更多子模块，一条 mvn 命令编译全部。</p>
+<pre>
+&lt;groupId&gt;com.testplatform&lt;/groupId&gt;          &lt;!-- 组织ID --&gt;
+&lt;artifactId&gt;test-platform-parent&lt;/artifactId&gt; &lt;!-- 项目名 --&gt;
+&lt;version&gt;1.0.0&lt;/version&gt;                    &lt;!-- 版本 --&gt;
+&lt;packaging&gt;pom&lt;/packaging&gt;                  &lt;!-- 父容器类型 --&gt;
+&lt;modules&gt;&lt;module&gt;backend&lt;/module&gt;&lt;/modules&gt; &lt;!-- 子模块 --&gt;
+</pre>
+</div>
+
+<div class="card">
+<h3>2.3 Backend pom.xml 详解 <span class="tag done">已完成</span></h3>
+<p>路径：<span class="fp">D:\test-platform\backend\pom.xml</span></p>
+
+<h4>依赖管理（BOM）</h4>
+<p>dependencyManagement 不直接引入 jar，而是声明版本管理中心。后续 Spring 相关依赖不用写版本号，Maven 自动从这个 BOM 查。</p>
+
+<h4>各依赖含义</h4>
+<table>
+<tr><th>依赖</th><th>作用</th><th>启动后发生了什么</th></tr>
+<tr><td>spring-boot-starter-web</td><td>Web 框架</td><td>自动配 Tomcat + Spring MVC + Jackson</td></tr>
+<tr><td>spring-boot-starter-security</td><td>安全框架</td><td>默认拦截所有请求（后续配置放行）</td></tr>
+<tr><td>spring-boot-starter-validation</td><td>参数校验</td><td>支持 @NotBlank、@Email 等注解</td></tr>
+<tr><td>mybatis-plus-boot-starter</td><td>ORM 框架</td><td>自动配数据源，提供 BaseMapper CRUD</td></tr>
+<tr><td>mysql-connector-java 8.0.33</td><td>MySQL 驱动</td><td>Java 和 MySQL 通信的翻译官</td></tr>
+<tr><td>jjwt 0.9.1</td><td>JWT Token</td><td>生成和验证登录令牌</td></tr>
+<tr><td>jaxb-api 2.3.1</td><td>XML 绑定</td><td>Java 8 缺少 jjwt 需要的类</td></tr>
+<tr><td>lombok</td><td>偷懒工具</td><td>@Data 自动生成 getter/setter</td></tr>
+</table>
+
+<h4>构建插件</h4>
+<p>spring-boot-maven-plugin 把项目打包成<strong>可执行 fat jar</strong>（包含所有依赖），运行 java -jar xxx.jar 即可启动。</p>
+</div>
+
+<div class="card">
+<h3>2.4 启动类详解 <span class="tag done">已完成</span></h3>
+<p>路径：<span class="fp">D:\test-platform\backend\src\main\java\com\testplatform\TestPlatformApplication.java</span></p>
+
+<pre>
+package com.testplatform;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class TestPlatformApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(TestPlatformApplication.class, args);
+    }
+}
+</pre>
+
+<h4>逐行拆解</h4>
+<table>
+<tr><th>代码</th><th>解释</th></tr>
+<tr><td>package com.testplatform</td><td>包声明，对应 java/com/testplatform/ 目录</td></tr>
+<tr><td>@SpringBootApplication</td><td>组合注解 = @Configuration + @EnableAutoConfiguration + @ComponentScan</td></tr>
+<tr><td>@Configuration</td><td>标记为配置类，可定义 Bean</td></tr>
+<tr><td>@EnableAutoConfiguration</td><td>自动配置——根据 classpath jar 自动猜你要做什么</td></tr>
+<tr><td>@ComponentScan</td><td>扫描 com.testplatform 包下所有 @Controller、@Service 等并注册为 Bean</td></tr>
+<tr><td>main 方法</td><td>Java 程序入口</td></tr>
+<tr><td>SpringApplication.run()</td><td>创建 Spring 容器 &rarr; 加载配置 &rarr; 自动配置 &rarr; 启动 Tomcat</td></tr>
+</table>
+
+<h4>启动流程</h4>
+<pre>
+main() 执行
+  |-> SpringApplication.run() 被调用
+  |-> 确定应用类型（Web 应用）
+  |-> 加载 spring.factories（自动配置菜单）
+  |-> 读取 application.yml
+  |-> 创建 Spring 容器
+  |     |-> 扫描所有 @Component、@Service、@Controller
+  |     |-> 执行自动配置（数据源、Web MVC、Security）
+  |     |-> 注册所有 Bean
+  |-> 启动内嵌 Tomcat（默认 8080 端口）
+  |-> 输出 "Started TestPlatformApplication"
+  |-> 等待 HTTP 请求...
+</pre>
+
+<p>✅ 已配置 application.yml，启动正常。</p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="c3">3. 核心概念详解</h2>
+
+<div class="grid">
+<div class="gi">
+<h4>Spring Boot 是什么？</h4>
+<p>Java Web 框架，最大特点是"自动配置"：</p>
+<ul>
+<li>Spring Boot : Java = NestJS : Node.js = FastAPI : Python</li>
+<li>内嵌 Tomcat，无需单独装 Web 服务器</li>
+<li>Starter 一键引入整组依赖</li>
+</ul>
+</div>
+
+<div class="gi g">
+<h4>Maven 是什么？</h4>
+<p>Java 世界的包管理器：</p>
+<table style="font-size:13px;">
+<tr><th>Maven</th><th>npm 类比</th></tr>
+<tr><td>pom.xml</td><td>package.json</td></tr>
+<tr><td>Maven Central</td><td>npm registry</td></tr>
+<tr><td>mvn clean install</td><td>npm run build</td></tr>
+<tr><td>~/.m2/repository</td><td>node_modules</td></tr>
+</table>
+</div>
+
+<div class="gi o">
+<h4>MyBatis-Plus 是什么？</h4>
+<p>ORM 框架，不写 SQL 就能 CRUD：</p>
+<pre>
+userMapper.insert(user);         // 新增
+userMapper.selectById(1L);       // 按 ID 查
+userMapper.updateById(user);     // 修改
+userMapper.selectList(null);     // 查全部
+</pre>
+<p>比 JPA 灵活，比原生 MyBatis 高效。</p>
+</div>
+
+<div class="gi p">
+<h4>三层架构</h4>
+<pre>
+Controller &rarr; 接收请求、返回结果
+Service    &rarr; 业务逻辑（if/else/计算）
+Mapper     &rarr; 数据库操作（CRUD）
+</pre>
+<p>优点：解耦、复用、可测试</p>
+</div>
+</div>
+
+<div class="card">
+<h3>3.1 IoC 和 DI（Spring 核心概念）</h3>
+<table>
+<tr><th>概念</th><th>解释</th><th>类比</th></tr>
+<tr><td><strong>IoC</strong> 控制反转</td><td>不自己 new 对象，交给 Spring 容器创建</td><td>不自己做饭，告诉服务员要什么</td></tr>
+<tr><td><strong>DI</strong> 依赖注入</td><td>Spring 自动把需要的对象注入进来</td><td>服务员直接把菜端到你面前</td></tr>
+</table>
+<pre>
+// 传统写法（自己 new，耦合度高）
+public class UserController {
+    private UserService userService = new UserServiceImpl();
+}
+
+// Spring 写法（IoC + DI，低耦合）
+@RestController
+public class UserController {
+    @Autowired
+    private UserService userService;  // Spring 自动赋值，不用 new
+}
+</pre>
+</div>
+
+<div class="card">
+<h3>3.2 JWT 认证流程（Phase 2 实现）</h3>
+<table>
+<tr><th>对比</th><th>Session</th><th>JWT</th></tr>
+<tr><td>Token 存储</td><td>服务器内存/Redis</td><td>浏览器 localStorage</td></tr>
+<tr><td>扩展性</td><td>差（多机需共享 Session）</td><td>好（无状态）</td></tr>
+<tr><td>适用场景</td><td>传统单体应用</td><td>前后端分离、微服务</td></tr>
+</table>
+<pre>
+1. 用户输入用户名密码 &rarr; POST /api/auth/login
+2. 后端验证密码正确 &rarr; 生成 JWT Token（含用户ID、过期时间）
+3. 返回 Token 给前端 &rarr; 前端存到 localStorage
+4. 后续每个请求 Header 带上：Authorization: Bearer xxx
+5. 后端拦截器验证 Token 合法 &rarr; 放行
+6. Token 过期 &rarr; 返回 401 &rarr; 前端跳转登录页
+</pre>
+</div>
+
+<div class="card">
+<h3>3.3 统一返回格式 Result&lt;T&gt;</h3>
+<pre>
+{
+  "code": 200,        // 200=成功，其他=失败
+  "message": "ok",    // 提示信息
+  "data": { ... }     // 实际数据
+}
+</pre>
+<p>所有 API 接口返回同样的 JSON 结构，前端只用写一套解析逻辑。</p>
+<pre>
+// 成功
+return Result.success(data);
+return Result.success("查询成功", data);
+
+// 失败
+return Result.error("用户名不能为空");
+return Result.error(401, "Token 已过期");
+</pre>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="c4">4. 系统架构设计</h2>
+
+<div class="card">
+<h3>4.1 后端完整包结构</h3>
+<div class="tree">
+com.testplatform/
++-- TestPlatformApplication.java         启动类
++-- common/
+|   +-- Result.java                      统一返回结果
+|   +-- PageResult.java                  分页返回结果
+|   +-- exception/
+|       +-- ServiceException.java        自定义业务异常
+|       +-- GlobalExceptionHandler.java  全局异常处理器
++-- config/
+|   +-- CorsConfig.java                 跨域配置
+|   +-- SecurityConfig.java             Spring Security 配置（Phase 2）
+|   +-- MyBatisPlusConfig.java          分页插件（Phase 2）
++-- auth/                                认证模块
+|   +-- JwtUtil.java                    JWT 工具类
+|   +-- JwtAuthFilter.java              JWT 过滤器
+|   +-- LoginController.java            登录接口
++-- user/                                （entity/mapper/service/controller）
++-- project/                             （entity/mapper/service/controller）
++-- testcase/                            （entity x2/mapper x2/service x2/controller）
++-- testplan/                            （entity x2/mapper/service/controller）
++-- report/                              （entity/mapper/service/controller）
+</div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="c5">5. 数据库设计（完整规划）</h2>
+
+<div class="card">
+<h3>5.1 各模块对应表</h3>
+<table>
+<tr><th>模块</th><th>表名</th><th>说明</th><th>阶段</th></tr>
+<tr><td>用户</td><td>user</td><td>用户账号表</td><td>Phase 2</td></tr>
+<tr><td>项目</td><td>project</td><td>项目表</td><td>Phase 3</td></tr>
+<tr><td>用例目录</td><td>testcase_folder</td><td>无限级目录树</td><td>Phase 4</td></tr>
+<tr><td>测试用例</td><td>testcase</td><td>用例详情</td><td>Phase 4</td></tr>
+<tr><td>接口定义</td><td>api_definition</td><td>HTTP 请求配置</td><td>Phase 5</td></tr>
+<tr><td>测试计划</td><td>test_plan</td><td>计划主表</td><td>Phase 6</td></tr>
+<tr><td>计划-用例</td><td>test_plan_case</td><td>关联表</td><td>Phase 6</td></tr>
+<tr><td>测试报告</td><td>test_report</td><td>报告数据</td><td>Phase 7</td></tr>
+</table>
+
+<h3>5.2 建库语句</h3>
+<p>在 MySQL 中先执行：</p>
+<pre>
+CREATE DATABASE IF NOT EXISTS test_platform
+    DEFAULT CHARACTER SET utf8mb4
+    DEFAULT COLLATE utf8mb4_general_ci;
+</pre>
+
+<h3>5.3 Phase 2：用户表</h3>
+<pre>
+CREATE TABLE `user` (
+    `id`          BIGINT(20)  NOT NULL AUTO_INCREMENT,
+    `username`    VARCHAR(50) NOT NULL,
+    `password`    VARCHAR(100) NOT NULL,
+    `nickname`    VARCHAR(50) DEFAULT NULL,
+    `email`       VARCHAR(100) DEFAULT NULL,
+    `avatar`      VARCHAR(255) DEFAULT NULL,
+    `create_time` DATETIME    DEFAULT CURRENT_TIMESTAMP,
+    `update_time` DATETIME    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_username` (`username`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+</pre>
+
+<h3>5.4 Phase 3：项目表</h3>
+<pre>
+CREATE TABLE `project` (
+    `id`          BIGINT(20)  NOT NULL AUTO_INCREMENT,
+    `name`        VARCHAR(100) NOT NULL,
+    `description` VARCHAR(500) DEFAULT NULL,
+    `owner_id`    BIGINT(20)  NOT NULL,
+    `create_time` DATETIME    DEFAULT CURRENT_TIMESTAMP,
+    `update_time` DATETIME    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_owner_id` (`owner_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+</pre>
+
+<h3>5.5 Phase 4：测试用例相关表</h3>
+<pre>
+CREATE TABLE `testcase_folder` (
+    `id`         BIGINT(20) NOT NULL AUTO_INCREMENT,
+    `project_id` BIGINT(20) NOT NULL,
+    `parent_id`  BIGINT(20) DEFAULT NULL,
+    `name`       VARCHAR(100) NOT NULL,
+    `sort_order` INT(11) DEFAULT 0,
+    PRIMARY KEY (`id`),
+    KEY `idx_project_id` (`project_id`),
+    KEY `idx_parent_id` (`parent_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `testcase` (
+    `id`              BIGINT(20) NOT NULL AUTO_INCREMENT,
+    `folder_id`       BIGINT(20) DEFAULT NULL,
+    `project_id`      BIGINT(20) NOT NULL,
+    `title`           VARCHAR(200) NOT NULL,
+    `priority`        VARCHAR(20) DEFAULT 'P2',
+    `type`            VARCHAR(50) DEFAULT '功能测试',
+    `precondition`    TEXT DEFAULT NULL,
+    `step_desc`       TEXT DEFAULT NULL,
+    `expected_result` TEXT DEFAULT NULL,
+    `status`          VARCHAR(20) DEFAULT '正常',
+    `create_by`       BIGINT(20) DEFAULT NULL,
+    `create_time`     DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `update_time`     DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_project_id` (`project_id`),
+    KEY `idx_folder_id` (`folder_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+</pre>
+
+<h3>5.6 Phase 5：接口定义表</h3>
+<pre>
+CREATE TABLE `api_definition` (
+    `id`          BIGINT(20) NOT NULL AUTO_INCREMENT,
+    `project_id`  BIGINT(20) NOT NULL,
+    `name`        VARCHAR(200) NOT NULL,
+    `url`         VARCHAR(500) NOT NULL,
+    `method`      VARCHAR(10) DEFAULT 'GET',
+    `headers`     TEXT DEFAULT NULL,
+    `params`      TEXT DEFAULT NULL,
+    `body_type`   VARCHAR(50) DEFAULT 'none',
+    `body`        TEXT DEFAULT NULL,
+    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_project_id` (`project_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+</pre>
+
+<h3>5.7 Phase 6-7：计划 + 报告表</h3>
+<pre>
+-- 测试计划表
+CREATE TABLE `test_plan` (
+    `id`          BIGINT(20) NOT NULL AUTO_INCREMENT,
+    `project_id`  BIGINT(20) NOT NULL,
+    `name`        VARCHAR(200) NOT NULL,
+    `description` TEXT DEFAULT NULL,
+    `status`      VARCHAR(20) DEFAULT '未开始',
+    `create_by`   BIGINT(20) DEFAULT NULL,
+    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_project_id` (`project_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 计划-用例关联表
+CREATE TABLE `test_plan_case` (
+    `id`            BIGINT(20) NOT NULL AUTO_INCREMENT,
+    `plan_id`       BIGINT(20) NOT NULL,
+    `case_id`       BIGINT(20) NOT NULL,
+    `status`        VARCHAR(20) DEFAULT '待执行',
+    `execute_by`    BIGINT(20) DEFAULT NULL,
+    `execute_time`  DATETIME DEFAULT NULL,
+    `actual_result` TEXT DEFAULT NULL,
+    PRIMARY KEY (`id`),
+    KEY `idx_plan_id` (`plan_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 测试报告表
+CREATE TABLE `test_report` (
+    `id`          BIGINT(20) NOT NULL AUTO_INCREMENT,
+    `plan_id`     BIGINT(20) NOT NULL,
+    `total`       INT(11) DEFAULT 0,
+    `passed`      INT(11) DEFAULT 0,
+    `failed`      INT(11) DEFAULT 0,
+    `skipped`     INT(11) DEFAULT 0,
+    `duration`    BIGINT(20) DEFAULT 0,
+    `detail`      TEXT DEFAULT NULL,
+    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_plan_id` (`plan_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+</pre>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="c6">6. API 接口设计（完整规划）</h2>
+
+<div class="card">
+<p>所有 API 前缀 <code>/api</code>，返回统一 <code>Result&lt;T&gt;</code> 格式</p>
+<table>
+<tr><th>方法</th><th>路径</th><th>说明</th><th>Phase</th></tr>
+<tr style="background:#e3f2fd;"><td colspan="4"><strong>认证模块</strong></td></tr>
+<tr><td>POST</td><td>/api/auth/login</td><td>登录（返回 JWT Token）</td><td>2</td></tr>
+<tr><td>POST</td><td>/api/auth/register</td><td>注册</td><td>2</td></tr>
+<tr><td>GET</td><td>/api/auth/userinfo</td><td>获取当前用户信息</td><td>2</td></tr>
+<tr style="background:#e3f2fd;"><td colspan="4"><strong>项目管理</strong></td></tr>
+<tr><td>GET</td><td>/api/projects</td><td>项目列表（分页+搜索）</td><td>3</td></tr>
+<tr><td>POST</td><td>/api/projects</td><td>创建项目</td><td>3</td></tr>
+<tr><td>GET</td><td>/api/projects/{id}</td><td>项目详情</td><td>3</td></tr>
+<tr><td>PUT</td><td>/api/projects/{id}</td><td>更新项目</td><td>3</td></tr>
+<tr><td>DELETE</td><td>/api/projects/{id}</td><td>删除项目</td><td>3</td></tr>
+<tr style="background:#e3f2fd;"><td colspan="4"><strong>用例目录</strong></td></tr>
+<tr><td>GET</td><td>/api/case-folders/tree?projectId=1</td><td>获取目录树</td><td>4</td></tr>
+<tr><td>POST</td><td>/api/case-folders</td><td>创建目录</td><td>4</td></tr>
+<tr><td>PUT</td><td>/api/case-folders/{id}</td><td>更新目录</td><td>4</td></tr>
+<tr><td>DELETE</td><td>/api/case-folders/{id}</td><td>删除目录（含子目录+用例）</td><td>4</td></tr>
+<tr style="background:#e3f2fd;"><td colspan="4"><strong>测试用例</strong></td></tr>
+<tr><td>GET</td><td>/api/testcases?folderId=1</td><td>根据目录获取用例列表</td><td>4</td></tr>
+<tr><td>POST</td><td>/api/testcases</td><td>创建用例</td><td>4</td></tr>
+<tr><td>GET</td><td>/api/testcases/{id}</td><td>用例详情</td><td>4</td></tr>
+<tr><td>PUT</td><td>/api/testcases/{id}</td><td>更新用例</td><td>4</td></tr>
+<tr><td>DELETE</td><td>/api/testcases/{id}</td><td>删除用例</td><td>4</td></tr>
+<tr style="background:#e3f2fd;"><td colspan="4"><strong>接口定义</strong></td></tr>
+<tr><td>GET</td><td>/api/api-definitions?projectId=1</td><td>接口列表</td><td>5</td></tr>
+<tr><td>POST</td><td>/api/api-definitions</td><td>保存接口定义</td><td>5</td></tr>
+<tr><td>GET</td><td>/api/api-definitions/{id}</td><td>接口详情</td><td>5</td></tr>
+<tr><td>PUT</td><td>/api/api-definitions/{id}</td><td>更新接口</td><td>5</td></tr>
+<tr><td>DELETE</td><td>/api/api-definitions/{id}</td><td>删除接口</td><td>5</td></tr>
+<tr><td>POST</td><td>/api/api-definitions/execute</td><td>执行接口请求</td><td>5</td></tr>
+<tr style="background:#e3f2fd;"><td colspan="4"><strong>测试计划</strong></td></tr>
+<tr><td>GET</td><td>/api/test-plans?projectId=1</td><td>计划列表</td><td>6</td></tr>
+<tr><td>POST</td><td>/api/test-plans</td><td>创建计划</td><td>6</td></tr>
+<tr><td>PUT</td><td>/api/test-plans/{id}</td><td>更新计划</td><td>6</td></tr>
+<tr><td>DELETE</td><td>/api/test-plans/{id}</td><td>删除计划</td><td>6</td></tr>
+<tr><td>POST</td><td>/api/test-plans/{id}/execute</td><td>执行计划</td><td>6</td></tr>
+<tr style="background:#e3f2fd;"><td colspan="4"><strong>测试报告</strong></td></tr>
+<tr><td>GET</td><td>/api/reports</td><td>报告列表</td><td>7</td></tr>
+<tr><td>GET</td><td>/api/reports/{id}</td><td>报告详情</td><td>7</td></tr>
+<tr><td>GET</td><td>/api/reports/stats</td><td>统计概览（仪表盘用）</td><td>7</td></tr>
+</table>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="c7">7. 下一步详细指引 — Phase 2</h2>
+
+<div class="card">
+<p>Phase 1 已完成 ✅，接下来进入 <strong>Phase 2：用户认证模块</strong>。</p>
+<p>按顺序创建以下 <strong>8 个文件 / SQL</strong>：</p>
+
+<h3>步骤 1：建表</h3>
+<p>在 MySQL 中执行 user 表建表语句。</p>
+<pre>
+CREATE TABLE `user` (
+    `id`          BIGINT(20)  NOT NULL AUTO_INCREMENT,
+    `username`    VARCHAR(50) NOT NULL,
+    `password`    VARCHAR(100) NOT NULL,
+    `nickname`    VARCHAR(50) DEFAULT NULL,
+    `email`       VARCHAR(100) DEFAULT NULL,
+    `avatar`      VARCHAR(255) DEFAULT NULL,
+    `create_time` DATETIME    DEFAULT CURRENT_TIMESTAMP,
+    `update_time` DATETIME    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_username` (`username`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+</pre>
+
+<h3>步骤 2：User 实体</h3>
+<p>路径：<span class="fp">user/entity/User.java</span></p>
+
+<h3>步骤 3：UserMapper</h3>
+<p>路径：<span class="fp">user/mapper/UserMapper.java</span></p>
+
+<h3>步骤 4：UserService + UserServiceImpl</h3>
+<p>路径：<span class="fp">user/service/UserService.java</span> + <span class="fp">user/service/impl/UserServiceImpl.java</span></p>
+
+<h3>步骤 5：JwtUtil</h3>
+<p>路径：<span class="fp">auth/JwtUtil.java</span></p>
+
+<h3>步骤 6：JwtAuthFilter</h3>
+<p>路径：<span class="fp">auth/JwtAuthFilter.java</span></p>
+
+<h3>步骤 7：SecurityConfig</h3>
+<p>路径：<span class="fp">config/SecurityConfig.java</span></p>
+
+<h3>步骤 8：LoginController</h3>
+<p>路径：<span class="fp">auth/LoginController.java</span></p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="c8">8. 次日恢复指南</h2>
+
+<div class="card">
+<h3>恢复步骤</h3>
+<ol>
+<li><strong>打开 IDEA</strong> &rarr; File &rarr; Open &rarr; <code>E:\Java_all\code\test-platform\test-platform</code></li>
+<li><strong>等待 Maven 加载</strong> 完成（右下角无进度条）</li>
+<li><strong>打开 Maven 面板</strong>（右侧边栏）确认无红字报错</li>
+<li><strong>确认 MySQL</strong> 已启动（可在 IDEA Database 或命令行测试连接）</li>
+<li><strong>开新对话</strong>，告诉助手：<em>"继续测试平台 Phase 2，项目在 E:\Java_all\code\test-platform\test-platform"</em></li>
+</ol>
+
+<h3>Phase 1 快速复习</h3>
+<table>
+<tr><th>概念</th><th>一句话总结</th></tr>
+<tr><td>Spring Boot</td><td>自动配置的 Java Web 框架，内嵌 Tomcat</td></tr>
+<tr><td>Maven</td><td>Java 包管理器，pom.xml 是配置文件</td></tr>
+<tr><td>MyBatis-Plus</td><td>不写 SQL 就能操作数据库的 ORM</td></tr>
+<tr><td>@SpringBootApplication</td><td>启动类核心注解 = @Configuration + @EnableAutoConfiguration + @ComponentScan</td></tr>
+<tr><td>三层架构</td><td>Controller &rarr; Service &rarr; Mapper，各司其职</td></tr>
+<tr><td>JWT</td><td>无状态 Token 认证，适合前后端分离</td></tr>
+<tr><td>统一返回 Result</td><td>所有 API 返回 {code, message, data} 格式</td></tr>
+</table>
+
+<h3>已创建的文件列表（Phase 1）</h3>
+<table>
+<tr><th>文件名</th><th>路径</th><th>状态</th></tr>
+<tr><td>pom.xml（父）</td><td>test-platform/pom.xml</td><td>✅</td></tr>
+<tr><td>pom.xml（子）</td><td>test-platform/backend/pom.xml</td><td>✅</td></tr>
+<tr><td>TestPlatformApplication.java</td><td>backend/src/main/java/com/testplatform/TestPlatformApplication.java</td><td>✅</td></tr>
+<tr><td>application.yml</td><td>backend/src/main/resources/application.yml</td><td>✅</td></tr>
+<tr><td>Result.java</td><td>backend/src/main/java/com/testplatform/common/Result.java</td><td>✅</td></tr>
+<tr><td>GlobalExceptionHandler.java</td><td>backend/src/main/java/.../common/exception/GlobalExceptionHandler.java</td><td>✅</td></tr>
+<tr><td>CorsConfig.java</td><td>backend/src/main/java/com/testplatform/config/CorsConfig.java</td><td>✅</td></tr>
+</table>
+</div>
+
+<div class="note">
+<strong>提示：</strong> 下次打开新对话时，说：<br>
+<strong>"继续测试平台 Phase 2，项目在 E:\Java_all\code\test-platform\test-platform"</strong>
+</div>
+
+<p style="text-align:center;color:#999;margin-top:40px;font-size:13px;">更新于 2026-05-22 &nbsp;|&nbsp; 项目路径：E:\Java_all\code\test-platform\test-platform</p>
+
+</body>
+</html>
