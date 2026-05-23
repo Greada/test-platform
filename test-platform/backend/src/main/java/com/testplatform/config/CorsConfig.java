@@ -7,10 +7,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
 /**
- * @Description: config class when spring start will run bean
- * @Author: admin
- * @Date: 2026/5/22 22:11
- * @Version: 1.0
+ * @author admin
+ * @version 1.0.0
  */
 @Configuration
 public class CorsConfig {

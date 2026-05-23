@@ -41,10 +41,10 @@ li{margin:5px 0}
 </head>
 <body>
 
-<h1>全功能测试平台 &mdash; 开发进度与学习指南</h1>
-<p style="color:#666;">技术栈：Spring Boot 2.7.18 + MyBatis-Plus 3.5.5 + MySQL 5.7 + Vue 3 + Element Plus &nbsp;|&nbsp; 2026-05-21</p>
-<div class="pbar"><div class="pfill" style="width:25%"></div></div>
-<p style="text-align:right;color:#888;font-size:13px;">整体进度约 25%（Phase 1 已完成，Phase 2 进行中，共 8 个阶段）</p>
+<h1>全功能测试平台 &mdash; V1 开发进度与指引</h1>
+<p style="color:#666;">技术栈：Spring Boot 2.7.18 + MyBatis-Plus 3.5.5 + MySQL 5.7 + Vue 3 + Element Plus &nbsp;|&nbsp; 2026-05-23</p>
+<div class="pbar"><div class="pfill" style="width:60%"></div></div>
+<p style="text-align:right;color:#888;font-size:13px;">整体进度约 60%（Phase 1 已完成，V1 Step 1~6 已完成）</p>
 
 <div class="card">
 <h3 style="margin-top:0;">目录</h3>
@@ -83,17 +83,11 @@ li{margin:5px 0}
 MySQL 5.7 数据库
 </pre>
 
-<h3>1.3 八个阶段总览</h3>
+<h3>1.3 V1 阶段总览</h3>
 <table>
 <tr><th>阶段</th><th>模块</th><th>核心产出</th><th>状态</th></tr>
 <tr><td>Phase 1</td><td>后端骨架</td><td>Maven 配置、启动类、统一返回体、异常处理、MySQL 连接、CORS</td><td><span class="tag done">已完成</span></td></tr>
-<tr><td>Phase 2</td><td>用户认证</td><td>注册登录、JWT Token、Spring Security 配置</td><td><span class="tag next">进行中</span></td></tr>
-<tr><td>Phase 3</td><td>项目管理</td><td>项目 CRUD、分页查询、前后端页面</td><td><span class="tag pending">待开始</span></td></tr>
-<tr><td>Phase 4</td><td>测试用例</td><td>目录树（无限级）、用例管理、富文本编辑器</td><td><span class="tag pending">待开始</span></td></tr>
-<tr><td>Phase 5</td><td>接口测试</td><td>HTTP 请求配置/发送/响应解析、断言</td><td><span class="tag pending">待开始</span></td></tr>
-<tr><td>Phase 6</td><td>测试计划</td><td>计划创建、批量选用例、一键执行</td><td><span class="tag pending">待开始</span></td></tr>
-<tr><td>Phase 7</td><td>测试报告</td><td>报告生成、图表统计、导出</td><td><span class="tag pending">待开始</span></td></tr>
-<tr><td>Phase 8</td><td>前端骨架 + 联调</td><td>Vue 项目搭建、路由布局、仪表盘</td><td><span class="tag pending">待开始</span></td></tr>
+<tr><td>V1</td><td>用例管理 + 执行 + 报告 + 日志</td><td>前后端全栈：用例 CRUD、HTTP 执行、报告记录、日志展示</td><td><span class="tag next">进行中</span></td></tr>
 </table>
 </div>
 
@@ -116,12 +110,10 @@ test-platform/
         |       +-- GlobalExceptionHandler.java  &larr; 全局异常处理 ✅
         +-- config/
         |   +-- CorsConfig.java           &larr; 跨域配置 ✅
-        +-- auth/                   &larr; 认证模块（Phase 2）
-        +-- user/                   &larr; 用户模块（Phase 2）
-        +-- project/                &larr; 项目模块（待创建）
-        +-- testcase/               &larr; 用例模块（待创建）
-        +-- testplan/               &larr; 计划模块（待创建）
-        +-- report/                 &larr; 报告模块（待创建）
+        +-- controller/             &larr; V1 控制器
+        +-- entity/                 &larr; V1 实体
+        +-- mapper/                 &larr; V1 Mapper
+        +-- service/                &larr; V1 业务层
     +-- src/main/resources/
         +-- application.yml         &larr; 全局配置文件 ✅
 </div>
@@ -287,20 +279,15 @@ public class UserController {
 </div>
 
 <div class="card">
-<h3>3.2 JWT 认证流程（Phase 2 实现）</h3>
-<table>
-<tr><th>对比</th><th>Session</th><th>JWT</th></tr>
-<tr><td>Token 存储</td><td>服务器内存/Redis</td><td>浏览器 localStorage</td></tr>
-<tr><td>扩展性</td><td>差（多机需共享 Session）</td><td>好（无状态）</td></tr>
-<tr><td>适用场景</td><td>传统单体应用</td><td>前后端分离、微服务</td></tr>
-</table>
+<h3>3.2 执行流程（V1 核心逻辑）</h3>
 <pre>
-1. 用户输入用户名密码 &rarr; POST /api/auth/login
-2. 后端验证密码正确 &rarr; 生成 JWT Token（含用户ID、过期时间）
-3. 返回 Token 给前端 &rarr; 前端存到 localStorage
-4. 后续每个请求 Header 带上：Authorization: Bearer xxx
-5. 后端拦截器验证 Token 合法 &rarr; 放行
-6. Token 过期 &rarr; 返回 401 &rarr; 前端跳转登录页
+1. 用户在页面创建测试用例（填写 URL、方法、参数、预期结果）
+2. 在用例列表点击「执行」按钮
+3. 后端接收请求 &rarr; 用 RestTemplate 发送真实 HTTP 请求
+4. 比对实际响应与预期结果 &rarr; 生成 PASS / FAIL / ERROR
+5. 保存 execution_record（含请求详情、响应详情）
+6. 返回执行结果给前端
+7. 用户可在执行记录页查看所有历史日志
 </pre>
 </div>
 
@@ -359,247 +346,102 @@ com.testplatform/
 <h2 id="c5">5. 数据库设计（完整规划）</h2>
 
 <div class="card">
-<h3>5.1 各模块对应表</h3>
+<h3>5.1 V1 表结构</h3>
 <table>
-<tr><th>模块</th><th>表名</th><th>说明</th><th>阶段</th></tr>
-<tr><td>用户</td><td>user</td><td>用户账号表</td><td>Phase 2</td></tr>
-<tr><td>项目</td><td>project</td><td>项目表</td><td>Phase 3</td></tr>
-<tr><td>用例目录</td><td>testcase_folder</td><td>无限级目录树</td><td>Phase 4</td></tr>
-<tr><td>测试用例</td><td>testcase</td><td>用例详情</td><td>Phase 4</td></tr>
-<tr><td>接口定义</td><td>api_definition</td><td>HTTP 请求配置</td><td>Phase 5</td></tr>
-<tr><td>测试计划</td><td>test_plan</td><td>计划主表</td><td>Phase 6</td></tr>
-<tr><td>计划-用例</td><td>test_plan_case</td><td>关联表</td><td>Phase 6</td></tr>
-<tr><td>测试报告</td><td>test_report</td><td>报告数据</td><td>Phase 7</td></tr>
+<tr><th>表名</th><th>说明</th></tr>
+<tr><td>test_case</td><td>测试用例：名称、请求地址、方法、参数、预期结果</td></tr>
+<tr><td>execution_record</td><td>执行记录：执行结果、请求详情、响应详情、日志</td></tr>
 </table>
 
-<h3>5.2 建库语句</h3>
-<p>在 MySQL 中先执行：</p>
+<h3>5.2 建库建表语句</h3>
 <pre>
 CREATE DATABASE IF NOT EXISTS test_platform
     DEFAULT CHARACTER SET utf8mb4
     DEFAULT COLLATE utf8mb4_general_ci;
-</pre>
 
-<h3>5.3 Phase 2：用户表</h3>
-<pre>
-CREATE TABLE `user` (
-    `id`          BIGINT(20)  NOT NULL AUTO_INCREMENT,
-    `username`    VARCHAR(50) NOT NULL,
-    `password`    VARCHAR(100) NOT NULL,
-    `nickname`    VARCHAR(50) DEFAULT NULL,
-    `email`       VARCHAR(100) DEFAULT NULL,
-    `avatar`      VARCHAR(255) DEFAULT NULL,
-    `create_time` DATETIME    DEFAULT CURRENT_TIMESTAMP,
-    `update_time` DATETIME    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_username` (`username`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-</pre>
+USE test_platform;
 
-<h3>5.4 Phase 3：项目表</h3>
-<pre>
-CREATE TABLE `project` (
-    `id`          BIGINT(20)  NOT NULL AUTO_INCREMENT,
-    `name`        VARCHAR(100) NOT NULL,
-    `description` VARCHAR(500) DEFAULT NULL,
-    `owner_id`    BIGINT(20)  NOT NULL,
-    `create_time` DATETIME    DEFAULT CURRENT_TIMESTAMP,
-    `update_time` DATETIME    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`),
-    KEY `idx_owner_id` (`owner_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-</pre>
-
-<h3>5.5 Phase 4：测试用例相关表</h3>
-<pre>
-CREATE TABLE `testcase_folder` (
-    `id`         BIGINT(20) NOT NULL AUTO_INCREMENT,
-    `project_id` BIGINT(20) NOT NULL,
-    `parent_id`  BIGINT(20) DEFAULT NULL,
-    `name`       VARCHAR(100) NOT NULL,
-    `sort_order` INT(11) DEFAULT 0,
-    PRIMARY KEY (`id`),
-    KEY `idx_project_id` (`project_id`),
-    KEY `idx_parent_id` (`parent_id`)
+CREATE TABLE test_case (
+    id              BIGINT(20)   NOT NULL AUTO_INCREMENT,
+    name            VARCHAR(255) NOT NULL,
+    request_url     VARCHAR(1024) NOT NULL,
+    request_method  VARCHAR(10)   NOT NULL DEFAULT 'GET',
+    request_headers TEXT,
+    request_params  TEXT,
+    expected_result TEXT,
+    create_time     DATETIME     DEFAULT CURRENT_TIMESTAMP,
+    update_time     DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE `testcase` (
-    `id`              BIGINT(20) NOT NULL AUTO_INCREMENT,
-    `folder_id`       BIGINT(20) DEFAULT NULL,
-    `project_id`      BIGINT(20) NOT NULL,
-    `title`           VARCHAR(200) NOT NULL,
-    `priority`        VARCHAR(20) DEFAULT 'P2',
-    `type`            VARCHAR(50) DEFAULT '功能测试',
-    `precondition`    TEXT DEFAULT NULL,
-    `step_desc`       TEXT DEFAULT NULL,
-    `expected_result` TEXT DEFAULT NULL,
-    `status`          VARCHAR(20) DEFAULT '正常',
-    `create_by`       BIGINT(20) DEFAULT NULL,
-    `create_time`     DATETIME DEFAULT CURRENT_TIMESTAMP,
-    `update_time`     DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`),
-    KEY `idx_project_id` (`project_id`),
-    KEY `idx_folder_id` (`folder_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-</pre>
-
-<h3>5.6 Phase 5：接口定义表</h3>
-<pre>
-CREATE TABLE `api_definition` (
-    `id`          BIGINT(20) NOT NULL AUTO_INCREMENT,
-    `project_id`  BIGINT(20) NOT NULL,
-    `name`        VARCHAR(200) NOT NULL,
-    `url`         VARCHAR(500) NOT NULL,
-    `method`      VARCHAR(10) DEFAULT 'GET',
-    `headers`     TEXT DEFAULT NULL,
-    `params`      TEXT DEFAULT NULL,
-    `body_type`   VARCHAR(50) DEFAULT 'none',
-    `body`        TEXT DEFAULT NULL,
-    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
-    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`),
-    KEY `idx_project_id` (`project_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-</pre>
-
-<h3>5.7 Phase 6-7：计划 + 报告表</h3>
-<pre>
--- 测试计划表
-CREATE TABLE `test_plan` (
-    `id`          BIGINT(20) NOT NULL AUTO_INCREMENT,
-    `project_id`  BIGINT(20) NOT NULL,
-    `name`        VARCHAR(200) NOT NULL,
-    `description` TEXT DEFAULT NULL,
-    `status`      VARCHAR(20) DEFAULT '未开始',
-    `create_by`   BIGINT(20) DEFAULT NULL,
-    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
-    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`),
-    KEY `idx_project_id` (`project_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 计划-用例关联表
-CREATE TABLE `test_plan_case` (
-    `id`            BIGINT(20) NOT NULL AUTO_INCREMENT,
-    `plan_id`       BIGINT(20) NOT NULL,
-    `case_id`       BIGINT(20) NOT NULL,
-    `status`        VARCHAR(20) DEFAULT '待执行',
-    `execute_by`    BIGINT(20) DEFAULT NULL,
-    `execute_time`  DATETIME DEFAULT NULL,
-    `actual_result` TEXT DEFAULT NULL,
-    PRIMARY KEY (`id`),
-    KEY `idx_plan_id` (`plan_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 测试报告表
-CREATE TABLE `test_report` (
-    `id`          BIGINT(20) NOT NULL AUTO_INCREMENT,
-    `plan_id`     BIGINT(20) NOT NULL,
-    `total`       INT(11) DEFAULT 0,
-    `passed`      INT(11) DEFAULT 0,
-    `failed`      INT(11) DEFAULT 0,
-    `skipped`     INT(11) DEFAULT 0,
-    `duration`    BIGINT(20) DEFAULT 0,
-    `detail`      TEXT DEFAULT NULL,
-    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`),
-    KEY `idx_plan_id` (`plan_id`)
+CREATE TABLE execution_record (
+    id              BIGINT(20)   NOT NULL AUTO_INCREMENT,
+    test_case_id    BIGINT(20)   NOT NULL,
+    status          VARCHAR(10) NOT NULL DEFAULT 'PENDING',
+    request_detail  TEXT,
+    response_detail TEXT,
+    actual_result   TEXT,
+    execute_time    DATETIME     DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_test_case_id (test_case_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 </pre>
 </div>
 
 <!-- ============================================================ -->
-<h2 id="c6">6. API 接口设计（完整规划）</h2>
+<h2 id="c6">6. V1 API 接口设计</h2>
 
 <div class="card">
 <p>所有 API 前缀 <code>/api</code>，返回统一 <code>Result&lt;T&gt;</code> 格式</p>
 <table>
-<tr><th>方法</th><th>路径</th><th>说明</th><th>Phase</th></tr>
-<tr style="background:#e3f2fd;"><td colspan="4"><strong>认证模块</strong></td></tr>
-<tr><td>POST</td><td>/api/auth/login</td><td>登录（返回 JWT Token）</td><td>2</td></tr>
-<tr><td>POST</td><td>/api/auth/register</td><td>注册</td><td>2</td></tr>
-<tr><td>GET</td><td>/api/auth/userinfo</td><td>获取当前用户信息</td><td>2</td></tr>
-<tr style="background:#e3f2fd;"><td colspan="4"><strong>项目管理</strong></td></tr>
-<tr><td>GET</td><td>/api/projects</td><td>项目列表（分页+搜索）</td><td>3</td></tr>
-<tr><td>POST</td><td>/api/projects</td><td>创建项目</td><td>3</td></tr>
-<tr><td>GET</td><td>/api/projects/{id}</td><td>项目详情</td><td>3</td></tr>
-<tr><td>PUT</td><td>/api/projects/{id}</td><td>更新项目</td><td>3</td></tr>
-<tr><td>DELETE</td><td>/api/projects/{id}</td><td>删除项目</td><td>3</td></tr>
-<tr style="background:#e3f2fd;"><td colspan="4"><strong>用例目录</strong></td></tr>
-<tr><td>GET</td><td>/api/case-folders/tree?projectId=1</td><td>获取目录树</td><td>4</td></tr>
-<tr><td>POST</td><td>/api/case-folders</td><td>创建目录</td><td>4</td></tr>
-<tr><td>PUT</td><td>/api/case-folders/{id}</td><td>更新目录</td><td>4</td></tr>
-<tr><td>DELETE</td><td>/api/case-folders/{id}</td><td>删除目录（含子目录+用例）</td><td>4</td></tr>
-<tr style="background:#e3f2fd;"><td colspan="4"><strong>测试用例</strong></td></tr>
-<tr><td>GET</td><td>/api/testcases?folderId=1</td><td>根据目录获取用例列表</td><td>4</td></tr>
-<tr><td>POST</td><td>/api/testcases</td><td>创建用例</td><td>4</td></tr>
-<tr><td>GET</td><td>/api/testcases/{id}</td><td>用例详情</td><td>4</td></tr>
-<tr><td>PUT</td><td>/api/testcases/{id}</td><td>更新用例</td><td>4</td></tr>
-<tr><td>DELETE</td><td>/api/testcases/{id}</td><td>删除用例</td><td>4</td></tr>
-<tr style="background:#e3f2fd;"><td colspan="4"><strong>接口定义</strong></td></tr>
-<tr><td>GET</td><td>/api/api-definitions?projectId=1</td><td>接口列表</td><td>5</td></tr>
-<tr><td>POST</td><td>/api/api-definitions</td><td>保存接口定义</td><td>5</td></tr>
-<tr><td>GET</td><td>/api/api-definitions/{id}</td><td>接口详情</td><td>5</td></tr>
-<tr><td>PUT</td><td>/api/api-definitions/{id}</td><td>更新接口</td><td>5</td></tr>
-<tr><td>DELETE</td><td>/api/api-definitions/{id}</td><td>删除接口</td><td>5</td></tr>
-<tr><td>POST</td><td>/api/api-definitions/execute</td><td>执行接口请求</td><td>5</td></tr>
-<tr style="background:#e3f2fd;"><td colspan="4"><strong>测试计划</strong></td></tr>
-<tr><td>GET</td><td>/api/test-plans?projectId=1</td><td>计划列表</td><td>6</td></tr>
-<tr><td>POST</td><td>/api/test-plans</td><td>创建计划</td><td>6</td></tr>
-<tr><td>PUT</td><td>/api/test-plans/{id}</td><td>更新计划</td><td>6</td></tr>
-<tr><td>DELETE</td><td>/api/test-plans/{id}</td><td>删除计划</td><td>6</td></tr>
-<tr><td>POST</td><td>/api/test-plans/{id}/execute</td><td>执行计划</td><td>6</td></tr>
-<tr style="background:#e3f2fd;"><td colspan="4"><strong>测试报告</strong></td></tr>
-<tr><td>GET</td><td>/api/reports</td><td>报告列表</td><td>7</td></tr>
-<tr><td>GET</td><td>/api/reports/{id}</td><td>报告详情</td><td>7</td></tr>
-<tr><td>GET</td><td>/api/reports/stats</td><td>统计概览（仪表盘用）</td><td>7</td></tr>
+<tr><th>方法</th><th>路径</th><th>说明</th></tr>
+<tr style="background:#e3f2fd;"><td colspan="3"><strong>测试用例</strong></td></tr>
+<tr><td>GET</td><td>/api/testcases</td><td>用例列表</td></tr>
+<tr><td>GET</td><td>/api/testcases/{id}</td><td>用例详情</td></tr>
+<tr><td>POST</td><td>/api/testcases</td><td>创建用例</td></tr>
+<tr><td>PUT</td><td>/api/testcases/{id}</td><td>更新用例</td></tr>
+<tr><td>DELETE</td><td>/api/testcases/{id}</td><td>删除用例</td></tr>
+<tr style="background:#e3f2fd;"><td colspan="3"><strong>执行</strong></td></tr>
+<tr><td>POST</td><td>/api/execution-records/{testCaseId}/execute</td><td>执行用例（发 HTTP 请求）</td></tr>
+<tr><td>GET</td><td>/api/execution-records?testCaseId=1</td><td>执行记录列表（按 testCaseId 过滤）</td></tr>
 </table>
 </div>
 
 <!-- ============================================================ -->
-<h2 id="c7">7. 下一步详细指引 — Phase 2</h2>
+<h2 id="c7">7. 下一步详细指引 — V1</h2>
 
 <div class="card">
-<p>Phase 1 已完成 ✅，接下来进入 <strong>Phase 2：用户认证模块</strong>。</p>
-<p>按顺序创建以下 <strong>8 个文件 / SQL</strong>：</p>
+<p>Phase 1 已完成 ✅，接下来进入 <strong>V1：用例管理 + 执行 + 报告 + 日志</strong>。</p>
+<p>按顺序完成以下 <strong>7 个 Step</strong>：</p>
 
-<h3>步骤 1：建表</h3>
-<p>在 MySQL 中执行 user 表建表语句。</p>
-<pre>
-CREATE TABLE `user` (
-    `id`          BIGINT(20)  NOT NULL AUTO_INCREMENT,
-    `username`    VARCHAR(50) NOT NULL,
-    `password`    VARCHAR(100) NOT NULL,
-    `nickname`    VARCHAR(50) DEFAULT NULL,
-    `email`       VARCHAR(100) DEFAULT NULL,
-    `avatar`      VARCHAR(255) DEFAULT NULL,
-    `create_time` DATETIME    DEFAULT CURRENT_TIMESTAMP,
-    `update_time` DATETIME    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_username` (`username`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-</pre>
+<h3>Step 1：建表 <span class="tag done">✅ 已完成</span></h3>
+<p>已创建 <span class="fp">sql/init_v1.sql</span>，在 MySQL 中执行建表。</p>
 
-<h3>步骤 2：User 实体</h3>
-<p>路径：<span class="fp">user/entity/User.java</span></p>
+<h3>Step 2：后端实体 + Mapper <span class="tag done">✅ 已完成</span></h3>
+<p>路径：<span class="fp">entity/TestCase.java</span>、<span class="fp">entity/ExecutionRecord.java</span></p>
+<p>路径：<span class="fp">mapper/TestCaseMapper.java</span>、<span class="fp">mapper/ExecutionRecordMapper.java</span></p>
+<p>主启动类加 <code>@MapperScan("com.testplatform.mapper")</code></p>
 
-<h3>步骤 3：UserMapper</h3>
-<p>路径：<span class="fp">user/mapper/UserMapper.java</span></p>
+<h3>Step 3：后端 Service <span class="tag done">✅ 已完成</span></h3>
+<p>路径：<span class="fp">service/TestCaseService.java</span> + <span class="fp">service/impl/TestCaseServiceImpl.java</span></p>
+<p>路径：<span class="fp">service/ExecutionService.java</span> + <span class="fp">service/impl/ExecutionServiceImpl.java</span></p>
+<p>路径：<span class="fp">service/HttpExecutor.java</span>（用 RestTemplate 发 HTTP 请求）</p>
 
-<h3>步骤 4：UserService + UserServiceImpl</h3>
-<p>路径：<span class="fp">user/service/UserService.java</span> + <span class="fp">user/service/impl/UserServiceImpl.java</span></p>
+<h3>Step 4：后端 Controller <span class="tag done">✅ 已完成</span></h3>
+<p>路径：<span class="fp">controller/TestCaseController.java</span>（CRUD 接口）</p>
+<p>路径：<span class="fp">controller/ExecutionController.java</span>（执行 + 查询记录）</p>
+<p>路径：<span class="fp">config/SecurityConfig.java</span>（放行所有请求，关闭默认登录页）</p>
 
-<h3>步骤 5：JwtUtil</h3>
-<p>路径：<span class="fp">auth/JwtUtil.java</span></p>
+<h3>Step 5：前端初始化 <span class="tag done">✅ 已完成</span></h3>
+<p>在项目根目录创建 <code>frontend/</code>，用 Vite 初始化 Vue 3 项目，安装 Element Plus、Axios、Vue Router。</p>
 
-<h3>步骤 6：JwtAuthFilter</h3>
-<p>路径：<span class="fp">auth/JwtAuthFilter.java</span></p>
+<h3>Step 6：前端页面 <span class="tag done">✅ 已完成</span></h3>
+<p>路径：<span class="fp">frontend/src/views/TestCaseList.vue</span>（用例表格 + 执行按钮）</p>
+<p>路径：<span class="fp">frontend/src/views/TestCaseEdit.vue</span>（用例表单）</p>
+<p>路径：<span class="fp">frontend/src/views/ExecutionList.vue</span>（执行记录 + 日志展示）</p>
 
-<h3>步骤 7：SecurityConfig</h3>
-<p>路径：<span class="fp">config/SecurityConfig.java</span></p>
-
-<h3>步骤 8：LoginController</h3>
-<p>路径：<span class="fp">auth/LoginController.java</span></p>
+<h3>Step 7：联调验证 <span class="tag pending">⏳ 待完成</span></h3>
+<p>启动后端 + 前端，走通：创建用例 → 点击执行 → 查看执行结果和日志。</p>
 </div>
 
 <!-- ============================================================ -->
@@ -612,7 +454,9 @@ CREATE TABLE `user` (
 <li><strong>等待 Maven 加载</strong> 完成（右下角无进度条）</li>
 <li><strong>打开 Maven 面板</strong>（右侧边栏）确认无红字报错</li>
 <li><strong>确认 MySQL</strong> 已启动（可在 IDEA Database 或命令行测试连接）</li>
-<li><strong>开新对话</strong>，告诉助手：<em>"继续测试平台 Phase 2，项目在 E:\Java_all\code\test-platform\test-platform"</em></li>
+<li><strong>启动后端</strong>：运行 <code>TestPlatformApplication.main()</code></li>
+<li><strong>启动前端</strong>：在 <code>frontend/</code> 目录执行 <code>npm run dev</code>，访问 <code>http://localhost:3000</code></li>
+<li><strong>开新对话</strong>，告诉助手：<em>"继续测试平台 V1，项目在 E:\Java_all\code\test-platform\test-platform"</em></li>
 </ol>
 
 <h3>Phase 1 快速复习</h3>
@@ -623,7 +467,6 @@ CREATE TABLE `user` (
 <tr><td>MyBatis-Plus</td><td>不写 SQL 就能操作数据库的 ORM</td></tr>
 <tr><td>@SpringBootApplication</td><td>启动类核心注解 = @Configuration + @EnableAutoConfiguration + @ComponentScan</td></tr>
 <tr><td>三层架构</td><td>Controller &rarr; Service &rarr; Mapper，各司其职</td></tr>
-<tr><td>JWT</td><td>无状态 Token 认证，适合前后端分离</td></tr>
 <tr><td>统一返回 Result</td><td>所有 API 返回 {code, message, data} 格式</td></tr>
 </table>
 
@@ -642,10 +485,10 @@ CREATE TABLE `user` (
 
 <div class="note">
 <strong>提示：</strong> 下次打开新对话时，说：<br>
-<strong>"继续测试平台 Phase 2，项目在 E:\Java_all\code\test-platform\test-platform"</strong>
+<strong>"继续测试平台 V1，项目在 E:\Java_all\code\test-platform\test-platform"</strong>
 </div>
 
-<p style="text-align:center;color:#999;margin-top:40px;font-size:13px;">更新于 2026-05-22 &nbsp;|&nbsp; 项目路径：E:\Java_all\code\test-platform\test-platform</p>
+<p style="text-align:center;color:#999;margin-top:40px;font-size:13px;">更新于 2026-05-23 &nbsp;|&nbsp; 项目路径：E:\Java_all\code\test-platform\test-platform</p>
 
 </body>
 </html>

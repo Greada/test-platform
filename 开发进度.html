@@ -33,8 +33,8 @@ th { background: #f5f7fa; font-weight: 600; }
 <h1>全功能测试平台 — 开发进度报告</h1>
 <p class="subtitle">技术栈：Spring Boot 2.7.18 + MyBatis-Plus 3.5.5 + MySQL 5.7 + Vue 3 + Element Plus</p>
 
-<div class="progress-bar"><div class="progress-fill" style="width:35%"></div></div>
-<p style="text-align:right;color:#666;font-size:13px;">总体进度：约 35%</p>
+<div class="progress-bar"><div class="progress-fill" style="width:60%"></div></div>
+<p style="text-align:right;color:#666;font-size:13px;">总体进度：约 60%（Step 1~6 完成）</p>
 
 <h2>Phase 1：后端骨架搭建 <span class="tag done">已完成</span></h2>
 
@@ -59,19 +59,27 @@ Started TestPlatformApplication in ~2.345 seconds</pre>
 <p style="color:#2e7d32;font-weight:600;">✅ 启动成功，Phase 1 完成。</p>
 </div>
 
-<h2>📋 整体项目计划总览</h2>
+<h2>📋 V1 项目计划</h2>
 
 <div class="card">
 <table>
 <tr><th>阶段</th><th>内容</th><th>状态</th></tr>
 <tr><td>Phase 1</td><td>后端骨架：Maven配置、启动类、统一返回体、全局异常、CORS、application.yml</td><td><span class="tag done">已完成</span></td></tr>
-<tr><td>Phase 2</td><td>用户认证：User实体、Mapper、Service、Controller、JWT工具、Security配置</td><td><span class="tag next">进行中</span></td></tr>
-<tr><td>Phase 3</td><td>项目管理：Project CRUD 后端 + 前端页面</td><td><span class="tag pending">待开始</span></td></tr>
-<tr><td>Phase 4</td><td>测试用例：目录树 + 用例 CRUD 后端 + 前端</td><td><span class="tag pending">待开始</span></td></tr>
-<tr><td>Phase 5</td><td>接口测试：接口定义 + 实时执行 后端 + 前端</td><td><span class="tag pending">待开始</span></td></tr>
-<tr><td>Phase 6</td><td>测试计划：计划管理 + 执行 + 结果记录</td><td><span class="tag pending">待开始</span></td></tr>
-<tr><td>Phase 7</td><td>测试报告：报告生成 + 统计 + 图表</td><td><span class="tag pending">待开始</span></td></tr>
-<tr><td>Phase 8</td><td>前端骨架 + 仪表盘 + 联调</td><td><span class="tag pending">待开始</span></td></tr>
+<tr><td>V1</td><td>用例管理 + 执行 + 报告 + 日志（前后端全栈）</td><td><span class="tag next">进行中</span></td></tr>
+</table>
+</div>
+
+<div class="card">
+<h3>V1 执行步骤</h3>
+<table>
+<tr><th>Step</th><th>内容</th><th>说明</th><th>状态</th></tr>
+<tr><td>1</td><td>SQL 建表</td><td>test_case + execution_record</td><td><span class="tag done">✅</span></td></tr>
+<tr><td>2</td><td>后端实体 + Mapper</td><td>TestCase、ExecutionRecord 实体与 MyBatis-Plus Mapper</td><td><span class="tag done">✅</span></td></tr>
+<tr><td>3</td><td>后端 Service</td><td>TestCaseService、ExecutionService、HttpExecutor（发 HTTP 请求）</td><td><span class="tag done">✅</span></td></tr>
+<tr><td>4</td><td>后端 Controller</td><td>TestCaseController（CRUD）、ExecutionController（执行+查询）+ SecurityConfig</td><td><span class="tag done">✅</span></td></tr>
+<tr><td>5</td><td>前端初始化</td><td>Vue 3 + Vite + Element Plus + Axios + Router</td><td><span class="tag done">✅</span></td></tr>
+<tr><td>6</td><td>前端页面</td><td>用例列表/编辑、执行记录/日志展示</td><td><span class="tag done">✅</span></td></tr>
+<tr><td>7</td><td>联调验证</td><td>走通创建用例 → 执行 → 查看报告/日志</td><td><span class="tag pending">⏳</span></td></tr>
 </table>
 </div>
 
@@ -119,11 +127,12 @@ Started TestPlatformApplication in ~2.345 seconds</pre>
 1. 打开 IDEA → Open → <code>E:\Java_all\code\test-platform\test-platform</code><br>
 2. 等待 Maven 加载完成（右下角无进度条）<br>
 3. 确认 MySQL 已启动<br>
-4. 开新对话时告诉助手：<br>
-   <strong>"继续测试平台 Phase 2，项目在 E:\Java_all\code\test-platform\test-platform"</strong>
+ 4. 前端启动：在 <code>frontend/</code> 目录执行 <code>npm run dev</code>，访问 <code>http://localhost:3000</code><br>
+ 5. 开新对话时告诉助手：<br>
+   <strong>"继续测试平台 V1，项目在 E:\Java_all\code\test-platform\test-platform"</strong>
 </div>
 
-<p style="text-align:center;color:#999;margin-top:40px;font-size:13px;">更新于 2026-05-22</p>
+<p style="text-align:center;color:#999;margin-top:40px;font-size:13px;">更新于 2026-05-23</p>
 
 </body>
 </html>
