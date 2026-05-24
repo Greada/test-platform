@@ -7,6 +7,7 @@ import com.testplatform.service.TestCaseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.List;
 
 /**
@@ -34,12 +35,12 @@ public class TestCaseController {
     }
 
     @PostMapping
-    public Result<Void> save(@RequestBody TestCase testCase) {
+    public Result<Void> save(@Valid @RequestBody TestCase testCase) {
         return testCaseService.save(testCase);
     }
 
     @PutMapping("/{id}")
-    public Result<Void> update(@PathVariable Long id, @RequestBody TestCase testCase) {
+    public Result<Void> update(@PathVariable Long id, @Valid @RequestBody TestCase testCase) {
         testCase.setId(id);
         return testCaseService.update(testCase);
     }

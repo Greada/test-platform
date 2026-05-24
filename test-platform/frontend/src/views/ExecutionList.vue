@@ -35,13 +35,22 @@
   </div>
 </template>
 <script setup>
-import {ref} from 'vue'
+import {onMounted, ref} from 'vue'
 import api from '../api'
+import {useRoute} from "vue-router";
 
 const testCaseId = ref(1)
 const records = ref([])
 const dialogVisible = ref(false)
 const dialogData = ref('')
+const route = useRoute()
+
+onMounted(() => {
+  if (route.query.testCaseId) {
+    testCaseId.value = Number(route.query.testCaseId)
+    fetchRecords()
+  }
+})
 
 async function fetchRecords() {
   const res = await api.get('/execution-records', {params: {testCaseId: testCaseId.value}})

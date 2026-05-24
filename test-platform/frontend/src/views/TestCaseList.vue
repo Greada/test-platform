@@ -5,7 +5,7 @@
       新建用例
     </el-button>
     <el-table :data="list" border stripe>
-      <el-table-column prop="id" label="ID" width="60"/>
+      <el-table-column prop="testNo" label="编号" width="100"/>
       <el-table-column prop="name" label="名称"/>
       <el-table-column prop="requestMethod" label="方法" width="80"/>
       <el-table-column prop="requestHeaders" label="请求头" min-width="150" show-overflow-tooltip/>
@@ -48,6 +48,7 @@ async function execute(id) {
     const res = await api.post(`/execution-records/${id}/execute`)
     if (res.data.code === 200) {
       ElMessage.success('执行完成')
+      await router.push('/executions?testCaseId=' + id)
     } else {
       ElMessage.error(res.data.message)
     }

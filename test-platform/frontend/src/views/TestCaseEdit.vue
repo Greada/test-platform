@@ -1,7 +1,11 @@
 <template>
   <div style="padding: 20px; max-width: 700px">
     <h2>{{ isEdit ? '编辑用例' : '新建用例' }}</h2>
-    <el-form :model="form" label-width="100px">
+    <el-form ref="formRef" :model="form" label-width="100px">
+      <el-form-item label="编号" prop="testNo"
+                    :rules="[{ required: true, message: '编号不能为空', trigger: 'blur' }]">
+        <el-input v-model="form.testNo" placeholder="例如：TC-001"/>
+      </el-form-item>
       <el-form-item label="名称">
         <el-input v-model="form.name"/>
       </el-form-item>
@@ -23,7 +27,8 @@
       <el-form-item label="请求参数">
         <el-input v-model="form.requestParams" type="textarea" :rows="3"/>
       </el-form-item>
-      <el-form-item label="预期结果">
+      <el-form-item label="预期结果" prop="expectedResult"
+                    :rules="[{ required: true, message: '预期结果不能为空', trigger: 'blur' }]">
         <el-input v-model="form.expectedResult" type="textarea" :rows="3"/>
       </el-form-item>
       <el-form-item>
@@ -37,11 +42,14 @@
 import {computed, onMounted, ref} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import api from '../api'
+import {ElMessage} from 'element-plus'
 
 const route = useRoute()
 const router = useRouter()
+const formRef = ref(null)
 const isEdit = computed(() => !!route.params.id)
 const form = ref({
+  testNo: '',
   name: '',
   requestUrl: '',
   requestMethod: 'GET',
@@ -59,6 +67,8 @@ onMounted(async () => {
 })
 
 async function save() {
+  const valid = await formRef.value.validate().catch(() => false)
+  if (!valid) return
   if (isEdit.value) {
     await api.put('/testcases/' + route.params.id, form.value)
   } else {

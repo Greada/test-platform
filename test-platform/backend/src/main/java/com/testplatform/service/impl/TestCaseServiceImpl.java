@@ -11,10 +11,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-/**
- * @author admin
- * @version 1.0.0
- */
 @Service
 public class TestCaseServiceImpl implements TestCaseService {
     private final TestCaseMapper testCaseMapper;
