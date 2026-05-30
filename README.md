@@ -6,11 +6,11 @@
 
 **快速启动**：
 - 后端：运行 `TestPlatformApplication.main()`，监听 `http://localhost:8080`
-- 前端：`cd frontend && npm run dev`，访问 `http://localhost:3000`
-- 数据库：`init_v1.sql` + `insert_test_case_v1.sql`（V1），`init_v2.sql`（V2.1 升级）
+- 前端：`cd test-platform/frontend && npm run dev`，访问 `http://localhost:3000`
+- 数据库（在 MySQL 中执行）：`test-platform/backend/src/main/resources/sql/init_v1.sql` + `insert_test_case_v1.sql`（V1），`init_v2.sql`（V2.1 升级）
 
 **当前版本**：V2.1（已完成测试套件 + 执行报告）
 
 ---
 
-👉 **完整文档请查阅 [docs/PROJECT_INTRO.md](docs/PROJECT_INTRO.md)**
+👉 **完整文档请查阅 [test-platform/docs/PROJECT_INTRO.md](test-platform/docs/PROJECT_INTRO.md)**
