@@ -282,3 +282,282 @@ expected_result
        └─ expected_result 为 "origin"
           actualResult 包含 "origin" → PASS
 ```
+
+---
+
+## 测试套件接口 (V2.1)
+
+### 查询全部套件
+
+```
+GET /test-suites
+```
+
+**响应示例**
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": [
+    {
+      "id": 1,
+      "name": "冒烟测试",
+      "description": "核心功能冒烟",
+      "createTime": "2026-05-30T12:00:00",
+      "updateTime": "2026-05-30T12:00:00"
+    }
+  ]
+}
+```
+
+---
+
+### 查询单个套件
+
+```
+GET /test-suites/{id}
+```
+
+| 参数 | 位置 | 类型 | 说明 |
+|---|---|---|---|
+| id | path | Long | 套件 ID |
+
+---
+
+### 新建套件
+
+```
+POST /test-suites
+```
+
+**请求体**
+
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| name | String | 是 | 套件名称 |
+| description | String | 否 | 描述 |
+
+---
+
+### 修改套件
+
+```
+PUT /test-suites/{id}
+```
+
+| 参数 | 位置 | 类型 | 说明 |
+|---|---|---|---|
+| id | path | Long | 套件 ID |
+
+**请求体**（同新建）
+
+---
+
+### 删除套件
+
+```
+DELETE /test-suites/{id}
+```
+
+---
+
+### 查询套件内用例
+
+```
+GET /test-suites/{id}/cases
+```
+
+**响应示例**
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": [
+    {
+      "id": 1,
+      "testCaseId": 1,
+      "testNo": "TC-001",
+      "caseName": "HTTP GET 请求",
+      "requestMethod": "GET",
+      "requestUrl": "https://httpbin.org/get",
+      "sortOrder": 1
+    }
+  ]
+}
+```
+
+---
+
+### 添加单个用例到套件
+
+```
+POST /test-suites/{id}/cases
+```
+
+**请求体**
+
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| caseId | Long | 是 | 用例 ID |
+
+---
+
+### 批量添加用例到套件
+
+```
+POST /test-suites/{id}/cases/batch
+```
+
+**请求体**
+
+```json
+{
+  "caseIds": [1, 2, 3]
+}
+```
+
+---
+
+### 从套件移除用例
+
+```
+DELETE /test-suites/{id}/cases/{caseId}
+```
+
+---
+
+### 批量执行套件
+
+```
+POST /test-suites/{id}/execute
+```
+
+**执行流程**
+
+```
+1. 查询套件内所有用例
+2. 创建 execution_report(status=RUNNING)
+3. 逐个执行用例（同 V1 执行逻辑）
+4. 每条执行记录关联 report_id，快照 test_no/case_name
+5. 更新 execution_report(status=COMPLETED, total/passed/failed/errored/pass_rate)
+```
+
+**响应示例**
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "id": 1,
+    "reportName": "冒烟测试-2026-05-30 12:00:00",
+    "total": 3,
+    "passed": 2,
+    "failed": 1,
+    "errored": 0,
+    "passRate": 66.67,
+    "status": "COMPLETED",
+    "executeTime": "2026-05-30T12:00:00"
+  }
+}
+```
+
+---
+
+## 执行报告接口 (V2.1)
+
+### 查询报告列表
+
+```
+GET /execution-reports
+```
+
+**响应示例**
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": [
+    {
+      "id": 1,
+      "suiteId": 1,
+      "suiteName": "冒烟测试",
+      "reportName": "冒烟测试-2026-05-30 12:00:00",
+      "total": 3,
+      "passed": 2,
+      "failed": 1,
+      "errored": 0,
+      "passRate": 66.67,
+      "status": "COMPLETED",
+      "executeTime": "2026-05-30T12:00:00",
+      "createTime": "2026-05-30T12:00:00"
+    }
+  ]
+}
+```
+
+---
+
+### 查询报告详情
+
+```
+GET /execution-reports/{id}
+```
+
+**响应示例**
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "id": 1,
+    "suiteId": 1,
+    "suiteName": "冒烟测试",
+    "reportName": "冒烟测试-2026-05-30 12:00:00",
+    "total": 3,
+    "passed": 2,
+    "failed": 1,
+    "errored": 0,
+    "passRate": 66.67,
+    "status": "COMPLETED",
+    "executeTime": "2026-05-30T12:00:00",
+    "createTime": "2026-05-30T12:00:00"
+  }
+}
+```
+
+---
+
+### 查询报告明细（执行记录列表）
+
+```
+GET /execution-reports/{id}/details
+```
+
+**响应示例**
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": [
+    {
+      "id": 1,
+      "testCaseId": 1,
+      "reportId": 1,
+      "testNo": "TC-001",
+      "caseName": "HTTP GET 请求",
+      "status": "PASS",
+      "executeDuration": 150,
+      "actualResult": "{ \"url\": \"https://httpbin.org/get\" }",
+      "requestDetail": "[requestMethod] GET ...",
+      "responseDetail": "[responseBody] ...",
+      "executeTime": "2026-05-30T12:00:00"
+    }
+  ]
+}
+```

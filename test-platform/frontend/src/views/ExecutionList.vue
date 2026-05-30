@@ -12,6 +12,8 @@
     <el-table :data="records" border stripe>
       <el-table-column prop="id" label="ID" width="60"/>
       <el-table-column prop="testCaseId" label="用例ID" width="80"/>
+      <el-table-column prop="testNo" label="用例编号" width="100"/>
+      <el-table-column prop="caseName" label="用例名称" min-width="150" show-overflow-tooltip/>
       <el-table-column prop="status" label="结果" width="80">
         <template #default="{ row }">
           <el-tag :type="row.status === 'PASS' ? 'success' : row.status === 'FAIL' ? 'danger' : 'warning'">
@@ -19,6 +21,7 @@
           </el-tag>
         </template>
       </el-table-column>
+      <el-table-column prop="executeDuration" label="耗时(ms)" width="100"/>
       <el-table-column prop="actualResult" label="实际结果" min-width="200" show-overflow-tooltip/>
       <el-table-column prop="executeTime" label="执行时间" width="180"/>
       <el-table-column label="详情" width="80">

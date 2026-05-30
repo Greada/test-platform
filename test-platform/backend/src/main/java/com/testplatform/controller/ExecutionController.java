@@ -24,7 +24,7 @@ public class ExecutionController {
     }
 
     @PostMapping("/{testCaseId}/execute")
-    public Result<Void> execute(@PathVariable Long testCaseId) {
+    public Result<ExecutionRecord> execute(@PathVariable Long testCaseId) {
         return executionService.execute(testCaseId);
     }
 

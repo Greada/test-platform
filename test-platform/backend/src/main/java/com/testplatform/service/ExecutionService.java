@@ -10,7 +10,9 @@ import java.util.List;
  * @version 1.0.0
  */
 public interface ExecutionService {
-    Result<Void> execute(Long testCaseId);
+    Result<ExecutionRecord> execute(Long testCaseId);
 
     Result<List<ExecutionRecord>> listByTestCaseId(Long testCaseId);
+
+    Result<ExecutionRecord> execute(Long testcaseId, Long reportId);
 }

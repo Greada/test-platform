@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>测试平台 V2.1 — 开发恢复指南</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f5f7fa;
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            max-width: 720px;
+            width: 100%;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            padding: 40px;
+        }
+        h1 { font-size: 24px; margin: 0 0 8px 0; color: #1a1a2e; }
+        .subtitle { color: #666; font-size: 14px; margin-bottom: 32px; }
+        .info-box {
+            background: #f0f9ff;
+            border-left: 4px solid #409eff;
+            padding: 16px 20px;
+            border-radius: 6px;
+            margin-bottom: 24px;
+        }
+        .info-box strong { color: #1a1a2e; }
+        .info-box code {
+            background: #d9ecff;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        .step {
+            border: 1px solid #ebeef5;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        .step .label {
+            display: inline-block;
+            background: #409eff;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 2px 10px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        .step h3 { margin: 0 0 6px 0; font-size: 16px; color: #1a1a2e; }
+        .step p { margin: 4px 0; color: #555; font-size: 14px; line-height: 1.7; }
+        .step code {
+            background: #f5f7fa;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #e03e2d;
+        }
+        .phrase-box {
+            background: #fdf6ec;
+            border: 1px dashed #e6a23c;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin: 24px 0;
+        }
+        .phrase-box .big {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1a1a2e;
+            letter-spacing: 1px;
+        }
+        .phrase-box .hint {
+            font-size: 13px;
+            color: #999;
+            margin-top: 8px;
+        }
+        .tag-green { color: #67c23a; font-weight: 600; }
+        .tag-blue { color: #409eff; font-weight: 600; }
+        .tag-orange { color: #e6a23c; font-weight: 600; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            margin: 12px 0;
+        }
+        th, td {
+            padding: 8px 12px;
+            border: 1px solid #ebeef5;
+            text-align: left;
+        }
+        th { background: #f5f7fa; font-weight: 600; }
+        .footer {
+            text-align: center;
+            color: #bbb;
+            font-size: 12px;
+            margin-top: 32px;
+            padding-top: 16px;
+            border-top: 1px solid #ebeef5;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>测试平台 V2.1</h1>
+    <div class="subtitle">项目开发恢复指南 — 下次回来直接复制一句话即可继续</div>
+
+    <div class="info-box">
+        <strong>项目位置：</strong><code>E:\Java_all\code\test-platform\test-platform</code><br>
+        <strong>当前进度：</strong><span class="tag-green">V2.1 全部完成</span>（后端 + 前端 + 数据库 + 文档）
+    </div>
+
+    <div class="phrase-box">
+        <div class="big">继续开发测试平台，V2.1 已完成，开始 V2.2</div>
+        <div class="hint">复制上面这句话，发给 AI，即可从暂停处继续</div>
+    </div>
+
+    <h2>已完成功能</h2>
+    <table>
+        <tr><th>功能</th><th>状态</th></tr>
+        <tr><td>V1：用例管理（增删改查 + 编号）</td><td class="tag-green">已完成</td></tr>
+        <tr><td>V1：用例执行（GET/POST/PUT/DELETE）</td><td class="tag-green">已完成</td></tr>
+        <tr><td>V1：JSON 字段匹配（递归嵌套 + 文本降级）</td><td class="tag-green">已完成</td></tr>
+        <tr><td>V1：执行日志 + 种子数据</td><td class="tag-green">已完成</td></tr>
+        <tr><td>V2.1：测试套件 CRUD + 用例管理（批量添加）</td><td class="tag-green">已完成</td></tr>
+        <tr><td>V2.1：批量执行套件 → 自动生成执行报告</td><td class="tag-green">已完成</td></tr>
+        <tr><td>V2.1：执行报告列表 + 统计卡片 + 明细</td><td class="tag-green">已完成</td></tr>
+        <tr><td>V2.1：执行记录增强（耗时/用例名称/编号）</td><td class="tag-green">已完成</td></tr>
+        <tr><td>V2.1：HttpExecutor 升级（返回耗时+状态码）</td><td class="tag-green">已完成</td></tr>
+        <tr><td>V2.1：文档更新</td><td class="tag-green">已完成</td></tr>
+    </table>
+
+    <h2>下一步方向（V2.2 候选）</h2>
+    <table>
+        <tr><th>方向</th><th>说明</th></tr>
+        <tr><td>日志分析增强</td><td>JSON Diff 高亮对比、错误模式聚合</td></tr>
+        <tr><td>自动修复建议</td><td>执行失败后分析差异，生成修复建议，一键应用</td></tr>
+        <tr><td>趋势分析</td><td>通过率趋势图、历史执行统计</td></tr>
+        <tr><td>用户与权限</td><td>登录/注册、JWT、用户隔离</td></tr>
+        <tr><td>环境管理</td><td>多环境配置、变量替换</td></tr>
+    </table>
+
+    <div class="footer">测试平台 V2.1 &copy; 2026</div>
+</div>
+</body>
+</html>

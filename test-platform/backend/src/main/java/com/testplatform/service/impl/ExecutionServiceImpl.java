@@ -3,6 +3,7 @@ package com.testplatform.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.testplatform.common.HttpResult;
 import com.testplatform.common.Result;
 import com.testplatform.entity.ExecutionRecord;
 import com.testplatform.entity.TestCase;
@@ -38,32 +39,37 @@ public class ExecutionServiceImpl implements ExecutionService {
     }
 
     @Override
-    public Result<Void> execute(Long testCaseId) {
+    public Result<ExecutionRecord> execute(Long testCaseId, Long reportId) {
         TestCase testCase = testCaseMapper.selectById(testCaseId);
         if (testCase == null) {
             return Result.error("testcase not found!");
         }
         try {
-            String actualResult = httpExecutor.execute(testCase);
-            ExecutionRecord executionRecord = new ExecutionRecord();
-            executionRecord.setTestCaseId(testCaseId);
-            executionRecord.setActualResult(actualResult);
-            executionRecord.setRequestDetail(
+            HttpResult httpResult = httpExecutor.execute(testCase);
+            ExecutionRecord record = new ExecutionRecord();
+            record.setTestCaseId(testCaseId);
+            record.setReportId(reportId);
+            record.setTestNo(testCase.getTestNo());
+            record.setCaseName(testCase.getName());
+            record.setExecuteDuration(httpResult.getDuration());
+            record.setActualResult(httpResult.getBody());
+            record.setRequestDetail(
                     String.format(
                             "[requestMethod] %s [requestUrl] %s \n [requestHeaders] %s \n [requestParams] %s \n",
                             testCase.getRequestMethod(),
                             testCase.getRequestUrl(),
                             testCase.getRequestHeaders(),
                             testCase.getRequestParams()));
-            executionRecord.setResponseDetail(String.format("[responseBody] \n %s", actualResult));
+            record.setResponseDetail(String.format("[responseBody] \n %s", httpResult.getBody()));
 
             String expected = testCase.getExpectedResult();
+            String actual = httpResult.getBody();
             try {
                 ObjectMapper mapper = new ObjectMapper();
                 Map<String, Object> expectedMap =
                         mapper.readValue(expected, new TypeReference<Map<String, Object>>() {});
                 Map<String, Object> actualMap =
-                        mapper.readValue(actualResult, new TypeReference<Map<String, Object>>() {});
+                        mapper.readValue(actual, new TypeReference<Map<String, Object>>() {});
                 boolean allMatch =
                         expectedMap.entrySet().stream()
                                 .allMatch(
@@ -72,17 +78,19 @@ public class ExecutionServiceImpl implements ExecutionService {
                                             Object actualValue = actualMap.get(entry.getKey());
                                             return matchValue(expectedValue, actualValue);
                                         });
-                executionRecord.setStatus(allMatch ? "PASS" : "FAIL");
+                record.setStatus(allMatch ? "PASS" : "FAIL");
             } catch (Exception e) {
-                executionRecord.setStatus(
-                        actualResult != null && actualResult.contains(expected) ? "PASS" : "FAIL");
+                record.setStatus(actual != null && actual.contains(expected) ? "PASS" : "FAIL");
             }
 
-            executionRecordMapper.insert(executionRecord);
-            return Result.success(null);
+            executionRecordMapper.insert(record);
+            return Result.success(record);
         } catch (Exception e) {
             ExecutionRecord record = new ExecutionRecord();
             record.setTestCaseId(testCaseId);
+            record.setReportId(reportId);
+            record.setTestNo(testCase.getTestNo());
+            record.setCaseName(testCase.getName());
             record.setRequestDetail(
                     String.format(
                             "[requestMethod] %s [requestUrl] %s \n [requestHeaders] %s \n [requestParams] %s \n",
@@ -98,8 +106,12 @@ public class ExecutionServiceImpl implements ExecutionService {
     }
 
     private boolean matchValue(Object expectedValue, Object actualValue) {
-        if (expectedValue == null) return actualValue == null;
-        if (actualValue == null) return false;
+        if (expectedValue == null) {
+            return actualValue == null;
+        }
+        if (actualValue == null) {
+            return false;
+        }
 
         if (expectedValue instanceof Map && actualValue instanceof Map) {
             Map<?, ?> expMap = (Map<?, ?>) expectedValue;
@@ -127,5 +139,10 @@ public class ExecutionServiceImpl implements ExecutionService {
         } catch (Exception e) {
             return Result.error(500, e.getMessage());
         }
+    }
+
+    @Override
+    public Result<ExecutionRecord> execute(Long testcaseId) {
+        return execute(testcaseId, null);
     }
 }

@@ -1,8 +1,24 @@
-# 全功能测试平台 V1
+# 全功能测试平台 V2.1
+
+> 📖 文档入口 — 从这里开始访问所有项目文档
+
+## 文档导航
+
+| 文档 | 说明 |
+|---|---|
+| **[PROJECT_INTRO.md](PROJECT_INTRO.md)** | 🏠 项目介绍（本文档） |
+| **[API.md](API.md)** | 📡 API 接口文档（V1 + V2.1） |
+| **[sql.md](sql.md)** | 🗄️ 数据库 ER 图与表结构 |
+| **[进度报告.md](进度报告.md)** | 📊 项目进度总览、里程碑、功能统计 |
+| **[开发进度.md](开发进度.md)** | 📝 分阶段详细任务跟踪与修复记录 |
+| **[阶段总结报告.md](阶段总结报告.md)** | 🏁 V2.1 阶段总结、技术决策、经验教训 |
+| **[resume.html](resume.html)** | 🔄 开发恢复指南（下次继续用） |
+
+---
 
 ## 项目定位
 
-一站式测试管理平台 V1，聚焦测试用例管理、执行、报告与日志展示。
+一站式测试管理平台 V2.1，聚焦测试用例管理、执行、报告、日志展示、测试套件与执行报告统计。
 
 ## 技术栈
 
@@ -21,8 +37,13 @@
 test-platform/
 ├── pom.xml                              # 父 POM
 ├── docs/
-│   ├── PROJECT_INTRO.md                 # 项目介绍（本文档）
-│   └── API.md                           # API 接口文档
+│   ├── PROJECT_INTRO.md                 # 项目介绍（文档入口）🏠
+│   ├── API.md                           # API 接口文档 📡
+│   ├── sql.md                           # 数据库 ER 图 🗄️
+│   ├── 进度报告.md                       # 项目进度总览 📊
+│   ├── 开发进度.md                       # 分阶段任务跟踪 📝
+│   ├── 阶段总结报告.md                   # 阶段总结报告 🏁
+│   └── resume.html                      # 开发恢复指南 🔄
 ├── backend/
 │   ├── pom.xml                          # 子模块 POM
 │   └── src/main/
@@ -30,6 +51,7 @@ test-platform/
 │       │   ├── TestPlatformApplication.java
 │       │   ├── common/
 │       │   │   ├── Result.java          # 统一响应体
+│       │   │   ├── HttpResult.java      # HTTP 响应包装类（body + duration + statusCode）
 │       │   │   └── exception/GlobalExceptionHandler.java
 │       │   ├── config/
 │       │   │   ├── CorsConfig.java      # CORS 跨域配置
@@ -37,24 +59,37 @@ test-platform/
 │       │   │   └── RestTemplateConfig.java
 │       │   ├── controller/
 │       │   │   ├── TestCaseController.java
-│       │   │   └── ExecutionController.java
+│       │   │   ├── ExecutionController.java
+│       │   │   ├── TestSuiteController.java          # V2.1 新增
+│       │   │   └── ExecutionReportController.java    # V2.1 新增
 │       │   ├── entity/
 │       │   │   ├── TestCase.java
-│       │   │   └── ExecutionRecord.java
+│       │   │   ├── ExecutionRecord.java
+│       │   │   ├── TestSuite.java                    # V2.1 新增
+│       │   │   ├── TestSuiteCase.java                # V2.1 新增
+│       │   │   └── ExecutionReport.java              # V2.1 新增
 │       │   ├── mapper/
 │       │   │   ├── TestCaseMapper.java
-│       │   │   └── ExecutionRecordMapper.java
+│       │   │   ├── ExecutionRecordMapper.java
+│       │   │   ├── TestSuiteMapper.java              # V2.1 新增
+│       │   │   ├── TestSuiteCaseMapper.java          # V2.1 新增
+│       │   │   └── ExecutionReportMapper.java        # V2.1 新增
 │       │   └── service/
 │       │       ├── TestCaseService.java
 │       │       ├── ExecutionService.java
 │       │       ├── HttpExecutor.java
+│       │       ├── TestSuiteService.java             # V2.1 新增
+│       │       ├── ExecutionReportService.java       # V2.1 新增
 │       │       └── impl/
 │       │           ├── TestCaseServiceImpl.java
-│       │           └── ExecutionServiceImpl.java
+│       │           ├── ExecutionServiceImpl.java
+│       │           ├── TestSuiteServiceImpl.java          # V2.1 新增
+│       │           └── ExecutionReportServiceImpl.java    # V2.1 新增
 │       └── resources/
 │           ├── application.yml
 │           └── sql/
 │               ├── init_v1.sql
+│               ├── init_v2.sql                    # V2.1 新增
 │               └── insert_test_case_v1.sql
 └── frontend/
     ├── index.html
@@ -71,7 +106,11 @@ test-platform/
             ├── TestCaseList.vue
             ├── TestCaseEdit.vue
             ├── ExecutionList.vue
-            └── DocView.vue
+            ├── DocView.vue
+            ├── TestSuiteList.vue                # V2.1 新增
+            ├── TestSuiteDetail.vue              # V2.1 新增
+            ├── ExecutionReportList.vue          # V2.1 新增
+            └── ExecutionReportDetail.vue        # V2.1 新增
 ```
 
 ## 开发进度
@@ -80,7 +119,8 @@ test-platform/
 |---|---|---|
 | Phase 1 | 后端骨架（7 个基础文件） | ✅ 已完成 |
 | V1 | 用例管理 + 执行 + 报告 + 日志 | ✅ 已完成 |
-| — | 全流程联调验证 | ✅ 已通过 |
+| V2.1 | 测试套件 + 执行报告 + HttpExecutor 升级 | ✅ 已完成 |
+| — | V2.1 全流程联调验证 | ✅ 已通过 |
 
 ### Phase 1 — 已完成文件
 
@@ -111,6 +151,22 @@ test-platform/
 | 11 | 12 条真实种子数据 | ✅ |
 | 12 | 全流程联调验证 | ✅ |
 
+### V2.1 — 已完成功能
+
+| # | 内容 | 状态 |
+|---|---|---|
+| 1 | SQL 建表（test_suite + test_suite_case + execution_report） | ✅ |
+| 2 | execution_record 新增 4 字段（report_id, test_no, case_name, execute_duration） | ✅ |
+| 3 | HttpResult 包装类 + HttpExecutor 返回耗时和状态码 | ✅ |
+| 4 | 测试套件 CRUD（后端 + 前端） | ✅ |
+| 5 | 套件-用例管理（添加/移除/批量添加） | ✅ |
+| 6 | 批量执行套件 → 自动生成执行报告 | ✅ |
+| 7 | 执行报告列表 + 报告详情（统计卡片 + 明细表格 + 日志弹窗） | ✅ |
+| 8 | 执行记录增强（显示用例编号、名称、耗时） | ✅ |
+| 9 | 批量添加用例接口（一次请求替代 N 次） | ✅ |
+| 10 | 批量执行加载对话框（防止用户误以为卡死） | ✅ |
+| 11 | V2.1 全流程联调验证 | ✅ |
+
 ### V1 修复与增强记录
 
 | # | 问题 | 修复 |
@@ -119,6 +175,18 @@ test-platform/
 | 2 | 全部用例执行结果为 FAIL | 全等匹配改为 JSON 字段子集匹配 + 递归嵌套支持 |
 | 3 | requestDetail / responseDetail 为空 | 执行时记录完整的请求和响应日志 |
 | 4 | SecurityConfig 路径匹配错误导致 403 | `"*/**"` 改为 `"/**"` 并启用 `.cors()` |
+
+### V2.1 修复与增强记录
+
+| # | 问题 | 修复 |
+|---|---|---|
+| 1 | ExecutionController 返回值类型不匹配 | `Result<Void>` → `Result<ExecutionRecord>` |
+| 2 | JSON 匹配逻辑中 allMatch 被 contains 覆盖 | try 块用 allMatch，catch 块用 contains 文本降级 |
+| 3 | TestSuiteController 空壳 | 补全 CRUD + 用例管理 + 批量执行共 8 个端点 |
+| 4 | ExecutionReportController 不存在 | 新建文件，补全 3 个端点 |
+| 5 | ExecutionReportServiceImpl 全部 return null | 注入 Mapper + 完整实现 |
+| 6 | ExecutionReport 字段名与数据库不匹配 | `executionTime` → `executeTime` |
+| 7 | 批量添加用例慢（循环 N 次 API） | 新增 batchAddCases 批量接口，前端一次调用 |
 
 ## 数据库设计
 
@@ -143,11 +211,52 @@ test-platform/
 |---|---|---|
 | id | BIGINT(20) PK | 自增主键 |
 | test_case_id | BIGINT(20) | 关联用例 ID |
+| report_id | BIGINT(20) | **V2.1** 关联报告 ID |
+| test_no | VARCHAR(20) | **V2.1** 快照-用例编号 |
+| case_name | VARCHAR(255) | **V2.1** 快照-用例名称 |
+| execute_duration | BIGINT(20) | **V2.1** 执行耗时(ms) |
 | status | VARCHAR(10) | PASS / FAIL / ERROR |
 | request_detail | TEXT | 请求详情（日志） |
 | response_detail | TEXT | 响应详情（日志） |
 | actual_result | TEXT | 实际响应结果 |
 | execute_time | DATETIME | 执行时间 |
+
+### test_suite（测试套件表）— V2.1 新增
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| id | BIGINT(20) PK | 自增主键 |
+| name | VARCHAR(255) | 套件名称 |
+| description | VARCHAR(500) | 描述 |
+| create_time | DATETIME | 创建时间 |
+| update_time | DATETIME | 更新时间 |
+
+### test_suite_case（套件-用例关联表）— V2.1 新增
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| id | BIGINT(20) PK | 自增主键 |
+| suite_id | BIGINT(20) | 套件 ID |
+| case_id | BIGINT(20) | 用例 ID |
+| sort_order | INT(11) | 排序序号 |
+
+UNIQUE KEY on (suite_id, case_id)
+
+### execution_report（执行报告表）— V2.1 新增
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| id | BIGINT(20) PK | 自增主键 |
+| suite_id | BIGINT(20) | 关联套件 ID |
+| report_name | VARCHAR(255) | 报告名称 |
+| total | INT(11) | 总计用例数 |
+| passed | INT(11) | 通过数 |
+| failed | INT(11) | 失败数 |
+| errored | INT(11) | 错误数 |
+| pass_rate | DECIMAL(5,2) | 通过率 % |
+| status | VARCHAR(20) | RUNNING / COMPLETED |
+| execute_time | DATETIME | 执行时间 |
+| create_time | DATETIME | 创建时间 |
 
 ## API 接口
 
@@ -160,8 +269,23 @@ test-platform/
 | DELETE | `/api/testcases/{id}` | 删除用例 |
 | POST | `/api/execution-records/{testCaseId}/execute` | 执行用例 |
 | GET | `/api/execution-records?testCaseId={id}` | 查询执行记录 |
+| **GET** | **`/api/test-suites`** | **V2.1** 查询全部套件 |
+| **GET** | **`/api/test-suites/{id}`** | **V2.1** 查询单个套件 |
+| **POST** | **`/api/test-suites`** | **V2.1** 新建套件 |
+| **PUT** | **`/api/test-suites/{id}`** | **V2.1** 修改套件 |
+| **DELETE** | **`/api/test-suites/{id}`** | **V2.1** 删除套件 |
+| **GET** | **`/api/test-suites/{id}/cases`** | **V2.1** 查询套件内用例 |
+| **POST** | **`/api/test-suites/{id}/cases`** | **V2.1** 添加单个用例 |
+| **POST** | **`/api/test-suites/{id}/cases/batch`** | **V2.1** 批量添加用例 |
+| **DELETE** | **`/api/test-suites/{id}/cases/{caseId}`** | **V2.1** 移除用例 |
+| **POST** | **`/api/test-suites/{id}/execute`** | **V2.1** 批量执行套件 |
+| **GET** | **`/api/execution-reports`** | **V2.1** 查询报告列表 |
+| **GET** | **`/api/execution-reports/{id}`** | **V2.1** 查询报告详情 |
+| **GET** | **`/api/execution-reports/{id}/details`** | **V2.1** 查询报告明细 |
 
-详见 [API.md](API.md)。
+详见 [API.md](API.md)（完整请求/响应示例）。
+
+> 其他文档：[sql.md](sql.md) · [进度报告.md](进度报告.md) · [开发进度.md](开发进度.md) · [阶段总结报告.md](阶段总结报告.md) · [resume.html](resume.html)
 
 ## 执行结果匹配逻辑
 
@@ -197,4 +321,7 @@ expected_result 是否为合法 JSON？
 
 **前端**：在 `frontend/` 目录执行 `npm run dev`，访问 `http://localhost:3000`
 
-**数据库**：执行 `init_v1.sql` + `insert_test_case_v1.sql`，MySQL 连接默认 `root:1234@localhost:3306`
+**数据库**：
+- V1 基础：执行 `init_v1.sql` + `insert_test_case_v1.sql`
+- V2.1 升级：执行 `init_v2.sql`（在 V1 基础上新增表 + 加字段）
+- MySQL 连接默认 `root:1234@localhost:3306`

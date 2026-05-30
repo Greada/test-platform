@@ -15,6 +15,10 @@ import java.time.LocalDateTime;
 public class ExecutionRecord {
     private Long id;
     private Long testCaseId;
+    private Long reportId;
+    private String testNo;
+    private String caseName;
+    private Long executeDuration;
     private String status;
     private String requestDetail;
     private String responseDetail;

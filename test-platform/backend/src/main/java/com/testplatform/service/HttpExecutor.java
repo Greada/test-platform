@@ -1,11 +1,13 @@
 package com.testplatform.service;
 
+import com.testplatform.common.HttpResult;
 import com.testplatform.entity.TestCase;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
@@ -22,21 +24,32 @@ public class HttpExecutor {
         this.restTemplate = restTemplate;
     }
 
-    public String execute(TestCase testCase) {
+    public HttpResult execute(TestCase testCase) {
         String url = testCase.getRequestUrl();
         HttpHeaders headers = parseHeaders(testCase.getRequestHeaders());
         HttpEntity<String> entity = new HttpEntity<>(testCase.getRequestParams(), headers);
-        switch (testCase.getRequestMethod().toUpperCase()) {
+        long start = System.currentTimeMillis();
+        try {
+            ResponseEntity<String> response =
+                    exchange(url, testCase.getRequestMethod().toUpperCase(), entity);
+            long duration = System.currentTimeMillis() - start;
+            return new HttpResult(response.getBody(), duration, response.getStatusCodeValue());
+        } catch (Exception e) {
+            long duration = System.currentTimeMillis() - start;
+            throw new RuntimeException(e.getMessage() + "cost: " + duration + "ms", e);
+        }
+    }
+
+    private ResponseEntity<String> exchange(String url, String method, HttpEntity<String> entity) {
+        switch (method) {
             case "POST":
-                return restTemplate.exchange(url, HttpMethod.POST, entity, String.class).getBody();
+                return restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
             case "PUT":
-                return restTemplate.exchange(url, HttpMethod.PUT, entity, String.class).getBody();
+                return restTemplate.exchange(url, HttpMethod.PUT, entity, String.class);
             case "DELETE":
-                return restTemplate
-                        .exchange(url, HttpMethod.DELETE, entity, String.class)
-                        .getBody();
+                return restTemplate.exchange(url, HttpMethod.DELETE, entity, String.class);
             default:
-                return restTemplate.exchange(url, HttpMethod.GET, entity, String.class).getBody();
+                return restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
         }
     }
 
