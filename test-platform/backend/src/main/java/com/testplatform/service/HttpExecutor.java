@@ -9,6 +9,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
 /**
@@ -34,9 +35,16 @@ public class HttpExecutor {
                     exchange(url, testCase.getRequestMethod().toUpperCase(), entity);
             long duration = System.currentTimeMillis() - start;
             return new HttpResult(response.getBody(), duration, response.getStatusCodeValue());
+        } catch (HttpStatusCodeException e) {
+            long duration = System.currentTimeMillis() - start;
+            return new HttpResult(e.getResponseBodyAsString(), duration, e.getStatusCode().value());
         } catch (Exception e) {
             long duration = System.currentTimeMillis() - start;
-            throw new RuntimeException(e.getMessage() + "cost: " + duration + "ms", e);
+            throw new RuntimeException(
+                    e.getMessage() != null
+                            ? e.getMessage() + " (cost: " + duration + "ms)"
+                            : "Unknown error (cost: " + duration + "ms)",
+                    e);
         }
     }
 

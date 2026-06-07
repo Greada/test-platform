@@ -27,6 +27,12 @@
       </el-card>
     </div>
 
+    <ErrorPatternCard
+        v-if="errorPatterns && errorPatterns.items && errorPatterns.items.length > 0"
+        style="margin-bottom:20px"
+        :items="errorPatterns.items"
+        :worst-endpoint="errorPatterns.worstEndpoint"/>
+
     <h3>执行明细</h3>
     <el-table :data="details" border stripe>
       <el-table-column prop="testNo" label="用例编号" width="100"/>
@@ -47,10 +53,12 @@
       </el-table-column>
     </el-table>
 
-    <el-dialog v-model="logVisible" title="执行日志" width="700px">
-      <pre style="background:#1e1e1e;color:#d4d4d4;padding:16px;border-radius:6px;overflow:auto;max-height:500px">{{
-          logData
-        }}</pre>
+    <el-dialog v-model="logVisible" title="执行日志" width="900px">
+      <JsonDiffViewer
+          :result="diffResult"
+          :expected-json="diffExpected"
+          :actual-json="diffActual"
+          @apply-fix="handleApplyFix"/>
     </el-dialog>
   </div>
 </template>
@@ -58,29 +66,58 @@
 <script setup>
 import {onMounted, ref} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
-import {reportApi} from '../api'
+import {diffApi, reportApi} from '../api'
+import JsonDiffViewer from "../components/JsonDiffViewer.vue";
+import ErrorPatternCard from "../components/ErrorPatternCard.vue";
+import {ElMessage} from "element-plus";
+
+const diffResult = ref(null)
+const diffExpected = ref('')
+const diffActual = ref('')
+const currentRecordId = ref(null)
 
 const route = useRoute()
 const router = useRouter()
 const report = ref({})
 const details = ref([])
 const logVisible = ref(false)
-const logData = ref('')
+const errorPatterns = ref(null)
 
 onMounted(async () => {
   const res = await reportApi.get(route.params.id)
   report.value = res.data.data || {}
   const res2 = await reportApi.getDetails(route.params.id)
   details.value = res2.data.data || []
+  const res3 = await reportApi.errorPatterns(route.params.id)
+  errorPatterns.value = res3.data.data || null
 })
 
-function showLog(row) {
-  logData.value = JSON.stringify({
-    status: row.status,
-    requestDetail: row.requestDetail,
-    responseDetail: row.responseDetail,
-    actualResult: row.actualResult
-  }, null, 2)
+async function showLog(row) {
+  currentRecordId.value = row.id
+  diffResult.value = null
+  diffExpected.value = ''
+  diffActual.value = ''
   logVisible.value = true
+
+  let res
+  try {
+    res = await diffApi.get(row.id)
+    if (res.data.code === 200 && res.data.data) {
+      diffResult.value = res.data.data
+    }
+  } catch {
+    // ignore
+  }
+
+  diffExpected.value = res?.data?.data?.expectedResult || ''
+  diffActual.value = res?.data?.data?.actualResult || ''
+}
+
+function handleApplyFix(suggested) {
+  if (!suggested) return
+  // 把建议的 expected 存入 localStorage，编辑页读取
+  localStorage.setItem('fix_expected', suggested)
+  ElMessage.success('已填充修复建议，请确认后保存')
+  logVisible.value = false
 }
 </script>

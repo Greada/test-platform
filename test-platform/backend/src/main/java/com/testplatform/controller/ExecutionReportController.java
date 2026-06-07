@@ -1,8 +1,10 @@
 package com.testplatform.controller;
 
+import com.testplatform.common.ErrorPatternResult;
 import com.testplatform.common.Result;
 import com.testplatform.entity.ExecutionRecord;
 import com.testplatform.entity.ExecutionReport;
+import com.testplatform.service.ErrorPatternService;
 import com.testplatform.service.ExecutionReportService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,10 +20,14 @@ import java.util.List;
 @RequestMapping("/api/execution-reports")
 public class ExecutionReportController {
     private final ExecutionReportService executionReportService;
+    private final ErrorPatternService errorPatternService;
 
     @Autowired
-    public ExecutionReportController(ExecutionReportService executionReportService) {
+    public ExecutionReportController(
+            ExecutionReportService executionReportService,
+            ErrorPatternService errorPatternService) {
         this.executionReportService = executionReportService;
+        this.errorPatternService = errorPatternService;
     }
 
     @GetMapping
@@ -40,5 +46,10 @@ public class ExecutionReportController {
     @GetMapping("/{id}/details")
     public Result<List<ExecutionRecord>> getDetails(@PathVariable Long id) {
         return executionReportService.getReportDetails(id);
+    }
+
+    @GetMapping("/{id}/error-patterns")
+    public Result<ErrorPatternResult> errorPatterns(@PathVariable Long id) {
+        return errorPatternService.analyze(id);
     }
 }

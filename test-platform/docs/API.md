@@ -561,3 +561,106 @@ GET /execution-reports/{id}/details
   ]
 }
 ```
+
+
+---
+
+## JSON Diff 接口 (V2.2)
+
+### 获取执行记录差异分析
+
+```
+GET /execution-records/{id}/diff
+```
+
+**参数**
+
+| 参数 | 位置 | 类型 | 说明 |
+|---|---|---|---|
+| id | path | Long | 执行记录 ID |
+
+**响应示例**
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "match": false,
+    "differences": [
+      {
+        "fieldPath": "headers.Host",
+        "expectedValue": "httpbin.org",
+        "actualValue": "example.com",
+        "type": "MISMATCH"
+      }
+    ],
+    "suggestedExpected": "{\"url\":\"https://httpbin.org/get\"}",
+    "expectedResult": "{\"url\":\"https://httpbin.org/get\"}",
+    "actualResult": "{\"url\":\"https://httpbin.org/get\",\"headers\":{...}}"
+  }
+}
+```
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| match | boolean | 是否完全匹配 |
+| differences | array | 差异明细 |
+| suggestedExpected | string | 修复建议（格式化后的 actualResult） |
+| expectedResult | string | 原始预期结果 |
+| actualResult | string | 原始实际结果 |
+
+| type | 说明 |
+|---|---|
+| MISMATCH | 值不匹配 |
+| MISSING | 预期字段在实际结果中缺失 |
+| EXTRA | 实际结果多余的字段 |
+
+---
+
+## 错误模式聚合接口 (V2.2)
+
+### 获取报告的错误模式分析
+
+```
+GET /execution-reports/{id}/error-patterns
+```
+
+**参数**
+
+| 参数 | 位置 | 类型 | 说明 |
+|---|---|---|---|
+| id | path | Long | 报告 ID |
+
+**响应示例**
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "items": [
+      {
+        "requestUrl": "https://httpbin.org/post",
+        "requestMethod": "POST",
+        "total": 5,
+        "pass": 3,
+        "fail": 2,
+        "error": 0,
+        "passRate": "60.00%"
+      }
+    ],
+    "worstEndpoint": "https://httpbin.org/post [POST]"
+  }
+}
+```
+
+---
+
+## JSON Diff 前端组件
+
+前端的 JsonDiffViewer 组件支持：
+- 双栏 JSON 对比（左侧预期、右侧实际，递归格式化显示）
+- 差异明细表格（字段路径 + 类型 + 预期值 + 实际值）
+- 修复建议区域 + 一键应用按钮（存入 localStorage）
+- 嵌套 JSON 自动展开（deepUnescape 递归处理）

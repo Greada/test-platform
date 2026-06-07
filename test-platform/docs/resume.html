@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>测试平台 V2.1 — 开发恢复指南</title>
+    <title>测试平台 V2.2 — 开发恢复指南</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -108,16 +108,16 @@
 </head>
 <body>
 <div class="container">
-    <h1>测试平台 V2.1</h1>
+    <h1>测试平台 V2.2</h1>
     <div class="subtitle">项目开发恢复指南 — 下次回来直接复制一句话即可继续</div>
 
     <div class="info-box">
         <strong>项目位置：</strong><code>E:\Java_all\code\test-platform\test-platform</code><br>
-        <strong>当前进度：</strong><span class="tag-green">V2.1 全部完成</span>（后端 + 前端 + 数据库 + 文档）
+        <strong>当前进度：</strong><span class="tag-green">V2.2 全部完成</span>（后端 + 前端 + 数据库 + 文档）
     </div>
 
     <div class="phrase-box">
-        <div class="big">继续开发测试平台，V2.1 已完成，开始 V2.2</div>
+        <div class="big">继续开发测试平台，下一步做趋势分析功能</div>
         <div class="hint">复制上面这句话，发给 AI，即可从暂停处继续</div>
     </div>
 
@@ -128,22 +128,20 @@
         <tr><td>V1：用例执行（GET/POST/PUT/DELETE）</td><td class="tag-green">已完成</td></tr>
         <tr><td>V1：JSON 字段匹配（递归嵌套 + 文本降级）</td><td class="tag-green">已完成</td></tr>
         <tr><td>V1：执行日志 + 种子数据</td><td class="tag-green">已完成</td></tr>
-        <tr><td>V2.1：测试套件 CRUD + 用例管理（批量添加）</td><td class="tag-green">已完成</td></tr>
-        <tr><td>V2.1：批量执行套件 → 自动生成执行报告</td><td class="tag-green">已完成</td></tr>
-        <tr><td>V2.1：执行报告列表 + 统计卡片 + 明细</td><td class="tag-green">已完成</td></tr>
-        <tr><td>V2.1：执行记录增强（耗时/用例名称/编号）</td><td class="tag-green">已完成</td></tr>
-        <tr><td>V2.1：HttpExecutor 升级（返回耗时+状态码）</td><td class="tag-green">已完成</td></tr>
-        <tr><td>V2.1：文档更新</td><td class="tag-green">已完成</td></tr>
+        <tr><td>V2.1：测试套件 CRUD + 批量执行 + 报告统计</td><td class="tag-green">已完成</td></tr>
+        <tr><td>V2.2：JSON Diff 可视化 + 自动修复建议</td><td class="tag-green">已完成</td></tr>
+        <tr><td>V2.2：批执行 ERROR 修复 + ExecutionService 重构</td><td class="tag-green">已完成</td></tr>
+        <tr><td>V2.2：错误模式聚合（按端点分组统计通过率）</td><td class="tag-green">已完成</td></tr>
     </table>
 
     <h2>下一步方向（V2.2 候选）</h2>
     <table>
         <tr><th>方向</th><th>说明</th></tr>
-        <tr><td>日志分析增强</td><td>JSON Diff 高亮对比、错误模式聚合</td></tr>
-        <tr><td>自动修复建议</td><td>执行失败后分析差异，生成修复建议，一键应用</td></tr>
-        <tr><td>趋势分析</td><td>通过率趋势图、历史执行统计</td></tr>
+        <tr><td>趋势分析</td><td>多报告通过率趋势图、历史执行统计</td></tr>
         <tr><td>用户与权限</td><td>登录/注册、JWT、用户隔离</td></tr>
         <tr><td>环境管理</td><td>多环境配置、变量替换</td></tr>
+        <tr><td>定时执行</td><td>Cron 表达式定时跑套件</td></tr>
+        <tr><td>导入/导出</td><td>Excel/JSON 导入导出用例</td></tr>
     </table>
 
     <div class="footer">测试平台 V2.1 &copy; 2026</div>

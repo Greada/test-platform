@@ -23,5 +23,10 @@ export const suiteApi = {
 export const reportApi = {
     list: (suiteId) => api.get('/execution-reports', {params: {suiteId}}),
     get: (id) => api.get(`/execution-reports/${id}`),
-    getDetails: (id) => api.get(`/execution-reports/${id}/details`)
+    getDetails: (id) => api.get(`/execution-reports/${id}/details`),
+    errorPatterns: (id) => api.get(`/execution-reports/${id}/error-patterns`)
+}
+
+export const diffApi = {
+    get: (recordId) => api.get(`/execution-records/${recordId}/diff`)
 }

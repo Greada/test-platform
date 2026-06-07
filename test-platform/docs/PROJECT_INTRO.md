@@ -1,4 +1,4 @@
-# 全功能测试平台 V2.1
+# 全功能测试平台 V2.2
 
 > 📖 文档入口 — 从这里开始访问所有项目文档
 
@@ -7,18 +7,18 @@
 | 文档 | 说明 |
 |---|---|
 | **[PROJECT_INTRO.md](PROJECT_INTRO.md)** | 🏠 项目介绍（本文档） |
-| **[API.md](API.md)** | 📡 API 接口文档（V1 + V2.1） |
+| **[API.md](API.md)** | 📡 API 接口文档（V1 ~ V2.2） |
 | **[sql.md](sql.md)** | 🗄️ 数据库 ER 图与表结构 |
 | **[进度报告.md](进度报告.md)** | 📊 项目进度总览、里程碑、功能统计 |
 | **[开发进度.md](开发进度.md)** | 📝 分阶段详细任务跟踪与修复记录 |
-| **[阶段总结报告.md](阶段总结报告.md)** | 🏁 V2.1 阶段总结、技术决策、经验教训 |
+| **[阶段总结报告.md](阶段总结报告.md)** | 🏁 V2.2 阶段总结、技术决策、经验教训 |
 | **[resume.html](resume.html)** | 🔄 开发恢复指南（下次继续用） |
 
 ---
 
 ## 项目定位
 
-一站式测试管理平台 V2.1，聚焦测试用例管理、执行、报告、日志展示、测试套件与执行报告统计。
+一站式测试管理平台 V2.2，聚焦测试用例管理、执行、报告、日志展示、测试套件、执行报告统计、JSON Diff 分析与错误模式聚合。
 
 ## 技术栈
 
@@ -52,6 +52,9 @@ test-platform/
 │       │   ├── common/
 │       │   │   ├── Result.java          # 统一响应体
 │       │   │   ├── HttpResult.java      # HTTP 响应包装类（body + duration + statusCode）
+│   │   │   ├── JsonDiffResult.java   # V2.2 新增
+│   │   │   ├── ErrorPatternItem.java # V2.2 新增
+│   │   │   ├── ErrorPatternResult.java# V2.2 新增
 │       │   │   └── exception/GlobalExceptionHandler.java
 │       │   ├── config/
 │       │   │   ├── CorsConfig.java      # CORS 跨域配置
@@ -107,6 +110,8 @@ test-platform/
             ├── TestCaseEdit.vue
             ├── ExecutionList.vue
             ├── DocView.vue
+│           ├── JsonDiffViewer.vue                # V2.2 新增
+│           ├── ErrorPatternCard.vue              # V2.2 新增
             ├── TestSuiteList.vue                # V2.1 新增
             ├── TestSuiteDetail.vue              # V2.1 新增
             ├── ExecutionReportList.vue          # V2.1 新增
@@ -120,6 +125,7 @@ test-platform/
 | Phase 1 | 后端骨架（7 个基础文件） | ✅ 已完成 |
 | V1 | 用例管理 + 执行 + 报告 + 日志 | ✅ 已完成 |
 | V2.1 | 测试套件 + 执行报告 + HttpExecutor 升级 | ✅ 已完成 |
+| V2.2 | JSON Diff + 错误模式聚合 + 批执行修复 | ✅ 已完成 |
 | — | V2.1 全流程联调验证 | ✅ 已通过 |
 
 ### Phase 1 — 已完成文件
@@ -166,6 +172,17 @@ test-platform/
 | 9 | 批量添加用例接口（一次请求替代 N 次） | ✅ |
 | 10 | 批量执行加载对话框（防止用户误以为卡死） | ✅ |
 | 11 | V2.1 全流程联调验证 | ✅ |
+
+### V2.2 — 已完成功能
+
+| # | 内容 | 状态 |
+|---|---|---|
+| 1 | JSON Diff 服务（递归对比 + 嵌套 Map/List + 数值安全比较） | ✅ |
+| 2 | 自动修复建议（差异分析 → 生成修复方案 → 一键应用） | ✅ |
+| 3 | 双栏 JSON 对比组件（预期 vs 实际 + 差异表格 + 修复建议） | ✅ |
+| 4 | 批执行 ERROR 修复（HttpStatusCodeException 捕获 4xx/5xx 响应体） | ✅ |
+| 5 | ExecutionServiceImpl 重构（抽取 5 个辅助方法 + ObjectMapper 注入复用） | ✅ |
+| 6 | 错误模式聚合（按 URL+Method 分组统计通过率 + 最差端点提示） | ✅ |
 
 ### V1 修复与增强记录
 

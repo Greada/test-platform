@@ -1,8 +1,10 @@
 package com.testplatform.controller;
 
+import com.testplatform.common.JsonDiffResult;
 import com.testplatform.common.Result;
 import com.testplatform.entity.ExecutionRecord;
 import com.testplatform.service.ExecutionService;
+import com.testplatform.service.JsonDiffService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -17,10 +19,12 @@ import java.util.List;
 @RequestMapping("/api/execution-records")
 public class ExecutionController {
     private final ExecutionService executionService;
+    private final JsonDiffService jsonDiffService;
 
     @Autowired
-    public ExecutionController(ExecutionService executionService) {
+    public ExecutionController(ExecutionService executionService, JsonDiffService jsonDiffService) {
         this.executionService = executionService;
+        this.jsonDiffService = jsonDiffService;
     }
 
     @PostMapping("/{testCaseId}/execute")
@@ -31,5 +35,10 @@ public class ExecutionController {
     @GetMapping
     public Result<List<ExecutionRecord>> listByTestCaseId(@RequestParam Long testCaseId) {
         return executionService.listByTestCaseId(testCaseId);
+    }
+
+    @GetMapping("/{id}/diff")
+    public Result<JsonDiffResult> diff(@PathVariable Long id) {
+        return jsonDiffService.diff(id);
     }
 }
