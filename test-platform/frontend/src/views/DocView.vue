@@ -1,12 +1,12 @@
 <template>
   <div style="padding: 20px; max-width: 900px; margin: 0 auto; line-height: 1.8">
-    <h1>全功能测试平台 V2.1 — 文档</h1>
+    <h1>全功能测试平台 V2.2 — 文档</h1>
     <el-alert title="docs/ 目录下还有更多文档可供阅读" type="info" :closable="false" show-icon style="margin-bottom: 20px"/>
 
     <el-divider/>
 
     <h2>项目定位</h2>
-    <p>一站式测试管理平台 V2.1，聚焦测试用例管理、执行、报告、日志展示、测试套件与执行报告统计。</p>
+    <p>一站式测试管理平台 V2.2，聚焦测试用例管理、执行、报告、日志展示、测试套件、执行报告统计、JSON Diff 分析与错误模式聚合。</p>
 
     <h2>技术栈</h2>
     <el-table :data="techStack" border stripe size="small" style="width: 100%">
@@ -60,6 +60,14 @@
     <p>套件执行后自动生成执行报告，包含统计卡片（总计/通过/失败/错误/通过率）和明细表格。</p>
     <p>执行记录快照用例编号（test_no）和用例名称（case_name），历史报告不受用例修改影响。</p>
 
+    <h2>JSON Diff 分析 (V2.2)</h2>
+    <p>执行失败后可查看 JSON Diff 可视化对比：左侧预期结果、右侧实际结果，差异字段逐行展示。</p>
+    <p>支持自动修复建议：分析差异后生成格式化的 actualResult，一键应用（存入 localStorage）。</p>
+    <p>支持嵌套 JSON 递归展开、Map/List 深层对比、数值安全比较。</p>
+
+    <h2>错误模式聚合 (V2.2)</h2>
+    <p>执行报告自动聚合错误模式：按 URL+Method 分组统计通过率，自动标出通过率最低的端点。</p>
+
     <h3>匹配示例</h3>
     <el-table :data="matchExamples" border stripe size="small" style="width: 100%">
       <el-table-column prop="expected" label="预期结果"/>
@@ -88,7 +96,7 @@
     </el-descriptions>
 
     <div style="margin-top: 40px; text-align: center; color: #999; font-size: 13px">
-      测试平台 V2.1 &copy; 2026
+      测试平台 V2.2 &copy; 2026
     </div>
   </div>
 </template>
@@ -100,7 +108,7 @@ const docNav = [
   { file: 'docs/sql.md', desc: '数据库 ER 图与表结构' },
   { file: 'docs/进度报告.md', desc: '项目进度总览、里程碑、功能统计' },
   { file: 'docs/开发进度.md', desc: '分阶段详细任务跟踪与修复记录' },
-  { file: 'docs/阶段总结报告.md', desc: 'V2.1 阶段总结、技术决策、经验教训' },
+  { file: 'docs/阶段总结报告.md', desc: 'V2.2 阶段总结、技术决策、经验教训' },
   { file: 'docs/resume.html', desc: '开发恢复指南' },
 ]
 
@@ -117,7 +125,7 @@ const progress = [
   { phase: 'Phase 1', content: '后端骨架（7 个基础文件）', status: '已完成' },
   { phase: 'V1', content: '用例管理 + 执行 + 报告 + 日志', status: '已完成' },
   { phase: 'V2.1', content: '测试套件 + 执行报告 + HttpExecutor 升级', status: '已完成' },
-  { phase: '联调验证', content: 'V2.1 全流程集成验证', status: '已完成' },
+  { phase: 'V2.2', content: 'JSON Diff + 错误模式聚合 + 批执行修复', status: '已完成' },
 ]
 
 const apiList = [
@@ -141,6 +149,8 @@ const apiList = [
   { method: 'GET', path: '/api/execution-reports', desc: '查询报告列表' },
   { method: 'GET', path: '/api/execution-reports/{id}', desc: '查询报告详情' },
   { method: 'GET', path: '/api/execution-reports/{id}/details', desc: '查询报告明细' },
+  { method: 'GET', path: '/api/execution-records/{id}/diff', desc: 'JSON Diff 分析 (V2.2)' },
+  { method: 'GET', path: '/api/execution-reports/{id}/error-patterns', desc: '错误模式聚合 (V2.2)' },
 ]
 
 const matchExamples = [
@@ -170,6 +180,9 @@ const projectStructure = `test-platform/
 ├── docs/
 │   ├── PROJECT_INTRO.md
 │   ├── API.md
+│   ├── sql.md
+│   ├── 阶段总结报告.md
+│   ├── 开发进度.md
 │   └── resume.html
 ├── backend/
 │   ├── pom.xml
@@ -179,6 +192,9 @@ const projectStructure = `test-platform/
 │       │   ├── common/
 │       │   │   ├── Result.java
 │       │   │   ├── HttpResult.java
+│       │   │   ├── JsonDiffResult.java      # V2.2
+│       │   │   ├── ErrorPatternItem.java    # V2.2
+│       │   │   ├── ErrorPatternResult.java  # V2.2
 │       │   │   └── exception/
 │       │   ├── config/
 │       │   ├── controller/
@@ -194,6 +210,9 @@ const projectStructure = `test-platform/
 │       │   │   └── ExecutionReport.java
 │       │   ├── mapper/
 │       │   └── service/
+│       │       ├── ...
+│       │       ├── JsonDiffService.java     # V2.2
+│       │       └── ErrorPatternService.java # V2.2
 │       └── resources/
 │           ├── application.yml
 │           └── sql/
@@ -209,6 +228,9 @@ const projectStructure = `test-platform/
 │       ├── App.vue
 │       ├── api/
 │       ├── router/
+│       ├── components/
+│       │   ├── JsonDiffViewer.vue           # V2.2
+│       │   └── ErrorPatternCard.vue         # V2.2
 │       └── views/
 │           ├── TestCaseList.vue
 │           ├── TestCaseEdit.vue
