@@ -664,3 +664,189 @@ GET /execution-reports/{id}/error-patterns
 - 差异明细表格（字段路径 + 类型 + 预期值 + 实际值）
 - 修复建议区域 + 一键应用按钮（存入 localStorage）
 - 嵌套 JSON 自动展开（deepUnescape 递归处理）
+
+---
+
+## 分类管理接口 (V3)
+
+### 获取分类树
+
+```
+GET /categories/tree
+```
+
+**响应示例**
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": [
+    {
+      "id": 1,
+      "parentId": 0,
+      "name": "HTTP基础",
+      "level": 1,
+      "sortOrder": 1,
+      "children": [
+        {
+          "id": 4,
+          "parentId": 1,
+          "name": "GET 请求",
+          "level": 2,
+          "sortOrder": 1,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "parentId": 0,
+      "name": "认证模块",
+      "level": 1,
+      "sortOrder": 2,
+      "children": []
+    }
+  ]
+}
+```
+
+---
+
+### 获取分类列表（扁平）
+
+```
+GET /categories
+```
+
+**响应示例**
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": [
+    {
+      "id": 1,
+      "parentId": 0,
+      "name": "HTTP基础",
+      "level": 1,
+      "sortOrder": 1
+    }
+  ]
+}
+```
+
+---
+
+### 新建分类
+
+```
+POST /categories
+```
+
+**请求体**
+
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| parentId | Long | 是 | 父级 ID，0 表示顶级 |
+| name | String | 是 | 分类名称（同父级下唯一） |
+| sortOrder | Integer | 否 | 排序序号 |
+
+**请求示例**
+
+```json
+{
+  "parentId": 0,
+  "name": "支付模块",
+  "sortOrder": 4
+}
+```
+
+**响应**
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": null
+}
+```
+
+**校验失败响应**
+
+```json
+{
+  "code": 400,
+  "message": "已达到最大层级（3层）",
+  "data": null
+}
+```
+
+---
+
+### 修改分类
+
+```
+PUT /categories/{id}
+```
+
+**参数**
+
+| 参数 | 位置 | 类型 | 说明 |
+|---|---|---|---|
+| id | path | Long | 分类 ID |
+
+**请求体**（同新建接口）
+
+---
+
+### 删除分类
+
+```
+DELETE /categories/{id}
+```
+
+**参数**
+
+| 参数 | 位置 | 类型 | 说明 |
+|---|---|---|---|
+| id | path | Long | 分类 ID |
+
+**删除保护**
+
+- 有子分类时返回 400：`"该分类下有 X 个子分类，无法删除"`
+- 无子分类时删除成功
+
+---
+
+### 查询分类下的用例
+
+```
+GET /testcases?categoryId={id}
+```
+
+**参数**
+
+| 参数 | 位置 | 类型 | 必填 | 说明 |
+|---|---|---|---|---|
+| categoryId | query | Long | 否 | 分类 ID，不传则返回全部用例 |
+
+**响应示例**
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": [
+    {
+      "id": 1,
+      "testNo": "TC-001",
+      "name": "HTTP GET 请求",
+      "categoryId": 1,
+      "requestMethod": "GET",
+      "requestUrl": "https://httpbin.org/get"
+    }
+  ]
+}
+```
