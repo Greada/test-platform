@@ -60,8 +60,10 @@ test-platform/
 │       │   │   ├── CorsConfig.java      # CORS 跨域配置
 │       │   │   ├── SecurityConfig.java  # Spring Security 配置
 │       │   │   └── RestTemplateConfig.java
+│       │   ├── dto/
+│       │   │   └── CategoryNode.java         # V3 树形 DTO
 │       │   ├── controller/
-│       │   │   ├── TestCaseController.java
+│       │   │   ├── CategoryController.java   # V3 分类 CRUD
 │       │   │   ├── ExecutionController.java
 │       │   │   ├── TestSuiteController.java          # V2.1 新增
 │       │   │   └── ExecutionReportController.java    # V2.1 新增
@@ -72,18 +74,21 @@ test-platform/
 │       │   │   ├── TestSuiteCase.java                # V2.1 新增
 │       │   │   └── ExecutionReport.java              # V2.1 新增
 │       │   ├── mapper/
+│       │   │   ├── CategoryMapper.java         # V3
 │       │   │   ├── TestCaseMapper.java
 │       │   │   ├── ExecutionRecordMapper.java
 │       │   │   ├── TestSuiteMapper.java              # V2.1 新增
 │       │   │   ├── TestSuiteCaseMapper.java          # V2.1 新增
 │       │   │   └── ExecutionReportMapper.java        # V2.1 新增
 │       │   └── service/
+│       │       ├── CategoryService.java            # V3
 │       │       ├── TestCaseService.java
 │       │       ├── ExecutionService.java
 │       │       ├── HttpExecutor.java
 │       │       ├── TestSuiteService.java             # V2.1 新增
 │       │       ├── ExecutionReportService.java       # V2.1 新增
 │       │       └── impl/
+│       │           ├── CategoryServiceImpl.java    # V3
 │       │           ├── TestCaseServiceImpl.java
 │       │           ├── ExecutionServiceImpl.java
 │       │           ├── TestSuiteServiceImpl.java          # V2.1 新增
@@ -93,6 +98,7 @@ test-platform/
 │           └── sql/
 │               ├── init_v1.sql
 │               ├── init_v2.sql                    # V2.1 新增
+│               ├── init_v3.sql                    # V3 新增
 │               └── insert_test_case_v1.sql
 └── frontend/
     ├── index.html
@@ -126,7 +132,7 @@ test-platform/
 | V1 | 用例管理 + 执行 + 报告 + 日志 | ✅ 已完成 |
 | V2.1 | 测试套件 + 执行报告 + HttpExecutor 升级 | ✅ 已完成 |
 | V2.2 | JSON Diff + 错误模式聚合 + 批执行修复 | ✅ 已完成 |
-| — | V2.1 全流程联调验证 | ✅ 已通过 |
+| V3   | 分类管理（树状 3 层） | 🚧 进行中 |
 
 ### Phase 1 — 已完成文件
 
@@ -184,6 +190,20 @@ test-platform/
 | 5 | ExecutionServiceImpl 重构（抽取 5 个辅助方法 + ObjectMapper 注入复用） | ✅ |
 | 6 | 错误模式聚合（按 URL+Method 分组统计通过率 + 最差端点提示） | ✅ |
 
+### V3 — 进行中：分类管理
+
+| # | 内容 | 状态 |
+|---|---|---|
+| 1 | SQL 建表（test_category）+ 为 test_case 添加 category_id | ✅ |
+| 2 | TestCategory 实体类 + CategoryNode DTO | ✅ |
+| 3 | TestCategoryMapper | ✅ |
+| 4 | CategoryService + CategoryServiceImpl（树形构建、层级校验≤3、同名唯一、删除保护） | ✅ |
+| 5 | CategoryController | 🚧 待开发 |
+| 6 | TestCase 集成 category_id 筛选 | 🚧 待开发 |
+| 7 | 前端：CategoryTree 侧边栏组件 | 🚧 待开发 |
+| 8 | 前端：CategoryDialog 弹窗编辑 | 🚧 待开发 |
+| 9 | 前端：TestCaseList 分类筛选 + TestCaseEdit 分类选择 | 🚧 待开发 |
+
 ### V1 修复与增强记录
 
 | # | 问题 | 修复 |
@@ -214,11 +234,24 @@ test-platform/
 | id | BIGINT(20) PK | 自增主键 |
 | test_no | VARCHAR(20) UNIQUE | 测试编号（如 TC-001） |
 | name | VARCHAR(255) | 用例名称 |
+| category_id | BIGINT(20) | **V3** 所属分类 ID |
 | request_url | VARCHAR(1024) | 请求地址 |
-| request_method | VARCHAR(10) | 请求方法（GET/POST/PUT/DELETE） |
+| request_method | VARCHAR(10) | 请求方法（GET/POST/PUT/PATCH/DELETE） |
 | request_headers | TEXT | 请求头（JSON 格式） |
 | request_params | TEXT | 请求参数（JSON 格式） |
 | expected_result | TEXT NOT NULL | 预期结果（JSON 或文本） |
+| create_time | DATETIME | 创建时间 |
+| update_time | DATETIME | 更新时间 |
+
+### test_category（分类表）— V3 新增
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| id | BIGINT(20) PK | 自增主键 |
+| parent_id | BIGINT(20) | 父级 ID（0=顶级） |
+| name | VARCHAR(100) | 分类名称（同父级下唯一） |
+| level | INT(11) | 层级（1-3） |
+| sort_order | INT(11) | 排序序号 |
 | create_time | DATETIME | 创建时间 |
 | update_time | DATETIME | 更新时间 |
 
