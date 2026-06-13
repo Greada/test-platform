@@ -17,6 +17,7 @@ const routes = [
     {path: '/suites/:id', name: 'TestSuiteDetail', component: TestSuiteDetail},
     {path: '/reports', name: 'ExecutionReportList', component: ExecutionReportList},
     {path: '/reports/:id', name: 'ExecutionReportDetail', component: ExecutionReportDetail},
+    {path: '/:pathMatch(.*)*', name: 'NotFound', redirect: '/'},
 ]
 const router = createRouter({
     history: createWebHistory(),

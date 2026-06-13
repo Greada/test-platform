@@ -1,5 +1,7 @@
 package com.testplatform.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.testplatform.common.HttpResult;
 import com.testplatform.entity.TestCase;
 
@@ -12,6 +14,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Map;
+
 /**
  * @author admin
  * @version 1.0.0
@@ -19,10 +23,12 @@ import org.springframework.web.client.RestTemplate;
 @Component
 public class HttpExecutor {
     private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
 
     @Autowired
-    public HttpExecutor(RestTemplate restTemplate) {
+    public HttpExecutor(RestTemplate restTemplate, ObjectMapper objectMapper) {
         this.restTemplate = restTemplate;
+        this.objectMapper = objectMapper;
     }
 
     public HttpResult execute(TestCase testCase) {
@@ -54,6 +60,8 @@ public class HttpExecutor {
                 return restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
             case "PUT":
                 return restTemplate.exchange(url, HttpMethod.PUT, entity, String.class);
+            case "PATCH":
+                return restTemplate.exchange(url, HttpMethod.PATCH, entity, String.class);
             case "DELETE":
                 return restTemplate.exchange(url, HttpMethod.DELETE, entity, String.class);
             default:
@@ -68,17 +76,11 @@ public class HttpExecutor {
         }
         try {
             // 格式: {"Content-Type":"application/json","Authorization":"Bearer xxx"}
-            String json = headersJson.trim();
-            if (json.startsWith("{") && json.endsWith("}")) {
-                json = json.substring(1, json.length() - 1);
-                for (String pair : json.split(",")) {
-                    String[] kv = pair.split(":", 2);
-                    if (kv.length == 2) {
-                        String key = kv[0].trim().replaceAll("^\"|\"$", "");
-                        String val = kv[1].trim().replaceAll("^\"|\"$", "");
-                        headers.add(key, val);
-                    }
-                }
+            Map<String, String> map =
+                    objectMapper.readValue(
+                            headersJson, new TypeReference<Map<String, String>>() {});
+            for (Map.Entry<String, String> entry : map.entrySet()) {
+                headers.add(entry.getKey(), entry.getValue());
             }
         } catch (Exception ignored) {
         }

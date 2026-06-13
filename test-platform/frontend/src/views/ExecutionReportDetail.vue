@@ -1,31 +1,40 @@
 <template>
-  <div style="padding: 20px">
-    <el-button style="margin-bottom: 10px" @click="router.push('/reports')">← 返回报告列表</el-button>
+  <div class="page-container">
+    <el-skeleton :rows="5" animated v-if="loading" />
+    <template v-else>
+    <el-page-header @back="router.push('/reports')" :title="'返回报告列表'">
+      <template #content>
+        <span class="page-header-title">{{ report.reportName || '报告详情' }}</span>
+      </template>
+    </el-page-header>
 
-    <div style="display: flex; gap: 20px; margin-bottom: 20px">
-      <el-card style="flex: 1; text-align: center">
-        <div style="font-size: 32px; font-weight: bold">{{ report.total }}</div>
-        <div style="color: #999; margin-top: 5px">总计</div>
-      </el-card>
-      <el-card style="flex: 1; text-align: center; border-top: 3px solid #67c23a">
-        <div style="font-size: 32px; font-weight: bold; color: #67c23a">{{ report.passed }}</div>
-        <div style="color: #999; margin-top: 5px">通过</div>
-      </el-card>
-      <el-card style="flex: 1; text-align: center; border-top: 3px solid #f56c6c">
-        <div style="font-size: 32px; font-weight: bold; color: #f56c6c">{{ report.failed }}</div>
-        <div style="color: #999; margin-top: 5px">失败</div>
-      </el-card>
-      <el-card style="flex: 1; text-align: center; border-top: 3px solid #e6a23c">
-        <div style="font-size: 32px; font-weight: bold; color: #e6a23c">{{ report.errored }}</div>
-        <div style="color: #999; margin-top: 5px">错误</div>
-      </el-card>
-      <el-card style="flex: 1; text-align: center">
-        <div style="font-size: 32px; font-weight: bold; color: #409eff">
-          {{ report.passRate != null ? report.passRate + '%' : '-' }}
-        </div>
-        <div style="color: #999; margin-top: 5px">通过率</div>
-      </el-card>
-    </div>
+    <el-row :gutter="20" style="margin: 20px 0">
+      <el-col :xs="24" :sm="12" :md="6">
+        <el-card shadow="hover" class="stat-card">
+          <el-statistic title="总计" :value="report.total" />
+        </el-card>
+      </el-col>
+      <el-col :xs="24" :sm="12" :md="6">
+        <el-card shadow="hover" class="stat-card stat-success">
+          <el-statistic title="通过" :value="report.passed" value-style="color: #67c23a" />
+        </el-card>
+      </el-col>
+      <el-col :xs="24" :sm="12" :md="6">
+        <el-card shadow="hover" class="stat-card stat-danger">
+          <el-statistic title="失败" :value="report.failed" value-style="color: #f56c6c" />
+        </el-card>
+      </el-col>
+      <el-col :xs="24" :sm="12" :md="6">
+        <el-card shadow="hover" class="stat-card stat-warning">
+          <el-statistic title="错误" :value="report.errored" value-style="color: #e6a23c" />
+        </el-card>
+      </el-col>
+      <el-col :xs="24" :sm="12" :md="6">
+        <el-card shadow="hover" class="stat-card stat-info">
+          <el-statistic title="通过率" :value="report.passRate != null ? report.passRate : 0" :precision="1" suffix="%" />
+        </el-card>
+      </el-col>
+    </el-row>
 
     <ErrorPatternCard
         v-if="errorPatterns && errorPatterns.items && errorPatterns.items.length > 0"
@@ -60,6 +69,7 @@
           :actual-json="diffActual"
           @apply-fix="handleApplyFix"/>
     </el-dialog>
+    </template>
   </div>
 </template>
 
@@ -82,14 +92,22 @@ const report = ref({})
 const details = ref([])
 const logVisible = ref(false)
 const errorPatterns = ref(null)
+const loading = ref(true)
 
 onMounted(async () => {
-  const res = await reportApi.get(route.params.id)
-  report.value = res.data.data || {}
-  const res2 = await reportApi.getDetails(route.params.id)
-  details.value = res2.data.data || []
-  const res3 = await reportApi.errorPatterns(route.params.id)
-  errorPatterns.value = res3.data.data || null
+  loading.value = true
+  try {
+    const res = await reportApi.get(route.params.id)
+    report.value = res.data.data || {}
+    const res2 = await reportApi.getDetails(route.params.id)
+    details.value = res2.data.data || []
+    const res3 = await reportApi.errorPatterns(route.params.id)
+    errorPatterns.value = res3.data.data || null
+  } catch (e) {
+    ElMessage.error('加载报告详情失败')
+  } finally {
+    loading.value = false
+  }
 })
 
 async function showLog(row) {
@@ -121,3 +139,40 @@ function handleApplyFix(suggested) {
   logVisible.value = false
 }
 </script>
+
+<style scoped>
+.page-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  padding: 20px;
+}
+
+.page-header-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.stat-card {
+  text-align: center;
+}
+
+.stat-success {
+  border-top: 3px solid #67c23a;
+}
+
+.stat-danger {
+  border-top: 3px solid #f56c6c;
+}
+
+.stat-warning {
+  border-top: 3px solid #e6a23c;
+}
+
+.stat-info {
+  border-top: 3px solid #409eff;
+}
+</style>

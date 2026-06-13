@@ -1,15 +1,19 @@
 <template>
-  <div style="padding: 20px">
-    <el-button style="margin-bottom: 10px" @click="router.push('/suites')">← 返回套件列表</el-button>
+  <div class="page-container">
+    <el-skeleton :rows="5" animated v-if="loading" />
+    <template v-else>
+    <el-page-header @back="router.push('/suites')" :title="'返回套件列表'" style="margin-bottom: 20px">
+      <template #content>
+        <span class="page-header-title">{{ suite.name }}</span>
+      </template>
+      <template #extra>
+        <el-button type="success" @click="executeSuite">批量执行</el-button>
+      </template>
+    </el-page-header>
 
     <el-card style="margin-bottom: 20px">
       <template #header>
-        <div style="display: flex; justify-content: space-between; align-items: center">
-          <span>{{ suite.name }}</span>
-          <div>
-            <el-button type="success" @click="executeSuite">批量执行</el-button>
-          </div>
-        </div>
+        <span>套件描述</span>
       </template>
       <p v-if="suite.description">{{ suite.description }}</p>
       <p v-else style="color: #999">暂无描述</p>
@@ -19,7 +23,8 @@
       <el-button type="primary" @click="openAddDialog">添加用例</el-button>
     </div>
 
-    <el-table :data="cases" border stripe>
+    <el-empty v-if="cases.length === 0" description="该套件暂无测试用例" />
+    <el-table v-else :data="cases" border stripe>
       <el-table-column prop="testNo" label="编号" width="100"/>
       <el-table-column prop="name" label="名称" min-width="200"/>
       <el-table-column prop="requestMethod" label="方法" width="80"/>
@@ -54,6 +59,7 @@
         <p style="font-size: 16px; margin-top: 10px">正在执行套件，请稍候...</p>
       </div>
     </el-dialog>
+    </template>
   </div>
 </template>
 
@@ -61,7 +67,7 @@
 import {onMounted, ref} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import api, {suiteApi} from '../api'
-import {ElMessage} from 'element-plus'
+import {ElMessage, ElMessageBox} from 'element-plus'
 
 const route = useRoute()
 const router = useRouter()
@@ -72,16 +78,28 @@ const selectedCases = ref([])
 const showAddDialog = ref(false)
 const executing = ref(false)
 const showExecuting = ref(false)
+const loading = ref(true)
 
 onMounted(async () => {
-  const res = await suiteApi.get(route.params.id)
-  suite.value = res.data.data || {}
-  await fetchCases()
+  loading.value = true
+  try {
+    const res = await suiteApi.get(route.params.id)
+    suite.value = res.data.data || {}
+    await fetchCases()
+  } catch (e) {
+    ElMessage.error('加载套件详情失败')
+  } finally {
+    loading.value = false
+  }
 })
 
 async function fetchCases() {
-  const res = await suiteApi.listCases(route.params.id)
-  cases.value = res.data.data || []
+  try {
+    const res = await suiteApi.listCases(route.params.id)
+    cases.value = res.data.data || []
+  } catch (e) {
+    ElMessage.error('加载用例列表失败')
+  }
 }
 
 async function executeSuite() {
@@ -102,25 +120,58 @@ async function executeSuite() {
 }
 
 async function removeCase(caseId) {
-  await suiteApi.removeCase(route.params.id, caseId)
-  ElMessage.success('已移除')
-  await fetchCases()
+  try {
+    await ElMessageBox.confirm('确定要从套件中移除此用例吗？', '确认移除', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    await suiteApi.removeCase(route.params.id, caseId)
+    ElMessage.success('已移除')
+    await fetchCases()
+  } catch {
+  }
 }
 
 async function openAddDialog() {
-  const res = await api.get('/testcases')
-  const all = res.data.data || []
-  const existingIds = new Set(cases.value.map(c => c.id))
-  allCases.value = all.filter(c => !existingIds.has(c.id))
-  selectedCases.value = []
-  showAddDialog.value = true
+  try {
+    const res = await api.get('/testcases')
+    const all = res.data.data || []
+    const existingIds = new Set(cases.value.map(c => c.id))
+    allCases.value = all.filter(c => !existingIds.has(c.id))
+    selectedCases.value = []
+    showAddDialog.value = true
+  } catch (e) {
+    ElMessage.error('加载用例列表失败')
+  }
 }
 
 async function addSelectedCases() {
-  const ids = selectedCases.value.map(tc => tc.id)
-  await suiteApi.batchAddCases(route.params.id, ids)
-  ElMessage.success('已添加 ' + ids.length + ' 个用例')
-  showAddDialog.value = false
-  await fetchCases()
+  try {
+    const ids = selectedCases.value.map(tc => tc.id)
+    await suiteApi.batchAddCases(route.params.id, ids)
+    ElMessage.success('已添加 ' + ids.length + ' 个用例')
+    showAddDialog.value = false
+    await fetchCases()
+  } catch (e) {
+    ElMessage.error('添加用例失败')
+  }
 }
 </script>
+
+<style scoped>
+.page-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  padding: 20px;
+}
+
+.page-header-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #303133;
+}
+</style>

@@ -1,15 +1,21 @@
 <template>
-  <div style="padding: 20px">
-    <h2>执行记录</h2>
-    <el-form inline>
-      <el-form-item label="用例 ID">
-        <el-input-number v-model="testCaseId" :min="1"/>
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" @click="fetchRecords">查询</el-button>
-      </el-form-item>
-    </el-form>
-    <el-table :data="records" border stripe>
+  <div class="page-container">
+    <div class="page-header">
+      <h2>执行记录</h2>
+      <div class="header-actions">
+        <el-form inline>
+          <el-form-item label="用例 ID">
+            <el-input-number v-model="testCaseId" :min="1" />
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" @click="fetchRecords">查询</el-button>
+          </el-form-item>
+        </el-form>
+      </div>
+    </div>
+    <el-skeleton :rows="5" animated v-if="loading" />
+    <el-empty v-else-if="records.length === 0" description="暂无执行记录" />
+    <el-table v-else :data="records" border stripe>
       <el-table-column prop="id" label="ID" width="60"/>
       <el-table-column prop="testCaseId" label="用例ID" width="80"/>
       <el-table-column prop="testNo" label="用例编号" width="100"/>
@@ -41,11 +47,13 @@
 import {onMounted, ref} from 'vue'
 import api from '../api'
 import {useRoute} from "vue-router";
+import {ElMessage} from 'element-plus';
 
 const testCaseId = ref(1)
 const records = ref([])
 const dialogVisible = ref(false)
 const dialogData = ref('')
+const loading = ref(true)
 const route = useRoute()
 
 onMounted(() => {
@@ -56,8 +64,15 @@ onMounted(() => {
 })
 
 async function fetchRecords() {
-  const res = await api.get('/execution-records', {params: {testCaseId: testCaseId.value}})
-  records.value = res.data.data || []
+  loading.value = true
+  try {
+    const res = await api.get('/execution-records', {params: {testCaseId: testCaseId.value}})
+    records.value = res.data.data || []
+  } catch (e) {
+    ElMessage.error('加载失败')
+  } finally {
+    loading.value = false
+  }
 }
 
 function showDetail(row) {
@@ -70,3 +85,35 @@ function showDetail(row) {
   dialogVisible.value = true
 }
 </script>
+
+<style scoped>
+.page-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  padding: 20px;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.page-header h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #303133;
+  font-weight: 600;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+}
+</style>
