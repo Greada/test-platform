@@ -85,6 +85,7 @@ const diffResult = ref(null)
 const diffExpected = ref('')
 const diffActual = ref('')
 const currentRecordId = ref(null)
+const currentTestCaseId = ref(null)
 
 const route = useRoute()
 const router = useRouter()
@@ -112,6 +113,7 @@ onMounted(async () => {
 
 async function showLog(row) {
   currentRecordId.value = row.id
+  currentTestCaseId.value = row.testCaseId
   diffResult.value = null
   diffExpected.value = ''
   diffActual.value = ''
@@ -133,10 +135,12 @@ async function showLog(row) {
 
 function handleApplyFix(suggested) {
   if (!suggested) return
-  // 把建议的 expected 存入 localStorage，编辑页读取
   localStorage.setItem('fix_expected', suggested)
-  ElMessage.success('已填充修复建议，请确认后保存')
+  ElMessage.success('已填充修复建议，请在新页签确认后保存')
   logVisible.value = false
+  if (currentTestCaseId.value) {
+    window.open('/?editId=' + currentTestCaseId.value + '&fix=1', '_blank')
+  }
 }
 </script>
 

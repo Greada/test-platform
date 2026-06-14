@@ -15,6 +15,7 @@ public class TestCase {
     private Long id;
     private String testNo;
     private String name;
+    private Long categoryId;
 
     @NotBlank(message = "Request URL is required")
     private String requestUrl;

@@ -1,18 +1,19 @@
 package com.testplatform.common;
 
+import lombok.Data;
+
 /**
-* @author admin
-* @version 1.0.0
-*/
+ * @author admin
+ * @version 1.0.0
+ */
+@Data
 public class Result<T> {
     private int code;
     private String message;
     private T data;
 
     // constructor
-    public Result(){
-
-    }
+    public Result() {}
 
     public Result(int code, String message, T data) {
         this.code = code;
@@ -36,29 +37,5 @@ public class Result<T> {
 
     public static <T> Result<T> error(int code, String message) {
         return new Result<>(code, message, null);
-    }
-
-    public int getCode() {
-        return code;
-    }
-
-    public void setCode(int code) {
-        this.code = code;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    public T getData() {
-        return data;
-    }
-
-    public void setData(T data) {
-        this.data = data;
     }
 }

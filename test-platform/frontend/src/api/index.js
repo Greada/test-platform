@@ -5,6 +5,17 @@ const api = axios.create({
 })
 export default api
 
+// ===== test case =====
+export const testCaseApi = {
+    list: (params) => api.get('/testcases', {params}),
+    get: (id) => api.get(`/testcases/${id}`),
+    save: (data) => api.post('/testcases', data),
+    update: (id, data) => api.put(`/testcases/${id}`, data),
+    delete: (id) => api.delete(`/testcases/${id}`),
+    importOpenapi: (data) => api.post('/testcases/import-openapi', data),
+    batchSave: (cases) => api.post('/testcases/batch-save', cases)
+}
+
 // ===== suite =====
 export const suiteApi = {
     list: () => api.get('/test-suites'),
@@ -29,4 +40,18 @@ export const reportApi = {
 
 export const diffApi = {
     get: (recordId) => api.get(`/execution-records/${recordId}/diff`)
+}
+
+// ===== category =====
+export const categoryApi = {
+    tree: () => api.get('/categories/tree'),
+    list: () => api.get('/categories'),
+    save: (data) => api.post('/categories', data),
+    update: (data) => api.put('/categories', data),
+    delete: (id) => api.delete(`/categories/${id}`)
+}
+
+// ===== ai =====
+export const aiApi = {
+    expected: (data) => api.post('/ai/expected', data)
 }

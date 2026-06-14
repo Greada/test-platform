@@ -31,6 +31,18 @@ public class TestCaseServiceImpl implements TestCaseService {
     }
 
     @Override
+    public Result<List<TestCase>> listByCategoryId(Long categoryId) {
+        try {
+            QueryWrapper<TestCase> qw = new QueryWrapper<>();
+            qw.eq("category_id", categoryId);
+            List<TestCase> testCaseList = testCaseMapper.selectList(qw);
+            return Result.success(testCaseList);
+        } catch (Exception e) {
+            return Result.error(500, e.getMessage());
+        }
+    }
+
+    @Override
     public Result<TestCase> getById(Long id) {
         try {
             TestCase testCase = testCaseMapper.selectById(id);

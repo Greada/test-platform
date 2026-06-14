@@ -12,6 +12,8 @@ import java.util.List;
 public interface TestCaseService {
     Result<List<TestCase>> listAll();
 
+    Result<List<TestCase>> listByCategoryId(Long categoryId);
+
     Result<TestCase> getById(Long id);
 
     Result<Void> save(TestCase testCase);

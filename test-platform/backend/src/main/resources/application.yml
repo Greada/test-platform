@@ -16,3 +16,8 @@ mybatis-plus:
   global-config:
     db-config:
       id-type: auto
+ai:
+  agnes:
+    api-key: ${AGNES_API_KEY}
+    base-url: https://apihub.agnes-ai.com/v1
+    model: agnes-2.0-flash

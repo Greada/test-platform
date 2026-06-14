@@ -1,4 +1,4 @@
-# 全功能测试平台 V2.2
+# 全功能测试平台 V3.1
 
 > 📖 文档入口 — 从这里开始访问所有项目文档
 
@@ -18,7 +18,7 @@
 
 ## 项目定位
 
-一站式测试管理平台 V2.2，聚焦测试用例管理、执行、报告、日志展示、测试套件、执行报告统计、JSON Diff 分析与错误模式聚合。
+一站式测试管理平台 V3.1，聚焦测试用例管理、执行、报告、日志展示、测试套件、执行报告统计、JSON Diff 分析、错误模式聚合、分类管理与 AI 智能生成预期结果。
 
 ## 技术栈
 
@@ -55,14 +55,17 @@ test-platform/
 │   │   │   ├── JsonDiffResult.java   # V2.2 新增
 │   │   │   ├── ErrorPatternItem.java # V2.2 新增
 │   │   │   ├── ErrorPatternResult.java# V2.2 新增
+│   │   │   └── EndpointDef.java         # V3.1 新增 OpenAPI 解析 DTO
 │       │   │   └── exception/GlobalExceptionHandler.java
 │       │   ├── config/
 │       │   │   ├── CorsConfig.java      # CORS 跨域配置
 │       │   │   ├── SecurityConfig.java  # Spring Security 配置
-│       │   │   └── RestTemplateConfig.java
+│       │   │   ├── RestTemplateConfig.java
+│       │   │   └── AiConfig.java              # V3.1 Agnes AI 配置
 │       │   ├── dto/
 │       │   │   └── CategoryNode.java         # V3 树形 DTO
 │       │   ├── controller/
+│       │   │   ├── AiController.java           # V3.1 AI 生成预期结果
 │       │   │   ├── CategoryController.java   # V3 分类 CRUD
 │       │   │   ├── ExecutionController.java
 │       │   │   ├── TestSuiteController.java          # V2.1 新增
@@ -81,6 +84,7 @@ test-platform/
 │       │   │   ├── TestSuiteCaseMapper.java          # V2.1 新增
 │       │   │   └── ExecutionReportMapper.java        # V2.1 新增
 │       │   └── service/
+│       │       ├── AiService.java              # V3.1 调 Agnes AI API
 │       │       ├── CategoryService.java            # V3
 │       │       ├── TestCaseService.java
 │       │       ├── ExecutionService.java
@@ -93,6 +97,8 @@ test-platform/
 │       │           ├── ExecutionServiceImpl.java
 │       │           ├── TestSuiteServiceImpl.java          # V2.1 新增
 │       │           └── ExecutionReportServiceImpl.java    # V2.1 新增
+│       │   └── util/
+│       │       └── OpenApiParser.java         # V3.1 OpenAPI JSON 解析器
 │       └── resources/
 │           ├── application.yml
 │           └── sql/
@@ -132,7 +138,8 @@ test-platform/
 | V1 | 用例管理 + 执行 + 报告 + 日志 | ✅ 已完成 |
 | V2.1 | 测试套件 + 执行报告 + HttpExecutor 升级 | ✅ 已完成 |
 | V2.2 | JSON Diff + 错误模式聚合 + 批执行修复 | ✅ 已完成 |
-| V3   | 分类管理（树状 3 层） | 🚧 进行中 |
+| V3   | 分类管理（树状 3 层） | ✅ 已完成 |
+| V3.1 | AI 智能生成预期结果 + OpenAPI 批量导入 | ✅ 已完成 |
 
 ### Phase 1 — 已完成文件
 
@@ -190,7 +197,7 @@ test-platform/
 | 5 | ExecutionServiceImpl 重构（抽取 5 个辅助方法 + ObjectMapper 注入复用） | ✅ |
 | 6 | 错误模式聚合（按 URL+Method 分组统计通过率 + 最差端点提示） | ✅ |
 
-### V3 — 进行中：分类管理
+### V3 — 已完成：分类管理
 
 | # | 内容 | 状态 |
 |---|---|---|
@@ -198,11 +205,25 @@ test-platform/
 | 2 | TestCategory 实体类 + CategoryNode DTO | ✅ |
 | 3 | TestCategoryMapper | ✅ |
 | 4 | CategoryService + CategoryServiceImpl（树形构建、层级校验≤3、同名唯一、删除保护） | ✅ |
-| 5 | CategoryController | 🚧 待开发 |
-| 6 | TestCase 集成 category_id 筛选 | 🚧 待开发 |
-| 7 | 前端：CategoryTree 侧边栏组件 | 🚧 待开发 |
-| 8 | 前端：CategoryDialog 弹窗编辑 | 🚧 待开发 |
-| 9 | 前端：TestCaseList 分类筛选 + TestCaseEdit 分类选择 | 🚧 待开发 |
+| 5 | CategoryController（5 个 REST 端点） | ✅ |
+| 6 | TestCase 集成 category_id 筛选（后端 + 前端可分类筛选） | ✅ |
+| 7 | 前端：CategoryTree 侧边栏组件（树形导航，点击筛选） | ✅ |
+| 8 | 前端：CategoryDialog 弹窗编辑（新增/编辑/删除，级联父级） | ✅ |
+| 9 | 前端：TestCaseList 左右布局重构 + TestCaseEdit 内联编辑面板 + 分类选择 | ✅ |
+| 10 | 导航栏从侧边栏改为顶部导航 | ✅ |
+| 11 | 移除独立"执行记录"页面，改为 TestCaseList 内联执行历史弹窗 | ✅ |
+
+### V3.1 — 已完成：AI 智能生成预期结果 + OpenAPI 批量导入
+
+| # | 内容 | 状态 |
+|---|---|---|
+| 1 | Agnes AI 接入（配置类 + AiService 调 chat/completions） | ✅ |
+| 2 | AiController：POST /api/ai/expected 预测预期结果 | ✅ |
+| 3 | 编辑面板"AI 生成"按钮，自动回填 expectedResult | ✅ |
+| 4 | OpenApiParser 手动解析 OpenAPI JSON | ✅ |
+| 5 | 批量导入：POST /import-openapi 解析 + AI 填充预期结果 | ✅ |
+| 6 | 批量入库：POST /batch-save | ✅ |
+| 7 | 前端 OpenAPI 导入对话框（粘贴→解析→预览→确认） | ✅ |
 
 ### V1 修复与增强记录
 
@@ -312,7 +333,7 @@ UNIQUE KEY on (suite_id, case_id)
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| GET | `/api/testcases` | 查询全部用例 |
+| GET | `/api/testcases` | 查询全部用例（支持 `?categoryId=` 筛选） |
 | GET | `/api/testcases/{id}` | 查询单个用例 |
 | POST | `/api/testcases` | 新建用例 |
 | PUT | `/api/testcases/{id}` | 修改用例 |
@@ -332,6 +353,14 @@ UNIQUE KEY on (suite_id, case_id)
 | **GET** | **`/api/execution-reports`** | **V2.1** 查询报告列表 |
 | **GET** | **`/api/execution-reports/{id}`** | **V2.1** 查询报告详情 |
 | **GET** | **`/api/execution-reports/{id}/details`** | **V2.1** 查询报告明细 |
+| **GET** | **`/api/categories/tree`** | **V3** 查询分类树 |
+| **GET** | **`/api/categories`** | **V3** 查询分类列表 |
+| **POST** | **`/api/categories`** | **V3** 新建分类 |
+| **PUT** | **`/api/categories`** | **V3** 修改分类 |
+| **DELETE** | **`/api/categories/{id}`** | **V3** 删除分类 |
+| **POST** | **`/api/ai/expected`** | **V3.1** AI 生成预期结果 |
+| **POST** | **`/api/testcases/import-openapi`** | **V3.1** 导入 OpenAPI 解析+AI 填充 |
+| **POST** | **`/api/testcases/batch-save`** | **V3.1** 批量保存用例 |
 
 详见 [API.md](API.md)（完整请求/响应示例）。
 
@@ -375,3 +404,24 @@ expected_result 是否为合法 JSON？
 - V1 基础：执行 `init_v1.sql` + `insert_test_case_v1.sql`
 - V2.1 升级：执行 `init_v2.sql`（在 V1 基础上新增表 + 加字段）
 - MySQL 连接默认 `root:1234@localhost:3306`
+
+## AI 接入（V3.1）
+
+平台接入 [Agnes AI](https://platform.agnes-ai.com) 的 `agnes-2.0-flash` 模型，用于自动生成测试用例预期结果。
+
+### 配置方式
+
+```yaml
+ai:
+  agnes:
+    api-key: ${AGNES_API_KEY}
+    base-url: https://apihub.agnes-ai.com/v1
+    model: agnes-2.0-flash
+```
+
+启动前需设置环境变量 `AGNES_API_KEY`。
+
+### 使用场景
+
+1. **单用例 AI 生成**：编辑页面填写请求地址/方法/参数后，点击"AI 生成"按钮，自动填充预期结果
+2. **OpenAPI 批量导入**：粘贴 Swagger/OpenAPI JSON，后端解析所有端点并调用 AI 生成预期结果，预览后批量入库
