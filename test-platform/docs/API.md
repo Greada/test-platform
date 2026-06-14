@@ -850,3 +850,129 @@ GET /testcases?categoryId={id}
   ]
 }
 ```
+
+---
+
+## AI 生成预期结果接口 (V3.1)
+
+### AI 生成预期结果
+
+```
+POST /ai/expected
+```
+
+**请求体**
+
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| requestUrl | String | 是 | 请求地址 |
+| requestMethod | String | 是 | 请求方法 |
+| requestHeaders | String | 否 | 请求头 JSON |
+| requestParams | String | 否 | 请求参数 JSON |
+
+**请求示例**
+
+```json
+{
+  "requestUrl": "https://jsonplaceholder.typicode.com/posts",
+  "requestMethod": "POST",
+  "requestHeaders": "{\"Content-Type\":\"application/json\"}",
+  "requestParams": "{\"title\":\"test\",\"body\":\"hello\",\"userId\":1}"
+}
+```
+
+**响应示例**
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": "{\"id\":101,\"title\":\"test\",\"body\":\"hello\",\"userId\":1}"
+}
+```
+
+---
+
+## OpenAPI 批量导入接口 (V3.1)
+
+### 导入并解析 OpenAPI
+
+```
+POST /testcases/import-openapi
+```
+
+**请求体**
+
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| openapi | String | 是 | OpenAPI JSON 原文 |
+
+**请求示例**
+
+```json
+{
+  "openapi": "{\"openapi\":\"3.0.0\",\"info\":{...},\"paths\":{...}}"
+}
+```
+
+**响应示例**
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": [
+    {
+      "testNo": "AUTO-001",
+      "name": "获取用户列表",
+      "requestUrl": "https://api.example.com/users",
+      "requestMethod": "GET",
+      "requestHeaders": "{\"Content-Type\":\"application/json\"}",
+      "requestParams": "{}",
+      "expectedResult": "{\"users\":[{\"id\":1,\"name\":\"张三\"}]}"
+    }
+  ]
+}
+```
+
+**说明**：该接口仅解析+AI 填充，**不入库**。前端预览确认后再调批量保存。
+
+---
+
+### 批量保存用例
+
+```
+POST /testcases/batch-save
+```
+
+**请求体**
+
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| 数组元素 | TestCase | 是 | 用例对象数组（同新建接口） |
+
+**请求示例**
+
+```json
+[
+  {
+    "testNo": "AUTO-001",
+    "name": "获取用户列表",
+    "requestUrl": "https://api.example.com/users",
+    "requestMethod": "GET",
+    "requestHeaders": "{\"Content-Type\":\"application/json\"}",
+    "requestParams": "{}",
+    "expectedResult": "{\"users\":[]}"
+  }
+]
+```
+
+**响应**
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": null
+}
+```

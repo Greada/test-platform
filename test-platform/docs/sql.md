@@ -60,3 +60,13 @@ erDiagram
         DATETIME execute_time "执行时间"
         DATETIME create_time
     }
+
+## 版本记录
+
+| 版本 | 变更内容 |
+|---|---|
+| V1 | test_case + execution_record |
+| V2.1 | 新增 test_suite/test_suite_case/execution_report，execution_record 加 4 字段 |
+| V2.2 | 无 schema 变更 |
+| V3 | 新增 test_category，test_case 加 category_id |
+| V3.1 | 无 schema 变更（纯前后端 + AI 集成） |

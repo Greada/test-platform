@@ -1,12 +1,12 @@
 <template>
   <div style="padding: 20px; max-width: 900px; margin: 0 auto; line-height: 1.8">
-    <h1>全功能测试平台 V2.2 — 文档</h1>
+    <h1>全功能测试平台 V3.1 — 文档</h1>
     <el-alert title="docs/ 目录下还有更多文档可供阅读" type="info" :closable="false" show-icon style="margin-bottom: 20px"/>
 
     <el-divider/>
 
     <h2>项目定位</h2>
-    <p>一站式测试管理平台 V2.2，聚焦测试用例管理、执行、报告、日志展示、测试套件、执行报告统计、JSON Diff 分析与错误模式聚合。</p>
+    <p>一站式测试管理平台 V3.1，聚焦测试用例管理、执行、报告、日志展示、测试套件、执行报告统计、JSON Diff 分析、错误模式聚合、分类管理与 AI 智能生成预期结果。</p>
 
     <h2>技术栈</h2>
     <el-table :data="techStack" border stripe size="small" style="width: 100%">
@@ -68,6 +68,15 @@
     <h2>错误模式聚合 (V2.2)</h2>
     <p>执行报告自动聚合错误模式：按 URL+Method 分组统计通过率，自动标出通过率最低的端点。</p>
 
+    <h2>分类管理 (V3)</h2>
+    <p>树状三层分类管理，支持新建/编辑/删除分类。编辑面板可设置用例所属分类，列表页可按分类筛选。</p>
+
+    <h2>AI 预期结果生成 (V3.1)</h2>
+    <p>接入 Agnes AI（agnes-2.0-flash），在编辑面板填写 URL/方法/参数后，点击"AI 生成"按钮自动填充预期结果。</p>
+
+    <h2>OpenAPI 批量导入 (V3.1)</h2>
+    <p>粘贴 Swagger/OpenAPI JSON，后端解析所有端点并调用 AI 填充预期结果，预览后批量入库。</p>
+
     <h3>匹配示例</h3>
     <el-table :data="matchExamples" border stripe size="small" style="width: 100%">
       <el-table-column prop="expected" label="预期结果"/>
@@ -93,10 +102,12 @@
       <el-descriptions-item label="前端">在 <code>frontend/</code> 目录执行 <code>npm run dev</code>，访问 <code>http://localhost:3000</code></el-descriptions-item>
       <el-descriptions-item label="数据库 V1">执行 <code>init_v1.sql</code> + <code>insert_test_case_v1.sql</code>，默认连接 <code>root:1234@localhost:3306</code></el-descriptions-item>
       <el-descriptions-item label="数据库 V2.1 升级">在 V1 基础上执行 <code>init_v2.sql</code>（新增 3 表 + 4 字段）</el-descriptions-item>
+      <el-descriptions-item label="数据库 V3 升级">在 V2.1 基础上执行 <code>init_v3.sql</code>（新增 test_category 表）</el-descriptions-item>
+      <el-descriptions-item label="AI 集成">启动前设置环境变量 <code>AGNES_API_KEY</code></el-descriptions-item>
     </el-descriptions>
 
     <div style="margin-top: 40px; text-align: center; color: #999; font-size: 13px">
-      测试平台 V2.2 &copy; 2026
+      测试平台 V3.1 &copy; 2026
     </div>
   </div>
 </template>
@@ -108,7 +119,7 @@ const docNav = [
   { file: 'docs/sql.md', desc: '数据库 ER 图与表结构' },
   { file: 'docs/进度报告.md', desc: '项目进度总览、里程碑、功能统计' },
   { file: 'docs/开发进度.md', desc: '分阶段详细任务跟踪与修复记录' },
-  { file: 'docs/阶段总结报告.md', desc: 'V2.2 阶段总结、技术决策、经验教训' },
+  { file: 'docs/阶段总结报告.md', desc: 'V3.1 阶段总结、技术决策、经验教训' },
   { file: 'docs/resume.html', desc: '开发恢复指南' },
 ]
 
@@ -126,6 +137,8 @@ const progress = [
   { phase: 'V1', content: '用例管理 + 执行 + 报告 + 日志', status: '已完成' },
   { phase: 'V2.1', content: '测试套件 + 执行报告 + HttpExecutor 升级', status: '已完成' },
   { phase: 'V2.2', content: 'JSON Diff + 错误模式聚合 + 批执行修复', status: '已完成' },
+  { phase: 'V3', content: '分类管理（树状 3 层）', status: '已完成' },
+  { phase: 'V3.1', content: 'AI 智能生成预期结果 + OpenAPI 批量导入', status: '已完成' },
 ]
 
 const apiList = [
@@ -151,6 +164,14 @@ const apiList = [
   { method: 'GET', path: '/api/execution-reports/{id}/details', desc: '查询报告明细' },
   { method: 'GET', path: '/api/execution-records/{id}/diff', desc: 'JSON Diff 分析 (V2.2)' },
   { method: 'GET', path: '/api/execution-reports/{id}/error-patterns', desc: '错误模式聚合 (V2.2)' },
+  { method: 'GET', path: '/api/categories/tree', desc: '查询分类树 (V3)' },
+  { method: 'GET', path: '/api/categories', desc: '查询分类列表 (V3)' },
+  { method: 'POST', path: '/api/categories', desc: '新建分类 (V3)' },
+  { method: 'PUT', path: '/api/categories', desc: '修改分类 (V3)' },
+  { method: 'DELETE', path: '/api/categories/{id}', desc: '删除分类 (V3)' },
+  { method: 'POST', path: '/api/ai/expected', desc: 'AI 生成预期结果 (V3.1)' },
+  { method: 'POST', path: '/api/testcases/import-openapi', desc: '导入 OpenAPI 解析+AI 填充 (V3.1)' },
+  { method: 'POST', path: '/api/testcases/batch-save', desc: '批量保存用例 (V3.1)' },
 ]
 
 const matchExamples = [
@@ -181,8 +202,9 @@ const projectStructure = `test-platform/
 │   ├── PROJECT_INTRO.md
 │   ├── API.md
 │   ├── sql.md
-│   ├── 阶段总结报告.md
+│   ├── 进度报告.md
 │   ├── 开发进度.md
+│   ├── 阶段总结报告.md
 │   └── resume.html
 ├── backend/
 │   ├── pom.xml
@@ -195,9 +217,16 @@ const projectStructure = `test-platform/
 │       │   │   ├── JsonDiffResult.java      # V2.2
 │       │   │   ├── ErrorPatternItem.java    # V2.2
 │       │   │   ├── ErrorPatternResult.java  # V2.2
+│       │   │   ├── EndpointDef.java         # V3.1
 │       │   │   └── exception/
 │       │   ├── config/
+│       │   │   ├── CorsConfig.java
+│       │   │   ├── SecurityConfig.java
+│       │   │   ├── RestTemplateConfig.java
+│       │   │   └── AiConfig.java            # V3.1
 │       │   ├── controller/
+│       │   │   ├── AiController.java        # V3.1
+│       │   │   ├── CategoryController.java  # V3
 │       │   │   ├── TestCaseController.java
 │       │   │   ├── ExecutionController.java
 │       │   │   ├── TestSuiteController.java
@@ -209,15 +238,20 @@ const projectStructure = `test-platform/
 │       │   │   ├── TestSuiteCase.java
 │       │   │   └── ExecutionReport.java
 │       │   ├── mapper/
-│       │   └── service/
-│       │       ├── ...
-│       │       ├── JsonDiffService.java     # V2.2
-│       │       └── ErrorPatternService.java # V2.2
+│       │   ├── service/
+│       │   │   ├── AiService.java           # V3.1
+│       │   │   ├── CategoryService.java     # V3
+│       │   │   ├── ...
+│       │   │   ├── JsonDiffService.java     # V2.2
+│       │   │   └── ErrorPatternService.java # V2.2
+│       │   └── util/
+│       │       └── OpenApiParser.java       # V3.1
 │       └── resources/
 │           ├── application.yml
 │           └── sql/
 │               ├── init_v1.sql
 │               ├── init_v2.sql
+│               ├── init_v3.sql
 │               └── insert_test_case_v1.sql
 ├── frontend/
 │   ├── index.html
@@ -229,12 +263,13 @@ const projectStructure = `test-platform/
 │       ├── api/
 │       ├── router/
 │       ├── components/
+│       │   ├── CategoryTree.vue             # V3
+│       │   ├── CategoryDialog.vue            # V3
 │       │   ├── JsonDiffViewer.vue           # V2.2
 │       │   └── ErrorPatternCard.vue         # V2.2
 │       └── views/
 │           ├── TestCaseList.vue
 │           ├── TestCaseEdit.vue
-│           ├── ExecutionList.vue
 │           ├── DocView.vue
 │           ├── TestSuiteList.vue
 │           ├── TestSuiteDetail.vue
