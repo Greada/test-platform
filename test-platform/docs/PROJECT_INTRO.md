@@ -1,4 +1,4 @@
-# 全功能测试平台 V3.1
+# 全功能测试平台 V3.2
 
 > 📖 文档入口 — 从这里开始访问所有项目文档
 
@@ -7,18 +7,18 @@
 | 文档 | 说明 |
 |---|---|
 | **[PROJECT_INTRO.md](PROJECT_INTRO.md)** | 🏠 项目介绍（本文档） |
-| **[API.md](API.md)** | 📡 API 接口文档（V1 ~ V2.2） |
+| **[API.md](API.md)** | 📡 API 接口文档（V1 ~ V3.2） |
 | **[sql.md](sql.md)** | 🗄️ 数据库 ER 图与表结构 |
 | **[进度报告.md](进度报告.md)** | 📊 项目进度总览、里程碑、功能统计 |
 | **[开发进度.md](开发进度.md)** | 📝 分阶段详细任务跟踪与修复记录 |
-| **[阶段总结报告.md](阶段总结报告.md)** | 🏁 V2.2 阶段总结、技术决策、经验教训 |
+| **[阶段总结报告.md](阶段总结报告.md)** | 🏁 阶段总结、技术决策、经验教训 |
 | **[resume.html](resume.html)** | 🔄 开发恢复指南（下次继续用） |
 
 ---
 
 ## 项目定位
 
-一站式测试管理平台 V3.1，聚焦测试用例管理、执行、报告、日志展示、测试套件、执行报告统计、JSON Diff 分析、错误模式聚合、分类管理与 AI 智能生成预期结果。
+一站式测试管理平台 V3.2，聚焦测试用例管理、执行、报告、日志展示、测试套件、执行报告统计、JSON Diff 分析、错误模式聚合、分类管理、AI 智能生成预期结果、OpenAPI 批量导入与 JWT 权限管理。
 
 ## 技术栈
 
@@ -61,22 +61,28 @@ test-platform/
 │       │   │   ├── CorsConfig.java      # CORS 跨域配置
 │       │   │   ├── SecurityConfig.java  # Spring Security 配置
 │       │   │   ├── RestTemplateConfig.java
-│       │   │   └── AiConfig.java              # V3.1 Agnes AI 配置
+│       │   │   ├── JwtUtil.java              # V3.2 JWT 工具类
+│       │   │   ├── JwtAuthFilter.java        # V3.2 JWT 认证过滤器
+│       │   │   ├── PasswordEncoderConfig.java# V3.2 BCrypt 加密
+│       │   │   └── AiConfig.java             # V3.1 Agnes AI 配置
 │       │   ├── dto/
 │       │   │   └── CategoryNode.java         # V3 树形 DTO
 │       │   ├── controller/
+│       │   │   ├── AuthController.java            # V3.2 JWT 认证
 │       │   │   ├── AiController.java           # V3.1 AI 生成预期结果
 │       │   │   ├── CategoryController.java   # V3 分类 CRUD
 │       │   │   ├── ExecutionController.java
 │       │   │   ├── TestSuiteController.java          # V2.1 新增
 │       │   │   └── ExecutionReportController.java    # V2.1 新增
 │       │   ├── entity/
+│       │   │   ├── User.java                         # V3.2 用户实体
 │       │   │   ├── TestCase.java
 │       │   │   ├── ExecutionRecord.java
 │       │   │   ├── TestSuite.java                    # V2.1 新增
 │       │   │   ├── TestSuiteCase.java                # V2.1 新增
 │       │   │   └── ExecutionReport.java              # V2.1 新增
 │       │   ├── mapper/
+│       │   │   ├── UserMapper.java                  # V3.2
 │       │   │   ├── CategoryMapper.java         # V3
 │       │   │   ├── TestCaseMapper.java
 │       │   │   ├── ExecutionRecordMapper.java
@@ -84,6 +90,7 @@ test-platform/
 │       │   │   ├── TestSuiteCaseMapper.java          # V2.1 新增
 │       │   │   └── ExecutionReportMapper.java        # V2.1 新增
 │       │   └── service/
+│       │       ├── UserService.java              # V3.2 用户认证
 │       │       ├── AiService.java              # V3.1 调 Agnes AI API
 │       │       ├── CategoryService.java            # V3
 │       │       ├── TestCaseService.java
@@ -92,6 +99,7 @@ test-platform/
 │       │       ├── TestSuiteService.java             # V2.1 新增
 │       │       ├── ExecutionReportService.java       # V2.1 新增
 │       │       └── impl/
+│       │           ├── UserServiceImpl.java       # V3.2
 │       │           ├── CategoryServiceImpl.java    # V3
 │       │           ├── TestCaseServiceImpl.java
 │       │           ├── ExecutionServiceImpl.java
@@ -105,6 +113,7 @@ test-platform/
 │               ├── init_v1.sql
 │               ├── init_v2.sql                    # V2.1 新增
 │               ├── init_v3.sql                    # V3 新增
+│               ├── init_v3.sql                    # V3.2 新增 user 表
 │               └── insert_test_case_v1.sql
 └── frontend/
     ├── index.html
@@ -140,6 +149,7 @@ test-platform/
 | V2.2 | JSON Diff + 错误模式聚合 + 批执行修复 | ✅ 已完成 |
 | V3   | 分类管理（树状 3 层） | ✅ 已完成 |
 | V3.1 | AI 智能生成预期结果 + OpenAPI 批量导入 | ✅ 已完成 |
+| V3.2 | JWT 权限管理（登录/注册/路由守卫） | ✅ 已完成 |
 
 ### Phase 1 — 已完成文件
 
@@ -225,6 +235,23 @@ test-platform/
 | 6 | 批量入库：POST /batch-save | ✅ |
 | 7 | 前端 OpenAPI 导入对话框（粘贴→解析→预览→确认） | ✅ |
 
+### V3.2 — 已完成：JWT 权限管理
+
+| # | 内容 | 状态 |
+|---|---|---|
+| 1 | SQL 建表（user）+ 默认管理员 admin/admin123 | ✅ |
+| 2 | User 实体 + UserMapper | ✅ |
+| 3 | JwtUtil（HS256 签发/解析） | ✅ |
+| 4 | JwtAuthFilter（Token 校验过滤器） | ✅ |
+| 5 | PasswordEncoderConfig（BCrypt） | ✅ |
+| 6 | UserService（登录/注册/查用户） | ✅ |
+| 7 | AuthController（POST /api/auth/login, register, GET /me） | ✅ |
+| 8 | SecurityConfig 更新（放行 /api/auth/**，其余需认证） | ✅ |
+| 9 | 前端 Login.vue 登录/注册页面 | ✅ |
+| 10 | Axios 请求拦截器自动带 Bearer Token + 401 跳登录 | ✅ |
+| 11 | 路由导航守卫（未登录跳 /login） | ✅ |
+| 12 | App.vue 导航栏显示用户名 + 退出 | ✅ |
+
 ### V1 修复与增强记录
 
 | # | 问题 | 修复 |
@@ -263,6 +290,19 @@ test-platform/
 | expected_result | TEXT NOT NULL | 预期结果（JSON 或文本） |
 | create_time | DATETIME | 创建时间 |
 | update_time | DATETIME | 更新时间 |
+
+### user（用户表）— V3.2 新增
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| id | BIGINT(20) PK | 自增主键 |
+| username | VARCHAR(50) UNIQUE | 用户名 |
+| password | VARCHAR(255) | BCrypt 加密密码 |
+| display_name | VARCHAR(100) | 显示名称 |
+| role | VARCHAR(20) | 角色（USER/ADMIN） |
+| create_time | DATETIME | 创建时间 |
+
+初始管理员：admin / admin123
 
 ### test_category（分类表）— V3 新增
 
@@ -361,6 +401,9 @@ UNIQUE KEY on (suite_id, case_id)
 | **POST** | **`/api/ai/expected`** | **V3.1** AI 生成预期结果 |
 | **POST** | **`/api/testcases/import-openapi`** | **V3.1** 导入 OpenAPI 解析+AI 填充 |
 | **POST** | **`/api/testcases/batch-save`** | **V3.1** 批量保存用例 |
+| **POST** | **`/api/auth/login`** | **V3.2** 用户登录（返回 token + user） |
+| **POST** | **`/api/auth/register`** | **V3.2** 用户注册 |
+| **GET** | **`/api/auth/me`** | **V3.2** 获取当前用户信息（需 token） |
 
 详见 [API.md](API.md)（完整请求/响应示例）。
 
@@ -403,6 +446,8 @@ expected_result 是否为合法 JSON？
 **数据库**：
 - V1 基础：执行 `init_v1.sql` + `insert_test_case_v1.sql`
 - V2.1 升级：执行 `init_v2.sql`（在 V1 基础上新增表 + 加字段）
+- V3 升级：执行 `init_v3.sql`
+- V3.2 升级：执行 `sql/init_v3.sql` 中的 user 表部分
 - MySQL 连接默认 `root:1234@localhost:3306`
 
 ## AI 接入（V3.1）

@@ -29,7 +29,7 @@
       </el-table-column>
       <el-table-column prop="executeDuration" label="耗时(ms)" width="100"/>
       <el-table-column prop="actualResult" label="实际结果" min-width="200" show-overflow-tooltip/>
-      <el-table-column prop="executeTime" label="执行时间" width="180"/>
+      <el-table-column prop="executeTime" label="执行时间" width="180" :formatter="formatDate"/>
       <el-table-column label="详情" width="80">
         <template #default="{ row }">
           <el-button size="small" @click="showDetail(row)">日志</el-button>
@@ -48,6 +48,7 @@ import {onMounted, ref} from 'vue'
 import api from '../api'
 import {useRoute} from "vue-router";
 import {ElMessage} from 'element-plus';
+import { formatDate } from '../utils/format'
 
 const testCaseId = ref(1)
 const records = ref([])

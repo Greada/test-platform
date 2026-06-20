@@ -84,7 +84,7 @@
         </el-table-column>
         <el-table-column prop="executeDuration" label="耗时(ms)" width="100"/>
         <el-table-column prop="actualResult" label="实际结果" min-width="200" show-overflow-tooltip/>
-        <el-table-column prop="executeTime" label="执行时间" width="180"/>
+        <el-table-column prop="executeTime" label="执行时间" width="180" :formatter="formatDate"/>
         <el-table-column label="日志" width="60">
           <template #default="{ row }">
             <el-button size="small" @click="showHistoryLog(row)">查看</el-button>
@@ -144,6 +144,7 @@ import { categoryApi, testCaseApi } from '../api'
 import CategoryTree from '../components/CategoryTree.vue'
 import CategoryDialog from '../components/CategoryDialog.vue'
 import TestCaseEditPanel from './TestCaseEdit.vue'
+import { formatDate } from '../utils/format'
 
 const list = ref([])
 const loading = ref(true)

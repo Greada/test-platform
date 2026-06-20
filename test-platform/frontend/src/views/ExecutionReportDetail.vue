@@ -54,7 +54,7 @@
         </template>
       </el-table-column>
       <el-table-column prop="executeDuration" label="耗时(ms)" width="100"/>
-      <el-table-column prop="executeTime" label="执行时间" width="180"/>
+      <el-table-column prop="executeTime" label="执行时间" width="180" :formatter="formatDate"/>
       <el-table-column label="日志" width="80">
         <template #default="{ row }">
           <el-button size="small" @click="showLog(row)">查看</el-button>
@@ -80,6 +80,7 @@ import {diffApi, reportApi} from '../api'
 import JsonDiffViewer from "../components/JsonDiffViewer.vue";
 import ErrorPatternCard from "../components/ErrorPatternCard.vue";
 import {ElMessage} from "element-plus";
+import { formatDate } from '../utils/format'
 
 const diffResult = ref(null)
 const diffExpected = ref('')

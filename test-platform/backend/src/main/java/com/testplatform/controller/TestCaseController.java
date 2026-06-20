@@ -8,8 +8,15 @@ import com.testplatform.service.AiService;
 import com.testplatform.service.TestCaseService;
 import com.testplatform.util.OpenApiParser;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +35,6 @@ public class TestCaseController {
     private final AiService aiService;
     private final ObjectMapper objectMapper;
 
-    @Autowired
     public TestCaseController(
             TestCaseService testCaseService, AiService aiService, ObjectMapper objectMapper) {
         this.testCaseService = testCaseService;
@@ -92,13 +98,6 @@ public class TestCaseController {
 
     @PostMapping("/batch-save")
     public Result<Void> batchSave(@RequestBody List<TestCase> cases) {
-        try {
-            for (TestCase tc : cases) {
-                testCaseService.save(tc);
-            }
-            return Result.success(null);
-        } catch (Exception e) {
-            return Result.error(500, "批量保存失败: " + e.getMessage());
-        }
+        return testCaseService.batchSave(cases);
     }
 }

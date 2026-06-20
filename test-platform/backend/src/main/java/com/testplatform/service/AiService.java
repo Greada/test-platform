@@ -58,8 +58,6 @@ public class AiService {
     }
 
     private String callAgnes(String userMessage) {
-        System.out.println("=== DEBUG API KEY: " + aiConfig.getApiKey()); // 加这行
-        System.out.println("=== DEBUG BASE URL: " + aiConfig.getBaseUrl());
         String url = aiConfig.getBaseUrl() + "/chat/completions";
 
         HttpHeaders headers = new HttpHeaders();

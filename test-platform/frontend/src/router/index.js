@@ -6,8 +6,10 @@ import TestSuiteList from '../views/TestSuiteList.vue'
 import TestSuiteDetail from '../views/TestSuiteDetail.vue'
 import ExecutionReportList from '../views/ExecutionReportList.vue'
 import ExecutionReportDetail from '../views/ExecutionReportDetail.vue'
+import Login from '../views/Login.vue'
 
 const routes = [
+    {path: '/login', name: 'Login', component: Login},
     {path: '/', name: 'TestCaseList', component: TestCaseList},
     {path: '/executions', name: 'ExecutionList', component: ExecutionList},
     {path: '/docs', name: 'DocView', component: DocView},
@@ -21,4 +23,16 @@ const router = createRouter({
     history: createWebHistory(),
     routes
 })
+
+router.beforeEach((to, from, next) => {
+    const token = localStorage.getItem('token')
+    if (to.path !== '/login' && !token) {
+        next('/login')
+    } else if (to.path === '/login' && token) {
+        next('/')
+    } else {
+        next()
+    }
+})
+
 export default router

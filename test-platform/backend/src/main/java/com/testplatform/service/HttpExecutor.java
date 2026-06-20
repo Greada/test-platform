@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.testplatform.common.HttpResult;
 import com.testplatform.entity.TestCase;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -16,12 +18,9 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
 
-/**
- * @author admin
- * @version 1.0.0
- */
 @Component
 public class HttpExecutor {
+    private static final Logger log = LoggerFactory.getLogger(HttpExecutor.class);
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
 
@@ -82,7 +81,8 @@ public class HttpExecutor {
             for (Map.Entry<String, String> entry : map.entrySet()) {
                 headers.add(entry.getKey(), entry.getValue());
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            log.warn("Failed to parse request headers: {}", headersJson, e);
         }
         return headers;
     }

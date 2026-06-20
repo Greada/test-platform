@@ -4,6 +4,16 @@ erDiagram
     test_suite ||--o{ test_suite_case : "包含"
     test_suite ||--o{ execution_report : "产生"
     execution_report ||--o{ execution_record : "汇总"
+    user ||--o{ test_case : "创建" (未实现)
+
+    user {
+        BIGINT id PK
+        VARCHAR username UK "用户名"
+        VARCHAR password "BCrypt 密码"
+        VARCHAR display_name "显示名称"
+        VARCHAR role "USER/ADMIN"
+        DATETIME create_time
+    }
 
     test_case {
         BIGINT id PK
@@ -70,3 +80,4 @@ erDiagram
 | V2.2 | 无 schema 变更 |
 | V3 | 新增 test_category，test_case 加 category_id |
 | V3.1 | 无 schema 变更（纯前后端 + AI 集成） |
+| V3.2 | 新增 user 表 |

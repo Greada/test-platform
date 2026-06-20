@@ -1,6 +1,6 @@
 <template>
   <div style="padding: 20px; max-width: 900px; margin: 0 auto; line-height: 1.8">
-    <h1>全功能测试平台 V3.1 — 文档</h1>
+    <h1>全功能测试平台 V3.2 — 文档</h1>
     <el-alert title="docs/ 目录下还有更多文档可供阅读" type="info" :closable="false" show-icon style="margin-bottom: 20px"/>
 
     <el-divider/>
@@ -103,11 +103,12 @@
       <el-descriptions-item label="数据库 V1">执行 <code>init_v1.sql</code> + <code>insert_test_case_v1.sql</code>，默认连接 <code>root:1234@localhost:3306</code></el-descriptions-item>
       <el-descriptions-item label="数据库 V2.1 升级">在 V1 基础上执行 <code>init_v2.sql</code>（新增 3 表 + 4 字段）</el-descriptions-item>
       <el-descriptions-item label="数据库 V3 升级">在 V2.1 基础上执行 <code>init_v3.sql</code>（新增 test_category 表）</el-descriptions-item>
+      <el-descriptions-item label="数据库 V3.2 升级">执行 <code>sql/init_v3.sql</code> 中的 user 表部分（新增 user 表 + 默认管理员）</el-descriptions-item>
       <el-descriptions-item label="AI 集成">启动前设置环境变量 <code>AGNES_API_KEY</code></el-descriptions-item>
     </el-descriptions>
 
     <div style="margin-top: 40px; text-align: center; color: #999; font-size: 13px">
-      测试平台 V3.1 &copy; 2026
+      测试平台 V3.2 &copy; 2026
     </div>
   </div>
 </template>
@@ -139,6 +140,7 @@ const progress = [
   { phase: 'V2.2', content: 'JSON Diff + 错误模式聚合 + 批执行修复', status: '已完成' },
   { phase: 'V3', content: '分类管理（树状 3 层）', status: '已完成' },
   { phase: 'V3.1', content: 'AI 智能生成预期结果 + OpenAPI 批量导入', status: '已完成' },
+  { phase: 'V3.2', content: 'JWT 权限管理（登录/注册/路由守卫）', status: '已完成' },
 ]
 
 const apiList = [
@@ -172,6 +174,9 @@ const apiList = [
   { method: 'POST', path: '/api/ai/expected', desc: 'AI 生成预期结果 (V3.1)' },
   { method: 'POST', path: '/api/testcases/import-openapi', desc: '导入 OpenAPI 解析+AI 填充 (V3.1)' },
   { method: 'POST', path: '/api/testcases/batch-save', desc: '批量保存用例 (V3.1)' },
+  { method: 'POST', path: '/api/auth/login', desc: '用户登录 (V3.2)' },
+  { method: 'POST', path: '/api/auth/register', desc: '用户注册 (V3.2)' },
+  { method: 'GET', path: '/api/auth/me', desc: '获取当前用户 (V3.2)' },
 ]
 
 const matchExamples = [
@@ -223,8 +228,12 @@ const projectStructure = `test-platform/
 │       │   │   ├── CorsConfig.java
 │       │   │   ├── SecurityConfig.java
 │       │   │   ├── RestTemplateConfig.java
+│       │   │   ├── JwtUtil.java              # V3.2
+│       │   │   ├── JwtAuthFilter.java        # V3.2
+│       │   │   ├── PasswordEncoderConfig.java# V3.2
 │       │   │   └── AiConfig.java            # V3.1
 │       │   ├── controller/
+│       │   │   ├── AuthController.java       # V3.2
 │       │   │   ├── AiController.java        # V3.1
 │       │   │   ├── CategoryController.java  # V3
 │       │   │   ├── TestCaseController.java
@@ -232,13 +241,16 @@ const projectStructure = `test-platform/
 │       │   │   ├── TestSuiteController.java
 │       │   │   └── ExecutionReportController.java
 │       │   ├── entity/
+│       │   │   ├── User.java                # V3.2
 │       │   │   ├── TestCase.java
 │       │   │   ├── ExecutionRecord.java
 │       │   │   ├── TestSuite.java
 │       │   │   ├── TestSuiteCase.java
 │       │   │   └── ExecutionReport.java
 │       │   ├── mapper/
+│       │   │   ├── UserMapper.java          # V3.2
 │       │   ├── service/
+│       │   │   ├── UserService.java         # V3.2
 │       │   │   ├── AiService.java           # V3.1
 │       │   │   ├── CategoryService.java     # V3
 │       │   │   ├── ...
@@ -261,6 +273,8 @@ const projectStructure = `test-platform/
 │       ├── main.js
 │       ├── App.vue
 │       ├── api/
+│       │   ├── index.js
+│       │   └── auth.js                      # V3.2
 │       ├── router/
 │       ├── components/
 │       │   ├── CategoryTree.vue             # V3
@@ -268,6 +282,7 @@ const projectStructure = `test-platform/
 │       │   ├── JsonDiffViewer.vue           # V2.2
 │       │   └── ErrorPatternCard.vue         # V2.2
 │       └── views/
+│           ├── Login.vue                    # V3.2
 │           ├── TestCaseList.vue
 │           ├── TestCaseEdit.vue
 │           ├── DocView.vue

@@ -12,7 +12,7 @@
       <el-table-column prop="id" label="ID" width="60"/>
       <el-table-column prop="name" label="名称" min-width="200"/>
       <el-table-column prop="description" label="描述" min-width="300" show-overflow-tooltip/>
-      <el-table-column prop="createTime" label="创建时间" width="170"/>
+      <el-table-column prop="createTime" label="创建时间" width="170" :formatter="formatDate"/>
       <el-table-column label="操作" width="200">
         <template #default="{ row }">
           <el-button size="small" @click="router.push('/suites/' + row.id)">详情</el-button>
@@ -44,6 +44,7 @@ import {onMounted, ref} from 'vue'
 import {suiteApi} from '../api'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import {useRouter} from 'vue-router'
+import { formatDate } from '../utils/format'
 
 const router = useRouter()
 const list = ref([])

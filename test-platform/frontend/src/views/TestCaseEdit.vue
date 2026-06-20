@@ -95,6 +95,10 @@ const form = ref({
 
 const rules = {
   testNo: [{ required: true, message: '编号不能为空', trigger: 'blur' }],
+  name: [
+    { required: true, message: '名称不能为空', trigger: 'blur' },
+    { min: 1, max: 100, message: '名称长度在 1-100 个字符', trigger: 'blur' }
+  ],
   expectedResult: [{ required: true, message: '预期结果不能为空', trigger: 'blur' }]
 }
 

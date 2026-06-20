@@ -5,10 +5,6 @@ import com.testplatform.entity.TestCase;
 
 import java.util.List;
 
-/**
- * @author admin
- * @version 1.0.0
- */
 public interface TestCaseService {
     Result<List<TestCase>> listAll();
 
@@ -21,4 +17,6 @@ public interface TestCaseService {
     Result<Void> update(TestCase testCase);
 
     Result<Void> deleteById(Long id);
+
+    Result<Void> batchSave(List<TestCase> cases);
 }

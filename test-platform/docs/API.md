@@ -976,3 +976,146 @@ POST /testcases/batch-save
   "data": null
 }
 ```
+
+---
+
+## JWT 认证接口 (V3.2)
+
+### 登录
+
+```
+POST /auth/login
+```
+
+**请求体**
+
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| username | String | 是 | 用户名 |
+| password | String | 是 | 密码 |
+
+**请求示例**
+
+```json
+{
+  "username": "admin",
+  "password": "admin123"
+}
+```
+
+**响应示例**
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiJ9...",
+    "user": {
+      "id": 1,
+      "username": "admin",
+      "displayName": "管理员",
+      "role": "ADMIN",
+      "createTime": "2026-06-20T22:27:10"
+    }
+  }
+}
+```
+
+**登录失败**
+
+```json
+{
+  "code": 400,
+  "message": "用户名或密码错误",
+  "data": null
+}
+```
+
+---
+
+### 注册
+
+```
+POST /auth/register
+```
+
+**请求体**
+
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| username | String | 是 | 用户名（唯一） |
+| password | String | 是 | 密码 |
+| displayName | String | 否 | 显示名称 |
+
+**请求示例**
+
+```json
+{
+  "username": "tester01",
+  "password": "test123",
+  "displayName": "测试员1"
+}
+```
+
+**注册成功**
+
+```json
+{
+  "code": 200,
+  "message": "注册成功",
+  "data": null
+}
+```
+
+**用户名冲突**
+
+```json
+{
+  "code": 400,
+  "message": "用户名已存在",
+  "data": null
+}
+```
+
+---
+
+### 获取当前用户
+
+```
+GET /auth/me
+```
+
+**请求头**
+
+| 头 | 值 |
+|---|---|
+| Authorization | Bearer {token} |
+
+**响应示例**
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "id": 1,
+    "username": "admin",
+    "displayName": "管理员",
+    "role": "ADMIN",
+    "createTime": "2026-06-20T22:27:10"
+  }
+}
+```
+
+---
+
+## 认证说明
+
+所有除 `/api/auth/login` 和 `/api/auth/register` 之外的接口都需要在请求头中携带 token：
+
+```
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+```
+
+Token 有效期 **24 小时**，过期后需重新登录。前端自动在 Axios 请求拦截器中添加 token，并在 401 时自动跳转登录页。

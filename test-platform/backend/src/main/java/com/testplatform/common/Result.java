@@ -38,4 +38,16 @@ public class Result<T> {
     public static <T> Result<T> error(int code, String message) {
         return new Result<>(code, message, null);
     }
+
+    public static <T> Result<T> badRequest(String message) {
+        return new Result<>(400, message, null);
+    }
+
+    public static <T> Result<T> notFound(String message) {
+        return new Result<>(404, message, null);
+    }
+
+    public static <T> Result<T> conflict(String message) {
+        return new Result<>(409, message, null);
+    }
 }

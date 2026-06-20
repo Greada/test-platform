@@ -48,7 +48,7 @@ public class ExecutionServiceImpl implements ExecutionService {
         // 1.find testcase
         TestCase testCase = testCaseMapper.selectById(testCaseId);
         if (testCase == null) {
-            return Result.error("testcase not found!");
+            return Result.notFound("testcase not found!");
         }
 
         // 2.execution http

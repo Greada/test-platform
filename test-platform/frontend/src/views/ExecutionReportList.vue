@@ -47,7 +47,7 @@
                        :color="row.passRate >= 80 ? '#67c23a' : '#f56c6c'"/>
         </template>
       </el-table-column>
-      <el-table-column prop="executeTime" label="执行时间" width="180"/>
+      <el-table-column prop="executeTime" label="执行时间" width="180" :formatter="formatDate"/>
       <el-table-column label="操作" width="80">
         <template #default="{ row }">
           <el-button size="small" @click="router.push('/reports/' + row.id)">详情</el-button>
@@ -68,6 +68,7 @@ const reports = ref([])
 const suites = ref([])
 const selectedSuiteId = ref(null)
 const loading = ref(true)
+import { formatDate } from '../utils/format'
 
 const totalReports = computed(() => reports.value.length)
 

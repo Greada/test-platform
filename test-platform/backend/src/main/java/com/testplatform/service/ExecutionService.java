@@ -14,5 +14,5 @@ public interface ExecutionService {
 
     Result<List<ExecutionRecord>> listByTestCaseId(Long testCaseId);
 
-    Result<ExecutionRecord> execute(Long testcaseId, Long reportId);
+    Result<ExecutionRecord> execute(Long testCaseId, Long reportId);
 }

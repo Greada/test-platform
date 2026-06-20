@@ -6,8 +6,12 @@ import com.testplatform.entity.ExecutionRecord;
 import com.testplatform.service.ExecutionService;
 import com.testplatform.service.JsonDiffService;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
@@ -21,7 +25,6 @@ public class ExecutionController {
     private final ExecutionService executionService;
     private final JsonDiffService jsonDiffService;
 
-    @Autowired
     public ExecutionController(ExecutionService executionService, JsonDiffService jsonDiffService) {
         this.executionService = executionService;
         this.jsonDiffService = jsonDiffService;
