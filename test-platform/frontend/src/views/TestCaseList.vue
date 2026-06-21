@@ -117,7 +117,8 @@
         <p style="margin:0 0 8px;color:#606266;font-size:13px">粘贴 OpenAPI JSON 内容（支持 Swagger 2.0 / OpenAPI 3.0）</p>
         <el-input v-model="importJson" type="textarea" :rows="6" placeholder="粘贴 OpenAPI JSON..." />
       </div>
-      <div style="text-align:right;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <el-switch v-model="importUseAi" active-text="AI 生成预期结果（慢，更真实）" inactive-text="本地生成（快，模板值）" />
         <el-button :loading="importLoading" @click="parseOpenApi">解析预览</el-button>
       </div>
       <el-table v-if="importPreview.length > 0" :data="importPreview" border stripe max-height="400">
@@ -167,6 +168,7 @@ const importDialogVisible = ref(false)
 const importJson = ref('')
 const importLoading = ref(false)
 const importPreview = ref([])
+const importUseAi = ref(false)
 
 const filteredAndSearchedList = computed(() => {
   let result = list.value
@@ -332,7 +334,7 @@ async function parseOpenApi() {
   }
   importLoading.value = true
   try {
-    const res = await testCaseApi.importOpenapi({ openapi: importJson.value })
+    const res = await testCaseApi.importOpenapi({ openapi: importJson.value, useAi: importUseAi.value })
     if (res.data.code === 200) {
       importPreview.value = res.data.data || []
       if (importPreview.value.length === 0) {

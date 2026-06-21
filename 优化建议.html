@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全功能测试平台 V2.2 — 优化建议清单</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", sans-serif;
+            background: #f0f2f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 48px 24px 40px;
+            text-align: center;
+        }
+        .header h1 { font-size: 28px; margin-bottom: 8px; }
+        .header p { font-size: 14px; opacity: 0.85; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 24px; }
+
+        /* ---- summary cards ---- */
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        .card {
+            background: #fff;
+            border-radius: 10px;
+            padding: 20px 24px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .card .num { font-size: 32px; font-weight: 700; }
+        .card .label { font-size: 13px; color: #888; margin-top: 4px; }
+        .card-red    { border-left: 4px solid #f56c6c; }
+        .card-red .num { color: #f56c6c; }
+        .card-orange { border-left: 4px solid #e6a23c; }
+        .card-orange .num { color: #e6a23c; }
+        .card-blue   { border-left: 4px solid #409eff; }
+        .card-blue .num { color: #409eff; }
+        .card-green  { border-left: 4px solid #67c23a; }
+        .card-green .num { color: #67c23a; }
+        .card-purple { border-left: 4px solid #9b59b6; }
+        .card-purple .num { color: #9b59b6; }
+
+        /* ---- section ---- */
+        .section {
+            background: #fff;
+            border-radius: 10px;
+            padding: 28px 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .section h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section h2 .icon { font-size: 22px; }
+
+        /* ---- table ---- */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        thead th {
+            background: #fafafa;
+            text-align: left;
+            padding: 12px 14px;
+            font-weight: 600;
+            border-bottom: 2px solid #e4e7ed;
+        }
+        tbody td {
+            padding: 14px;
+            border-bottom: 1px solid #ebeef5;
+            vertical-align: top;
+        }
+        tbody tr:hover { background: #fafcff; }
+        .idx { font-weight: 700; color: #999; text-align: center; width: 44px; }
+
+        /* ---- badges ---- */
+        .badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-critical  { background: #fef0f0; color: #f56c6c; }
+        .badge-important { background: #fdf6ec; color: #e6a23c; }
+        .badge-normal    { background: #e8f4fd; color: #409eff; }
+        .badge-enhance   { background: #f0f9eb; color: #67c23a; }
+
+        /* ---- file ref ---- */
+        .ref {
+            font-family: "SF Mono", "Fira Code", Consolas, "Courier New", monospace;
+            background: #f5f7fa;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #e64980;
+            white-space: nowrap;
+        }
+
+        /* ---- phase table ---- */
+        .phase-tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .phase-p1 { background: #f56c6c; color: #fff; }
+        .phase-p2 { background: #e6a23c; color: #fff; }
+        .phase-p3 { background: #409eff; color: #fff; }
+
+        /* ---- footer ---- */
+        .footer {
+            text-align: center;
+            color: #bbb;
+            font-size: 13px;
+            padding: 32px 24px;
+        }
+
+        /* ---- print ---- */
+        @media print {
+            body { background: #fff; }
+            .header { background: #667eea !important; -webkit-print-color-adjust: exact; }
+            .card, .section { box-shadow: none; border: 1px solid #ddd; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>全功能测试平台 V2.2</h1>
+    <p>优化建议清单 · 2026-06-08 · 基于代码深度审查</p>
+</div>
+
+<div class="container">
+
+    <!-- 统计概览 -->
+    <div class="summary">
+        <div class="card card-red">
+            <div class="num">6</div>
+            <div class="label">严重问题</div>
+        </div>
+        <div class="card card-orange">
+            <div class="num">9</div>
+            <div class="label">重要问题</div>
+        </div>
+        <div class="card card-blue">
+            <div class="num">5</div>
+            <div class="label">一般问题</div>
+        </div>
+        <div class="card card-green">
+            <div class="num">10</div>
+            <div class="label">功能建议</div>
+        </div>
+        <div class="card card-purple">
+            <div class="num">30</div>
+            <div class="label">总计待办项</div>
+        </div>
+    </div>
+
+    <!-- 推荐实施顺序 -->
+    <div class="section">
+        <h2><span class="icon">🗺️</span> 推荐实施顺序（分三阶段）</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:120px">阶段</th>
+                    <th>目标</th>
+                    <th>包含项</th>
+                    <th style="width:80px">预计工作量</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="phase-tag phase-p1">Phase 1</span></td>
+                    <td>安全加固 + 代码质量修复</td>
+                    <td>#1 ~ #10 · 安全问题 6 项 + 后端代码质量 4 项</td>
+                    <td>2-3 天</td>
+                </tr>
+                <tr>
+                    <td><span class="phase-tag phase-p2">Phase 2</span></td>
+                    <td>前端重构 + 架构完善</td>
+                    <td>#11 ~ #20 · 前端代码 5 项 + 架构设计 5 项</td>
+                    <td>3-5 天</td>
+                </tr>
+                <tr>
+                    <td><span class="phase-tag phase-p3">Phase 3</span></td>
+                    <td>功能扩展</td>
+                    <td>#21 ~ #30 · 缺失功能 10 项</td>
+                    <td>按需迭代</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Phase 1：严重问题 -->
+    <div class="section">
+        <h2><span class="icon">🔴</span> Phase 1 — 安全问题（严重，立即处理）</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:44px">#</th>
+                    <th>问题</th>
+                    <th>严重程度</th>
+                    <th>修改建议</th>
+                    <th style="width:180px">涉及文件</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="idx">1</td>
+                    <td><strong>SecurityConfig 完全开放</strong><br>所有接口 permitAll，结合 CORS 允许所有来源，攻击者可伪造请求操作数据</td>
+                    <td><span class="badge badge-critical">严重</span></td>
+                    <td>引入 JWT 认证；对 POST/PUT/DELETE 做鉴权；仅 GET 可放行</td>
+                    <td><span class="ref">SecurityConfig.java</span></td>
+                </tr>
+                <tr>
+                    <td class="idx">2</td>
+                    <td><strong>数据库密码硬编码</strong><br>密码 "1234" 明文存储在代码仓库中</td>
+                    <td><span class="badge badge-critical">严重</span></td>
+                    <td>改用环境变量 <code>${DB_PASSWORD}</code> 或 <code>application-dev.yml</code> + <code>.gitignore</code></td>
+                    <td><span class="ref">application.yml:7</span></td>
+                </tr>
+                <tr>
+                    <td class="idx">3</td>
+                    <td><strong>CORS 允许所有来源</strong><br><code>addAllowedOriginPattern("*")</code> 应限制为前端域名</td>
+                    <td><span class="badge badge-critical">严重</span></td>
+                    <td>改为 <code>config.addAllowedOriginPattern("http://localhost:3000")</code></td>
+                    <td><span class="ref">CorsConfig.java</span></td>
+                </tr>
+                <tr>
+                    <td class="idx">4</td>
+                    <td><strong>6 个空包残留</strong><br>auth/、user/、project/、report/、testcase/、testplan/ 增加维护混淆</td>
+                    <td><span class="badge badge-critical">严重</span></td>
+                    <td>删除空包，或按需实现对应功能</td>
+                    <td><span class="ref">各空包目录</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Phase 1：后端代码质量 -->
+    <div class="section">
+        <h2><span class="icon">🟡</span> Phase 1 — 后端代码质量（重要）</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:44px">#</th>
+                    <th>问题</th>
+                    <th>严重程度</th>
+                    <th>修改建议</th>
+                    <th style="width:200px">涉及文件</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="idx">5</td>
+                    <td><strong>parseHeaders 手动 split 解析 JSON</strong><br>无法处理值中含冒号或嵌套对象的情况</td>
+                    <td><span class="badge badge-important">重要</span></td>
+                    <td>改用 <code>ObjectMapper.readValue(headersJson, Map.class)</code> 反序列化</td>
+                    <td><span class="ref">HttpExecutor.java:64</span></td>
+                </tr>
+                <tr>
+                    <td class="idx">6</td>
+                    <td><strong>resolveStatus 文本降级误判</strong><br><code>actual.contains(expected)</code> 对 JSON 片段可能误匹配</td>
+                    <td><span class="badge badge-important">重要</span></td>
+                    <td>提取 expected 的 key 检查 actual 是否包含所有 key，或禁用文本降级</td>
+                    <td><span class="ref">ExecutionServiceImpl.java:86</span></td>
+                </tr>
+                <tr>
+                    <td class="idx">7</td>
+                    <td><strong>HTTP 无超时配置</strong><br>RestTemplate 无 connectTimeout 和 readTimeout</td>
+                    <td><span class="badge badge-important">重要</span></td>
+                    <td>设置 <code>SimpleClientHttpRequestFactory</code> 的超时时间</td>
+                    <td><span class="ref">RestTemplateConfig.java</span></td>
+                </tr>
+                <tr>
+                    <td class="idx">8</td>
+                    <td><strong>Service 层重复 try-catch 样板代码</strong></td>
+                    <td><span class="badge badge-important">重要</span></td>
+                    <td>提取 BaseServiceImpl 或使用 AOP 统一处理异常</td>
+                    <td><span class="ref">各ServiceImpl.java</span></td>
+                </tr>
+                <tr>
+                    <td class="idx">9</td>
+                    <td><strong>Result.error(500) 泄露内部信息</strong><br><code>e.getMessage()</code> 可能包含堆栈细节</td>
+                    <td><span class="badge badge-important">重要</span></td>
+                    <td>生产环境返回通用提示 <code>"Internal error"</code>，日志中记录详情</td>
+                    <td><span class="ref">GlobalExceptionHandler.java</span></td>
+                </tr>
+                <tr>
+                    <td class="idx">10</td>
+                    <td><strong>executeSuite 无事务保护</strong><br>循环执行中途中途失败导致数据不一致</td>
+                    <td><span class="badge badge-important">重要</span></td>
+                    <td>添加 <code>@Transactional</code> 或实现补偿机制</td>
+                    <td><span class="ref">TestSuiteServiceImpl.java:175</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Phase 2：前端代码 -->
+    <div class="section">
+        <h2><span class="icon">🔵</span> Phase 2 — 前端代码（重要）</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:44px">#</th>
+                    <th>问题</th>
+                    <th>严重程度</th>
+                    <th>修改建议</th>
+                    <th style="width:180px">涉及文件</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="idx">11</td>
+                    <td><strong>无统一 Axios 拦截器</strong><br>各页面各自处理 <code>res.data.data</code>，缺少统一错误提示</td>
+                    <td><span class="badge badge-important">重要</span></td>
+                    <td>新建 <code>utils/request.js</code>：统一拦截、错误提示、401 跳转、加载态</td>
+                    <td><span class="ref">应新建</span></td>
+                </tr>
+                <tr>
+                    <td class="idx">12</td>
+                    <td><strong>无状态管理</strong><br>全局数据（用例列表/套件列表）全在页面级 ref</td>
+                    <td><span class="badge badge-important">重要</span></td>
+                    <td>引入 Pinia，管理全局共享状态</td>
+                    <td><span class="ref">应引入 Pinia</span></td>
+                </tr>
+                <tr>
+                    <td class="idx">13</td>
+                    <td><strong>页面组件过大</strong><br>DocView.vue 243 行，缺乏组件拆分</td>
+                    <td><span class="badge badge-important">重要</span></td>
+                    <td>拆分为子组件（统计卡片、表格等）</td>
+                    <td><span class="ref">DocView.vue</span></td>
+                </tr>
+                <tr>
+                    <td class="idx">14</td>
+                    <td><strong>路由无守卫</strong><br>为后续登录扩展预留</td>
+                    <td><span class="badge badge-important">重要</span></td>
+                    <td>添加 <code>router.beforeEach</code> 导航守卫</td>
+                    <td><span class="ref">router/index.js</span></td>
+                </tr>
+                <tr>
+                    <td class="idx">15</td>
+                    <td><strong>表单无字段长度校验</strong><br>URL 最长 1024、名称 255，前端未做限制</td>
+                    <td><span class="badge badge-important">重要</span></td>
+                    <td>el-form-item 添加 <code>rules</code> 中的 <code>max</code> 规则</td>
+                    <td><span class="ref">TestCaseEdit.vue</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Phase 2：架构设计 -->
+    <div class="section">
+        <h2><span class="icon">🟢</span> Phase 2 — 架构设计（一般）</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:44px">#</th>
+                    <th>问题</th>
+                    <th>严重程度</th>
+                    <th>修改建议</th>
+                    <th style="width:200px">涉及文件</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="idx">16</td>
+                    <td><strong>无日志系统</strong><br>异常只在内存中打印，无法追溯生产问题</td>
+                    <td><span class="badge badge-normal">一般</span></td>
+                    <td>引入 Logback + <code>logback-spring.xml</code>，info/error 分离写入文件</td>
+                    <td><span class="ref">应新建 logback-spring.xml</span></td>
+                </tr>
+                <tr>
+                    <td class="idx">17</td>
+                    <td><strong>无接口文档</strong><br>API 文档靠手写 MD，容易过期</td>
+                    <td><span class="badge badge-normal">一般</span></td>
+                    <td>引入 <code>springdoc-openapi</code> 自动生成 Swagger UI</td>
+                    <td><span class="ref">pom.xml + 依赖</span></td>
+                </tr>
+                <tr>
+                    <td class="idx">18</td>
+                    <td><strong>无单元测试</strong><br>核心匹配逻辑无覆盖</td>
+                    <td><span class="badge badge-normal">一般</span></td>
+                    <td>对 <code>matchValue</code>、<code>compareMaps</code>、<code>resolveStatus</code> 编写 JUnit5 单测</td>
+                    <td><span class="ref">应新建 src/test/</span></td>
+                </tr>
+                <tr>
+                    <td class="idx">19</td>
+                    <td><strong>无多环境配置</strong><br>application.yml 无 dev/prod 区分</td>
+                    <td><span class="badge badge-normal">一般</span></td>
+                    <td>拆分 <code>application-dev.yml</code> / <code>application-prod.yml</code>，配合 <code>spring.profiles.active</code></td>
+                    <td><span class="ref">application.yml</span></td>
+                </tr>
+                <tr>
+                    <td class="idx">20</td>
+                    <td><strong>Mapper XML 目录为空</strong></td>
+                    <td><span class="badge badge-normal">一般</span></td>
+                    <td>确认 BaseMapper 够用的话删除空目录，或迁移到 XML 自定义 SQL</td>
+                    <td><span class="ref">mapper/ 目录</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Phase 3：缺失功能 -->
+    <div class="section">
+        <h2><span class="icon">🟣</span> Phase 3 — 缺失功能建议</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:44px">#</th>
+                    <th>功能</th>
+                    <th>优先级</th>
+                    <th>说明</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="idx">21</td>
+                    <td><strong>用户认证/授权</strong></td>
+                    <td><span class="badge badge-critical">高</span></td>
+                    <td>登录页、JWT Token 签发与校验、角色（admin/runner）、接口鉴权拦截器</td>
+                </tr>
+                <tr>
+                    <td class="idx">22</td>
+                    <td><strong>定时任务/自动化执行</strong></td>
+                    <td><span class="badge badge-important">中</span></td>
+                    <td>Spring Task / Quartz，Cron 表达式配置定时批量执行测试套件</td>
+                </tr>
+                <tr>
+                    <td class="idx">23</td>
+                    <td><strong>API 导入导出</strong></td>
+                    <td><span class="badge badge-important">中</span></td>
+                    <td>Postman Collection JSON 导入用例、测试结果导出 CSV/Excel（Apache POI）</td>
+                </tr>
+                <tr>
+                    <td class="idx">24</td>
+                    <td><strong>用例标签/分组</strong></td>
+                    <td><span class="badge badge-normal">低</span></td>
+                    <td>给用例打标签（api/performance），支持按标签筛选和搜索</td>
+                </tr>
+                <tr>
+                    <td class="idx">25</td>
+                    <td><strong>执行历史趋势图</strong></td>
+                    <td><span class="badge badge-normal">低</span></td>
+                    <td>通过率/失败率趋势折线图（ECharts），按天/周/月统计</td>
+                </tr>
+                <tr>
+                    <td class="idx">26</td>
+                    <td><strong>用例优先级</strong></td>
+                    <td><span class="badge badge-normal">低</span></td>
+                    <td>用例表新增 priority 字段（高/中/低），套件执行时按优先级排序</td>
+                </tr>
+                <tr>
+                    <td class="idx">27</td>
+                    <td><strong>WebSocket 实时推送</strong></td>
+                    <td><span class="badge badge-normal">低</span></td>
+                    <td>套件执行时前端实时看到进度（已通过/当前/剩余），替代轮询</td>
+                </tr>
+                <tr>
+                    <td class="idx">28</td>
+                    <td><strong>失败重试</strong></td>
+                    <td><span class="badge badge-normal">低</span></td>
+                    <td>报告详情页，单条用例支持一键重试，记录新执行记录</td>
+                </tr>
+                <tr>
+                    <td class="idx">29</td>
+                    <td><strong>Mock 数据</strong></td>
+                    <td><span class="badge badge-normal">低</span></td>
+                    <td>自定义 Mock 接口，支持返回固定 JSON/延迟/随机状态码，无后端时测试</td>
+                </tr>
+                <tr>
+                    <td class="idx">30</td>
+                    <td><strong>Docker 容器化部署</strong></td>
+                    <td><span class="badge badge-normal">低</span></td>
+                    <td>后端 Dockerfile + 前端 Nginx 镜像 + docker-compose.yml，一键拉起</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<div class="footer">
+    全功能测试平台 V2.2 · 优化建议清单 · 2026-06-08
+</div>
+
+</body>
+</html>

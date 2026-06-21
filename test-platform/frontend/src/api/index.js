@@ -38,7 +38,7 @@ export const testCaseApi = {
     save: (data) => api.post('/testcases', data),
     update: (id, data) => api.put(`/testcases/${id}`, data),
     delete: (id) => api.delete(`/testcases/${id}`),
-    importOpenapi: (data) => api.post('/testcases/import-openapi', data),
+    importOpenapi: (data) => api.post('/testcases/import-openapi', data, { timeout: data.useAi ? 120000 : 30000 }),
     batchSave: (cases) => api.post('/testcases/batch-save', cases)
 }
 

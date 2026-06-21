@@ -1,5 +1,6 @@
 package com.testplatform.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.testplatform.config.AiConfig;
@@ -11,10 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author admin
@@ -97,5 +95,49 @@ public class AiService {
                         + "Use realistic values for all fields. Return ONLY valid JSON, no extra text:\n"
                         + schemaJson;
         return callAgnes(prompt);
+    }
+
+    public List<String> generateExpectedBatch(List<String> schemaJsons)
+            throws JsonProcessingException {
+        int batchSize = 15;
+        String[] results = new String[schemaJsons.size()];
+        Arrays.fill(results, "{}");
+
+        for (int start = 0; start < schemaJsons.size(); start += batchSize) {
+            int end = Math.min(start + batchSize, schemaJsons.size());
+            List<String> chunk = schemaJsons.subList(start, end);
+
+            StringBuilder builder = new StringBuilder();
+            builder.append("Generate a sample JSON response body for each of the following ")
+                    .append(chunk.size())
+                    .append(" JSON Schemas. Use realistic values.\n")
+                    .append("Return a JSON array of objects, each with format:\n")
+                    .append("  {\"index\": <number>, \"response\": <generated JSON>}\n")
+                    .append("Include ALL items in original order. Return ONLY valid JSON.\n\n");
+
+            for (int i = 0; i < chunk.size(); i++) {
+                builder.append("--- Schema ")
+                        .append(i)
+                        .append(" ---\n")
+                        .append(chunk.get(i))
+                        .append("\n\n");
+            }
+
+            try {
+                String raw = callAgnes(builder.toString());
+                JsonNode root = objectMapper.readTree(raw);
+                for (JsonNode item : root) {
+                    int idxInChunk = item.get("index").asInt();
+                    int globalIdx = start + idxInChunk;
+                    if (globalIdx < results.length) {
+                        results[globalIdx] = item.get("response").toString();
+                    }
+                }
+            } catch (Exception e) {
+                // 单批失败不影响其他批次
+            }
+        }
+
+        return Arrays.asList(results);
     }
 }

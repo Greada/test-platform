@@ -7,27 +7,18 @@ import com.testplatform.entity.TestCase;
 import com.testplatform.service.AiService;
 import com.testplatform.service.TestCaseService;
 import com.testplatform.util.OpenApiParser;
+import com.testplatform.util.SchemaToJsonGenerator;
 
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
-/**
- * @author admin
- * @version 1.0.0
- */
 @RestController
 @RequestMapping("/api/testcases")
 public class TestCaseController {
@@ -72,13 +63,29 @@ public class TestCaseController {
     }
 
     @PostMapping("/import-openapi")
-    public Result<List<TestCase>> importOpenapi(@RequestBody Map<String, String> req) {
+    public Result<List<TestCase>> importOpenapi(@RequestBody Map<String, Object> req) {
         try {
-            String openapiJson = req.get("openapi");
+            String openapiJson = (String) req.get("openapi");
+            boolean useAi = req.containsKey("useAi") && Boolean.TRUE.equals(req.get("useAi"));
+
             List<EndpointDef> endpoints = OpenApiParser.parse(openapiJson);
             List<TestCase> cases = new ArrayList<>();
+
+            List<String> schemas =
+                    endpoints.stream()
+                            .map(EndpointDef::getResponseSchema)
+                            .collect(Collectors.toList());
+
+            List<String> expectedResults;
+            if (useAi) {
+                expectedResults = aiService.generateExpectedBatch(schemas);
+            } else {
+                expectedResults = SchemaToJsonGenerator.batchGenerate(schemas);
+            }
+
             int seq = 1;
-            for (EndpointDef def : endpoints) {
+            for (int i = 0; i < endpoints.size(); i++) {
+                EndpointDef def = endpoints.get(i);
                 TestCase tc = new TestCase();
                 tc.setTestNo("AUTO-" + String.format("%03d", seq++));
                 tc.setName(def.getName());
@@ -86,8 +93,7 @@ public class TestCaseController {
                 tc.setRequestMethod(def.getRequestMethod());
                 tc.setRequestHeaders(def.getRequestHeaders());
                 tc.setRequestParams(def.getRequestParams());
-                String expected = aiService.generateExpectedFromSchema(def.getResponseSchema());
-                tc.setExpectedResult(expected);
+                tc.setExpectedResult(expectedResults.get(i));
                 cases.add(tc);
             }
             return Result.success(cases);

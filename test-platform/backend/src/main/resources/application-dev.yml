@@ -1,0 +1,6 @@
+spring:
+  datasource:
+    password: 1234
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl

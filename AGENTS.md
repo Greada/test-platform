@@ -6,7 +6,7 @@
 
 ## 技术栈
 
-Spring Boot 2.7.18 + MyBatis-Plus 3.5.5 + MySQL 5.7 + Vue 3 + Element Plus + Vite 5
+Spring Boot 3.3.6 + MyBatis-Plus 3.5.9 + MySQL 5.7 + Vue 3 + Element Plus + Vite 5
 
 ## 启动命令
 
@@ -20,7 +20,7 @@ test-platform/backend/src/main/resources/sql/init_v2.sql
 test-platform/backend/src/main/resources/sql/init_v3.sql
 
 # 后端 — 在 test-platform/ 下
-mvn package -DskipTests -pl backend && java -jar backend/target/test-platform-backend-1.0.0.jar
+mvn package -D"maven.test.skip=true" -pl backend && java -jar backend/target/test-platform-backend-1.0.0.jar
 # 或直接运行 TestPlatformApplication.main()，端口 8080
 
 # 前端 — 在 test-platform/frontend/ 下
@@ -71,10 +71,15 @@ test-platform/
 - `SecurityConfig` 路径匹配曾为 `"*/**"` → 应为 `"/**"`（导致 403）
 - 全等匹配已改为 JSON 子集匹配，旧逻辑已被覆盖
 - `JwtUtil.parseToken` 必须是 `parseClaimsJws`（带 `s`），不是 `parseClaimsJwt`（该 API 不校验签名）
+- Spring Boot 3: `antMatchers` → `requestMatchers`；`HttpComponentsClientHttpRequestFactory` → `SimpleClientHttpRequestFactory`（Duration 替代毫秒）
+- jjwt 0.9.1 → 0.12.6: `SigningKeyResolverAdapter` → 移除了，直接 `Keys.hmacShaKeyFor`；`parseClaimsJws` → `parseSignedClaims`
+- MyBatis-Plus 3.5.9: `BaseMapper.insert(T)` 与 `insert(Collection<T>)` 重载冲突 → 测试文件需显式类型转换或用 `-D"maven.test.skip=true"` 跳过测试编译
+- PowerShell 下 Maven `-D` 属性需引号包裹（如 `-D"maven.test.skip=true"`）否则被解析为生命周期阶段
+- 未用 `spring-boot-starter-parent` 时，`spring-boot-maven-plugin` 需显式声明 `<goal>repackage</goal>` 否则生成普通 JAR 而非 fat JAR
 
 ## 注意事项
 
-- **无测试**：`backend/src/test/java/` 为空，无自动化测试
+- **有测试但无法编译**：`backend/src/test/java/` 下有测试文件，但因 MyBatis-Plus 3.5.9 `BaseMapper.insert(T)` 与 `insert(Collection<T>)` 重载冲突无法编译，需用 `-D"maven.test.skip=true"` 跳过
 - **无 CI/CD**：无 Maven Wrapper、无 GitHub Actions、无 Makefile
 - **无 Linter/Formatter**：前端无 ESLint/Prettier，后端无 Checkstyle
 - 前端开发时确保后端已启动（vite proxy `/api` → localhost:8080）

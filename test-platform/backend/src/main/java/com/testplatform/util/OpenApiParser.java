@@ -15,6 +15,7 @@ import java.util.Map;
  */
 public class OpenApiParser {
     private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static final int MAX_REF_DEPTH = 5;
 
     public static List<EndpointDef> parse(String openapiJson) {
         ArrayList<EndpointDef> result = new ArrayList<>();
@@ -22,6 +23,7 @@ public class OpenApiParser {
             JsonNode root = objectMapper.readTree(openapiJson);
 
             String baseUrl = extractBaseUrl(root);
+            JsonNode components = root.get("components");
 
             JsonNode paths = root.get("paths");
             if (paths == null || !paths.isObject()) {
@@ -45,11 +47,11 @@ public class OpenApiParser {
                     JsonNode details = m.getValue();
                     EndpointDef def = new EndpointDef();
                     def.setName(extractName(details));
-                    def.setRequestUrl(baseUrl + path);
+                    def.setRequestUrl((baseUrl + path).replaceAll("\\{[^}]+\\}", "1"));
                     def.setRequestMethod(method);
                     def.setRequestHeaders("{\"Content-Type\":\"application/json\"}");
-                    def.setRequestParams(extractSchema(details, "requestBody"));
-                    def.setResponseSchema(extractSchema(details, "responses"));
+                    def.setRequestParams(extractSchema(details, "requestBody", components));
+                    def.setResponseSchema(extractSchema(details, "responses", components));
                     result.add(def);
                 }
             }
@@ -61,34 +63,92 @@ public class OpenApiParser {
         return result;
     }
 
-    private static String extractSchema(JsonNode details, String type) {
+    private static String extractSchema(JsonNode details, String type, JsonNode components) {
         try {
+            JsonNode content;
             if ("requestBody".equals(type)) {
-                JsonNode content = details.path("requestBody").path("content");
-                JsonNode jsonContent = content.get("application/json");
-                if (jsonContent != null) {
-                    JsonNode schema = jsonContent.get("schema");
-                    if (schema != null) {
-                        return objectMapper
-                                .writerWithDefaultPrettyPrinter()
-                                .writeValueAsString(schema);
-                    }
-                }
+                content = details.path("requestBody").path("content");
             } else if ("responses".equals(type)) {
-                JsonNode response = details.path("responses").path("200").path("content");
-                JsonNode jsonContent = response.get("application/json");
-                if (jsonContent != null) {
-                    JsonNode schema = jsonContent.get("schema");
-                    if (schema != null) {
-                        return objectMapper
-                                .writerWithDefaultPrettyPrinter()
-                                .writeValueAsString(schema);
-                    }
+                content = details.path("responses").path("200").path("content");
+            } else {
+                return "{}";
+            }
+
+            if (content == null || !content.isObject()) {
+                return "{}";
+            }
+
+            // 先找 application/json，找不到就取第一个 content type
+            JsonNode mediaType = content.get("application/json");
+            if (mediaType == null) {
+                Iterator<Map.Entry<String, JsonNode>> fields = content.fields();
+                if (fields.hasNext()) {
+                    mediaType = fields.next().getValue();
                 }
             }
+
+            if (mediaType == null) {
+                return "{}";
+            }
+
+            JsonNode schema = mediaType.get("schema");
+            if (schema == null) {
+                return "{}";
+            }
+
+            JsonNode resolved = resolveRef(schema, components, 0);
+            return objectMapper
+                    .writerWithDefaultPrettyPrinter()
+                    .writeValueAsString(resolved);
         } catch (Exception ignored) {
         }
         return "{}";
+    }
+
+    /**
+     * 递归解析 $ref 引用，将引用替换为实际定义内容。
+     */
+    private static JsonNode resolveRef(JsonNode node, JsonNode components, int depth) {
+        if (node == null || depth > MAX_REF_DEPTH) {
+            return objectMapper.getNodeFactory().objectNode();
+        }
+
+        if (node.isObject() && node.has("$ref")) {
+            String ref = node.get("$ref").asText();
+            if (ref.startsWith("#/components/schemas/")) {
+                String schemaName = ref.substring("#/components/schemas/".length());
+                JsonNode target = null;
+                if (components != null) {
+                    target = components.path("schemas").path(schemaName);
+                }
+                if (target != null && !target.isMissingNode()) {
+                    // 用浅拷贝避免修改原始树，然后递归解析
+                    JsonNode resolved = target.deepCopy();
+                    return resolveRef(resolved, components, depth + 1);
+                }
+            }
+            return node;
+        }
+
+        if (node.isObject()) {
+            Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
+            while (fields.hasNext()) {
+                Map.Entry<String, JsonNode> entry = fields.next();
+                JsonNode child = resolveRef(entry.getValue(), components, depth);
+                if (child != entry.getValue()) {
+                    ((com.fasterxml.jackson.databind.node.ObjectNode) node).set(entry.getKey(), child);
+                }
+            }
+        } else if (node.isArray()) {
+            for (int i = 0; i < node.size(); i++) {
+                JsonNode child = resolveRef(node.get(i), components, depth);
+                if (child != node.get(i)) {
+                    ((com.fasterxml.jackson.databind.node.ArrayNode) node).set(i, child);
+                }
+            }
+        }
+
+        return node;
     }
 
     private static String extractName(JsonNode details) {
