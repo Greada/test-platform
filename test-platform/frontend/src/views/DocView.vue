@@ -6,7 +6,7 @@
     <el-divider/>
 
     <h2>项目定位</h2>
-    <p>一站式测试管理平台 V3.1，聚焦测试用例管理、执行、报告、日志展示、测试套件、执行报告统计、JSON Diff 分析、错误模式聚合、分类管理与 AI 智能生成预期结果。</p>
+    <p>一站式测试管理平台 V3.2，聚焦测试用例管理、执行、报告、日志展示、测试套件、执行报告统计、JSON Diff 分析、错误模式聚合、分类管理、AI 智能生成预期结果、OpenAPI 批量导入与 JWT 权限管理。</p>
 
     <h2>技术栈</h2>
     <el-table :data="techStack" border stripe size="small" style="width: 100%">
@@ -125,9 +125,9 @@ const docNav = [
 ]
 
 const techStack = [
-  { layer: '语言', tech: 'Java', version: '1.8' },
-  { layer: '框架', tech: 'Spring Boot', version: '2.7.18' },
-  { layer: 'ORM', tech: 'MyBatis-Plus', version: '3.5.5' },
+  { layer: '语言', tech: 'Java', version: '17' },
+  { layer: '框架', tech: 'Spring Boot', version: '3.3.6' },
+  { layer: 'ORM', tech: 'MyBatis-Plus', version: '3.5.9' },
   { layer: '数据库', tech: 'MySQL', version: '5.7+ (驱动 8.0.33)' },
   { layer: '前端', tech: 'Vue 3 + Element Plus', version: '-' },
   { layer: '构建', tech: 'Maven (父子模块)', version: '-' },
@@ -256,8 +256,9 @@ const projectStructure = `test-platform/
 │       │   │   ├── ...
 │       │   │   ├── JsonDiffService.java     # V2.2
 │       │   │   └── ErrorPatternService.java # V2.2
-│       │   └── util/
-│       │       └── OpenApiParser.java       # V3.1
+│       │       └── util/
+│       │           ├── OpenApiParser.java       # V3.1
+│       │           └── SchemaToJsonGenerator.java # V3.1
 │       └── resources/
 │           ├── application.yml
 │           └── sql/
