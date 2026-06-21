@@ -904,8 +904,9 @@ POST /testcases/import-openapi
 **请求体**
 
 | 字段 | 类型 | 必填 | 说明 |
-|---|---|---|---|
+|---|---|---|---|---|
 | openapi | String | 是 | OpenAPI JSON 原文 |
+| useAi | Boolean | 否 | 是否使用 AI 生成预期结果（默认 false，本地 schema→JSON 生成） |
 
 **请求示例**
 

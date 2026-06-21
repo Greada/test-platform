@@ -24,9 +24,9 @@
 
 | 层 | 技术 | 版本 |
 |---|---|---|
-| 语言 | Java | 1.8 |
-| 框架 | Spring Boot | 2.7.18 |
-| ORM | MyBatis-Plus | 3.5.5 |
+| 语言 | Java | 17 |
+| 框架 | Spring Boot | 3.3.6 |
+| ORM | MyBatis-Plus | 3.5.9 |
 | 数据库 | MySQL | 5.7+ (驱动 8.0.33) |
 | 前端 | Vue 3 + Element Plus | — |
 | 构建 | Maven (父子模块) | — |
@@ -105,8 +105,10 @@ test-platform/
 │       │           ├── ExecutionServiceImpl.java
 │       │           ├── TestSuiteServiceImpl.java          # V2.1 新增
 │       │           └── ExecutionReportServiceImpl.java    # V2.1 新增
-│       │   └── util/
-│       │       └── OpenApiParser.java         # V3.1 OpenAPI JSON 解析器
+│       │       └── util/
+│       │           ├── OpenApiParser.java         # V3.1 OpenAPI JSON 解析器
+│       │           └── SchemaToJsonGenerator.java # V3.1 JSON Schema → 模板 JSON
+│       │   ├── test/                              # 91 个单元测试 (Mockito + JUnit 5)
 │       └── resources/
 │           ├── application.yml
 │           └── sql/
@@ -231,9 +233,10 @@ test-platform/
 | 2 | AiController：POST /api/ai/expected 预测预期结果 | ✅ |
 | 3 | 编辑面板"AI 生成"按钮，自动回填 expectedResult | ✅ |
 | 4 | OpenApiParser 手动解析 OpenAPI JSON | ✅ |
-| 5 | 批量导入：POST /import-openapi 解析 + AI 填充预期结果 | ✅ |
-| 6 | 批量入库：POST /batch-save | ✅ |
-| 7 | 前端 OpenAPI 导入对话框（粘贴→解析→预览→确认） | ✅ |
+| 5 | 批量导入：POST /import-openapi 解析 + AI/本地填充预期结果（useAi 开关） | ✅ |
+| 6 | SchemaToJsonGenerator：JSON Schema → 模板 JSON（本地生成，默认模式） | ✅ |
+| 7 | 批量入库：POST /batch-save | ✅ |
+| 8 | 前端 OpenAPI 导入对话框（粘贴→解析→AI/本地切换→预览→确认） | ✅ |
 
 ### V3.2 — 已完成：JWT 权限管理
 
