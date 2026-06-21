@@ -30,7 +30,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, defineEmits } from 'vue'
+import { ref, onMounted } from 'vue'
 import { categoryApi } from '../api'
 import { ElMessage } from 'element-plus'
 import { Setting, Loading } from '@element-plus/icons-vue'
