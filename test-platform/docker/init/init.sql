@@ -96,8 +96,10 @@ CREATE TABLE IF NOT EXISTS test_category (
     id          BIGINT(20)   NOT NULL AUTO_INCREMENT,
     name        VARCHAR(100) NOT NULL,
     parent_id   BIGINT(20)   DEFAULT NULL,
+    level       INT(11)      DEFAULT 1 COMMENT '层级（1/2/3）',
     sort_order  INT(11)      DEFAULT 0,
     create_time DATETIME     DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     KEY idx_parent (parent_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
