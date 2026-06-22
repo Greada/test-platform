@@ -1,3 +1,5 @@
+SET NAMES utf8mb4;
+
 -- V1: 核心表
 CREATE TABLE IF NOT EXISTS test_case
 (
