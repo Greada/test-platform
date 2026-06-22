@@ -81,3 +81,4 @@ erDiagram
 | V3 | 新增 test_category，test_case 加 category_id |
 | V3.1 | 无 schema 变更（纯前后端 + AI 集成） |
 | V3.2 | 新增 user 表 |
+| Docker | 合并 DDL 为 `docker/init/init.sql` 单入口（V1+V2+V3+种子数据+SET NAMES utf8mb4） |

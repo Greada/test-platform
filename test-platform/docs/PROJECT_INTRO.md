@@ -45,100 +45,42 @@ test-platform/
 │   ├── 阶段总结报告.md                   # 阶段总结报告 🏁
 │   └── resume.html                      # 开发恢复指南 🔄
 ├── backend/
-│   ├── pom.xml                          # 子模块 POM
+│   ├── pom.xml
+│   ├── Dockerfile                        # 多阶段 Spring Boot 镜像
 │   └── src/main/
 │       ├── java/com/testplatform/
 │       │   ├── TestPlatformApplication.java
-│       │   ├── common/
-│       │   │   ├── Result.java          # 统一响应体
-│       │   │   ├── HttpResult.java      # HTTP 响应包装类（body + duration + statusCode）
-│   │   │   ├── JsonDiffResult.java   # V2.2 新增
-│   │   │   ├── ErrorPatternItem.java # V2.2 新增
-│   │   │   ├── ErrorPatternResult.java# V2.2 新增
-│   │   │   └── EndpointDef.java         # V3.1 新增 OpenAPI 解析 DTO
-│       │   │   └── exception/GlobalExceptionHandler.java
-│       │   ├── config/
-│       │   │   ├── CorsConfig.java      # CORS 跨域配置
-│       │   │   ├── SecurityConfig.java  # Spring Security 配置
-│       │   │   ├── RestTemplateConfig.java
-│       │   │   ├── JwtUtil.java              # V3.2 JWT 工具类
-│       │   │   ├── JwtAuthFilter.java        # V3.2 JWT 认证过滤器
-│       │   │   ├── PasswordEncoderConfig.java# V3.2 BCrypt 加密
-│       │   │   └── AiConfig.java             # V3.1 Agnes AI 配置
-│       │   ├── dto/
-│       │   │   └── CategoryNode.java         # V3 树形 DTO
-│       │   ├── controller/
-│       │   │   ├── AuthController.java            # V3.2 JWT 认证
-│       │   │   ├── AiController.java           # V3.1 AI 生成预期结果
-│       │   │   ├── CategoryController.java   # V3 分类 CRUD
-│       │   │   ├── ExecutionController.java
-│       │   │   ├── TestSuiteController.java          # V2.1 新增
-│       │   │   └── ExecutionReportController.java    # V2.1 新增
-│       │   ├── entity/
-│       │   │   ├── User.java                         # V3.2 用户实体
-│       │   │   ├── TestCase.java
-│       │   │   ├── ExecutionRecord.java
-│       │   │   ├── TestSuite.java                    # V2.1 新增
-│       │   │   ├── TestSuiteCase.java                # V2.1 新增
-│       │   │   └── ExecutionReport.java              # V2.1 新增
-│       │   ├── mapper/
-│       │   │   ├── UserMapper.java                  # V3.2
-│       │   │   ├── CategoryMapper.java         # V3
-│       │   │   ├── TestCaseMapper.java
-│       │   │   ├── ExecutionRecordMapper.java
-│       │   │   ├── TestSuiteMapper.java              # V2.1 新增
-│       │   │   ├── TestSuiteCaseMapper.java          # V2.1 新增
-│       │   │   └── ExecutionReportMapper.java        # V2.1 新增
-│       │   └── service/
-│       │       ├── UserService.java              # V3.2 用户认证
-│       │       ├── AiService.java              # V3.1 调 Agnes AI API
-│       │       ├── CategoryService.java            # V3
-│       │       ├── TestCaseService.java
-│       │       ├── ExecutionService.java
-│       │       ├── HttpExecutor.java
-│       │       ├── TestSuiteService.java             # V2.1 新增
-│       │       ├── ExecutionReportService.java       # V2.1 新增
-│       │       └── impl/
-│       │           ├── UserServiceImpl.java       # V3.2
-│       │           ├── CategoryServiceImpl.java    # V3
-│       │           ├── TestCaseServiceImpl.java
-│       │           ├── ExecutionServiceImpl.java
-│       │           ├── TestSuiteServiceImpl.java          # V2.1 新增
-│       │           └── ExecutionReportServiceImpl.java    # V2.1 新增
-│       │       └── util/
-│       │           ├── OpenApiParser.java         # V3.1 OpenAPI JSON 解析器
-│       │           └── SchemaToJsonGenerator.java # V3.1 JSON Schema → 模板 JSON
-│       │   ├── test/                              # 91 个单元测试 (Mockito + JUnit 5)
+│       │   ├── common/ (Result + HttpResult + JsonDiffResult + ErrorPattern + EndpointDef + GlobalExceptionHandler)
+│       │   ├── config/ (Cors + Security + RestTemplate + JwtUtil + JwtAuthFilter + PasswordEncoder + AiConfig)
+│       │   ├── dto/CategoryNode.java
+│       │   ├── controller/ (Auth + Ai + Category + Execution + TestCase + TestSuite + ExecutionReport)
+│       │   ├── entity/ (User + TestCase + ExecutionRecord + TestCategory + TestSuite + TestSuiteCase + ExecutionReport)
+│       │   ├── mapper/ (7 个 Mapper)
+│       │   ├── service/ (10 个接口 + 6 个实现)
+│       │   └── util/ (OpenApiParser + SchemaToJsonGenerator)
 │       └── resources/
 │           ├── application.yml
-│           └── sql/
-│               ├── init_v1.sql
-│               ├── init_v2.sql                    # V2.1 新增
-│               ├── init_v3.sql                    # V3 新增
-│               ├── init_v3.sql                    # V3.2 新增 user 表
-│               └── insert_test_case_v1.sql
+│           └── sql/ (init_v1 + init_v2 + init_v3 + insert_test_case_v1)
+├── docker/
+│   └── init/init.sql                     # Docker 入口 SQL（合并 V1+V2+V3+种子数据）
+├── docker-compose.yml                    # mysql + backend + frontend 三服务编排
+├── .env.example                          # 环境变量模板（DB_PASSWORD / AGNES_API_KEY）
+├── .dockerignore                         # 构建排除文件
+├── docs/ (7 个文档)
 └── frontend/
+    ├── Dockerfile                        # Vue 3 + Nginx 多阶段构建
+    ├── nginx.conf                        # SPA 路由 + /api 反向代理
     ├── index.html
     ├── package.json
     ├── vite.config.js
     └── src/
-        ├── main.js
-        ├── App.vue
-        ├── api/
-        │   └── index.js
-        ├── router/
-        │   └── index.js
-        └── views/
-            ├── TestCaseList.vue
-            ├── TestCaseEdit.vue
-            ├── ExecutionList.vue
-            ├── DocView.vue
-│           ├── JsonDiffViewer.vue                # V2.2 新增
-│           ├── ErrorPatternCard.vue              # V2.2 新增
-            ├── TestSuiteList.vue                # V2.1 新增
-            ├── TestSuiteDetail.vue              # V2.1 新增
-            ├── ExecutionReportList.vue          # V2.1 新增
-            └── ExecutionReportDetail.vue        # V2.1 新增
+        ├── main.js + App.vue
+        ├── api/index.js + auth.js
+        ├── router/index.js
+        ├── utils/format.js
+        ├── components/ (CategoryTree + CategoryDialog + JsonDiffViewer + ErrorPatternCard)
+        └── views/ (Login + TestCaseList + TestCaseEdit + ExecutionList + DocView
+                     + TestSuiteList + TestSuiteDetail + ExecutionReportList + ExecutionReportDetail)
 ```
 
 ## 开发进度
@@ -152,6 +94,7 @@ test-platform/
 | V3   | 分类管理（树状 3 层） | ✅ 已完成 |
 | V3.1 | AI 智能生成预期结果 + OpenAPI 批量导入 | ✅ 已完成 |
 | V3.2 | JWT 权限管理（登录/注册/路由守卫） | ✅ 已完成 |
+| Docker | Docker 容器化（Dockerfile + Nginx + docker-compose） | ✅ 已完成 |
 
 ### Phase 1 — 已完成文件
 
@@ -442,16 +385,25 @@ expected_result 是否为合法 JSON？
 
 ## 启动方式
 
+### Docker 部署（推荐）
+
+```bash
+cp .env.example .env
+# 编辑 .env 填入 DB_PASSWORD
+docker compose up -d
+```
+
+访问 `http://服务器IP:80`（前端）/ `http://服务器IP:8080`（后端 API）
+
+数据库端口映射 `3307:3306`（避免本地 MySQL 冲突），MySQL 字符集 `utf8mb4`。
+
+### 本地开发
+
 **后端**：运行 `TestPlatformApplication.main()`，监听 `http://localhost:8080`
 
 **前端**：在 `frontend/` 目录执行 `npm run dev`，访问 `http://localhost:3000`
 
-**数据库**：
-- V1 基础：执行 `init_v1.sql` + `insert_test_case_v1.sql`
-- V2.1 升级：执行 `init_v2.sql`（在 V1 基础上新增表 + 加字段）
-- V3 升级：执行 `init_v3.sql`
-- V3.2 升级：执行 `sql/init_v3.sql` 中的 user 表部分
-- MySQL 连接默认 `root:1234@localhost:3306`
+**数据库**：依次执行 `init_v1.sql` → `init_v2.sql` → `init_v3.sql`，然后 `insert_test_case_v1.sql`（可选种子数据）。MySQL 连接默认 `root:1234@localhost:3306`。
 
 ## AI 接入（V3.1）
 

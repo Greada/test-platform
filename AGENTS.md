@@ -98,44 +98,26 @@ test-platform/
 ### test-platform/
 | ID | Type | Title | Date |
 |----|------|-------|------|
-| e26fb229-7c51-4b40-9bfa-d3876f799958 | ⚖️ decision | 后续更新文档的维护清单 | 2026-06-14 |
+| 76cee9d7-3b5c-42e7-a4b2-01b16cf3c03d | 🟣 feature | Docker 容器化测试工程 | 2026-06-22 |
+| f31040b3-7ab3-458c-aa15-23e42457e8d8 | 🟣 feature | CI/CD 流水线落地集成 | 2026-06-22 |
 
-**Key concepts:** documentation, maintenance, versioning, docs-checklist
+**Key concepts:** docker, containerization, docker-compose, multi-stage-build, nginx, mysql, spa, future-roadmap, ci-cd, github-actions
 
-**Recent decisions:** 后续更新文档的维护清单
-
-### test-platform\backend\src\main\resources/
+### test-platform\backend/
 | ID | Type | Title | Date |
 |----|------|-------|------|
-| 3c769077-f4ce-4173-8163-fbd539bb69b7 | 🟣 feature | AI 接入 + OpenAPI 导入实施计划 | 2026-06-14 |
+| 76cee9d7-3b5c-42e7-a4b2-01b16cf3c03d | 🟣 feature | Docker 容器化测试工程 | 2026-06-22 |
+| f31040b3-7ab3-458c-aa15-23e42457e8d8 | 🟣 feature | CI/CD 流水线落地集成 | 2026-06-22 |
 
-**Key concepts:** ai-integration, agnes-api, openapi-import, backend-guide, frontend-code
+**Key concepts:** docker, containerization, docker-compose, multi-stage-build, nginx, mysql, spa, future-roadmap, ci-cd, github-actions
 
-### test-platform\docs/
+### test-platform\frontend/
 | ID | Type | Title | Date |
 |----|------|-------|------|
-| e26fb229-7c51-4b40-9bfa-d3876f799958 | ⚖️ decision | 后续更新文档的维护清单 | 2026-06-14 |
+| 76cee9d7-3b5c-42e7-a4b2-01b16cf3c03d | 🟣 feature | Docker 容器化测试工程 | 2026-06-22 |
+| f31040b3-7ab3-458c-aa15-23e42457e8d8 | 🟣 feature | CI/CD 流水线落地集成 | 2026-06-22 |
 
-**Key concepts:** documentation, maintenance, versioning, docs-checklist
-
-**Recent decisions:** 后续更新文档的维护清单
-
-### test-platform\frontend\src\api/
-| ID | Type | Title | Date |
-|----|------|-------|------|
-| 3c769077-f4ce-4173-8163-fbd539bb69b7 | 🟣 feature | AI 接入 + OpenAPI 导入实施计划 | 2026-06-14 |
-
-**Key concepts:** ai-integration, agnes-api, openapi-import, backend-guide, frontend-code
-
-### test-platform\frontend\src\views/
-| ID | Type | Title | Date |
-|----|------|-------|------|
-| 3c769077-f4ce-4173-8163-fbd539bb69b7 | 🟣 feature | AI 接入 + OpenAPI 导入实施计划 | 2026-06-14 |
-| e26fb229-7c51-4b40-9bfa-d3876f799958 | ⚖️ decision | 后续更新文档的维护清单 | 2026-06-14 |
-
-**Key concepts:** ai-integration, agnes-api, openapi-import, backend-guide, frontend-code, documentation, maintenance, versioning, docs-checklist
-
-**Recent decisions:** 后续更新文档的维护清单
+**Key concepts:** docker, containerization, docker-compose, multi-stage-build, nginx, mysql, spa, future-roadmap, ci-cd, github-actions
 
 💡 *Use `mem-find` to search full details. Use `mem-create` to save important decisions.*
 <!-- /open-mem-context -->
