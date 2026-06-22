@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS test_case
     request_headers TEXT,
     request_params  TEXT,
     expected_result TEXT    NOT NULL,
+    category_id     BIGINT(20)             DEFAULT NULL COMMENT '所属分类ID',
     create_time     DATETIME               DEFAULT CURRENT_TIMESTAMP,
     update_time     DATETIME               DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
