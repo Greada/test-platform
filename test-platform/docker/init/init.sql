@@ -74,11 +74,11 @@ CREATE TABLE IF NOT EXISTS execution_report
   DEFAULT CHARSET = utf8mb4;
 
 ALTER TABLE execution_record
-    ADD COLUMN IF NOT EXISTS report_id        BIGINT(20)   DEFAULT NULL COMMENT '关联报告ID' AFTER test_case_id,
-    ADD COLUMN IF NOT EXISTS test_no          VARCHAR(20)  DEFAULT NULL COMMENT '快照-用例编号' AFTER report_id,
-    ADD COLUMN IF NOT EXISTS case_name        VARCHAR(255) DEFAULT NULL COMMENT '快照-用例名称' AFTER test_no,
-    ADD COLUMN IF NOT EXISTS execute_duration BIGINT(20)   DEFAULT NULL COMMENT '执行耗时(ms)' AFTER case_name,
-    ADD KEY IF NOT EXISTS idx_report_id (report_id);
+    ADD COLUMN report_id        BIGINT(20)   DEFAULT NULL COMMENT '关联报告ID' AFTER test_case_id,
+    ADD COLUMN test_no          VARCHAR(20)  DEFAULT NULL COMMENT '快照-用例编号' AFTER report_id,
+    ADD COLUMN case_name        VARCHAR(255) DEFAULT NULL COMMENT '快照-用例名称' AFTER test_no,
+    ADD COLUMN execute_duration BIGINT(20)   DEFAULT NULL COMMENT '执行耗时(ms)' AFTER case_name,
+    ADD KEY idx_report_id (report_id);
 
 -- V3.2: 用户 + 分类
 CREATE TABLE IF NOT EXISTS `user` (
