@@ -37,6 +37,7 @@ pipeline {
                             -w "$WORKSPACE/test-platform" \\
                             -v "maven-repo:/root/.m2" \\
                             --network host \\
+                            --user 1000:1000 \\
                             maven:3.9-eclipse-temurin-17 \\
                             mvn test -f backend/pom.xml -B -s backend/settings.xml
                     '''
