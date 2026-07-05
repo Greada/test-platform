@@ -2,6 +2,8 @@ FROM maven:3.9-eclipse-temurin-17-alpine AS build
 WORKDIR /app
 
 # pom.xml 不变 → 缓存这层 → 依赖只下载一次
+# 阿里云 Maven 镜像，加速依赖下载
+COPY backend/settings.xml /root/.m2/settings.xml
 COPY pom.xml .
 COPY backend/pom.xml backend/
 RUN mvn -B dependency:go-offline -pl backend
