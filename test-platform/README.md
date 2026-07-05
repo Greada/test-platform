@@ -58,13 +58,14 @@ AGNES_API_KEY=your_api_key
 项目使用 Jenkins Pipeline 实现自动构建部署，代码 push 后触发流程：
 
 ```bash
-# 流程：Checkout → Docker Build → Deploy → Verify
+# 流程：Checkout → Test → Docker Build → Deploy → Verify
 #
 # 自动执行：
 #   1. 从 Gitee 拉取最新代码
-#   2. docker compose build backend frontend
-#   3. docker compose up -d backend frontend
-#   4. 验证 API 和前端可用性
+#   2. Maven 容器执行单元测试，解析结果推送后端
+#   3. docker compose build backend frontend
+#   4. docker compose up -d backend frontend
+#   5. 验证 API 和前端可用性
 ```
 
 详见 [docs/PROJECT_INTRO.md](docs/PROJECT_INTRO.md) CI/CD 接入章节。

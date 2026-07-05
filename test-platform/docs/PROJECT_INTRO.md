@@ -57,16 +57,16 @@ test-platform/
 │       │   ├── common/ (Result + HttpResult + JsonDiffResult + ErrorPattern + EndpointDef + GlobalExceptionHandler)
 │       │   ├── config/ (Cors + Security + RestTemplate + JwtUtil + JwtAuthFilter + PasswordEncoder + AiConfig)
 │       │   ├── dto/CategoryNode.java
-│       │   ├── controller/ (Auth + Ai + Category + Execution + TestCase + TestSuite + ExecutionReport)
-│       │   ├── entity/ (User + TestCase + ExecutionRecord + TestCategory + TestSuite + TestSuiteCase + ExecutionReport)
-│       │   ├── mapper/ (7 个 Mapper)
+│   │   ├── controller/ (Auth + Ai + Category + Execution + TestCase + TestSuite + ExecutionReport + CiBuild)
+│   │   ├── entity/ (User + TestCase + ExecutionRecord + TestCategory + TestSuite + TestSuiteCase + ExecutionReport + CiBuild)
+│   │   ├── mapper/ (9 个 Mapper)
 │       │   ├── service/ (10 个接口 + 6 个实现)
 │       │   └── util/ (OpenApiParser + SchemaToJsonGenerator)
 │       └── resources/
 │           ├── application.yml
-│           └── sql/ (init_v1 + init_v2 + init_v3 + insert_test_case_v1)
+│           └── sql/ (init_v1 + init_v2 + init_v3 + init_v4 + V4 ci_build + insert_test_case_v1)
 ├── docker/
-│   └── init/init.sql                     # Docker 入口 SQL（合并 V1+V2+V3+种子数据）
+│   └── init/init.sql                     # Docker 入口 SQL（合并 V1+V2+V3+V4+种子数据）
 ├── docker-compose.yml                    # mysql + backend + frontend 三服务编排
 ├── .env.example                          # 环境变量模板（DB_PASSWORD / AGNES_API_KEY）
 ├── .dockerignore                         # 构建排除文件
@@ -84,7 +84,7 @@ test-platform/
         ├── utils/format.js
         ├── components/ (CategoryTree + CategoryDialog + JsonDiffViewer + ErrorPatternCard)
         └── views/ (Login + TestCaseList + TestCaseEdit + ExecutionList + DocView
-                     + TestSuiteList + TestSuiteDetail + ExecutionReportList + ExecutionReportDetail)
+                     + TestSuiteList + TestSuiteDetail + ExecutionReportList + ExecutionReportDetail + CiStatus)
 ```
 
 ## 开发进度
@@ -98,7 +98,8 @@ test-platform/
 | V3   | 分类管理（树状 3 层） | ✅ 已完成 |
 | V3.1 | AI 智能生成预期结果 + OpenAPI 批量导入 | ✅ 已完成 |
 | V3.2 | JWT 权限管理（登录/注册/路由守卫） | ✅ 已完成 |
-| V3.3 | Jenkins CI/CD 自动化部署（Pipeline + crontab 自动触发） | ✅ 已完成 |
+| V3.3 | Jenkins CI/CD 自动化部署（Pipeline + Test 阶段 + 构建结果推送） | ✅ 已完成 |
+| V4 | ci_build 表 + CI API（构建记录持久化 + 前端看板） | ✅ 已完成 |
 | Docker | Docker 容器化（Dockerfile + Nginx + docker-compose） | ✅ 已完成 |
 
 ### Phase 1 — 已完成文件
@@ -209,11 +210,17 @@ test-platform/
 
 | # | 内容 | 状态 |
 |---|---|---|
-| 1 | Jenkinsfile Pipeline 配置 | ✅ |
-| 2 | Dockerfile 分层缓存优化（依赖层独立缓存） | ✅ |
-| 3 | 阿里云 Maven 镜像（settings.xml） | ✅ |
-| 4 | Docker Compose 容器化编排 | ✅ |
-| 5 | crontab 定时检测 Git 变更，自动触发 Jenkins 构建 | ✅ |
+| 1 | Jenkinsfile Pipeline（5 阶段：Checkout → Test → Docker Build → Deploy → Verify） | ✅ |
+| 2 | Docker 容器内单元测试（`--volumes-from` Maven 容器执行） | ✅ |
+| 3 | 测试结果解析（纯 `grep -oE` shell 命令替代 findFiles 插件） | ✅ |
+| 4 | 通过率计算（`awk` 替代 `bc`，兼容 Alpine） | ✅ |
+| 5 | 测试结果推送后端 API（`docker run --network host curlimages/curl` POST /api/ci/builds） | ✅ |
+| 6 | ci_build 表（V4 迁移 init_v4.sql） | ✅ |
+| 7 | CiBuild 后端 Entity + Mapper + Service + Controller | ✅ |
+| 8 | CI API 端点（GET /api/ci/builds、GET /api/ci/builds/latest、POST /api/ci/builds） | ✅ |
+| 9 | 前端 CiStatus.vue（/ci 路由，统计卡片 + 构建历史表格） | ✅ |
+| 10 | crontab 定时检测 Git 变更，自动触发 Jenkins 构建 | ✅ |
+| 11 | 触发脚本认证（--user greada:API_TOKEN + HTTP 状态码检查） | ✅ |
 
 ### V1 修复与增强记录
 
@@ -248,11 +255,14 @@ test-platform/
 
 | # | 问题 | 修复 |
 |---|---|---|
-| 1 | Jenkins 容器内 localhost 无法访问宿主机容器 | Verify 阶段改用 `docker run --network host` 测试 |
-| 2 | `docker compose -f` 和 `-p` 在容器内不可用 | 改用 `dir()` 切换到项目目录，省去参数 |
-| 3 | Maven 每次构建都从中央仓库下载依赖 | Dockerfile 增加分层缓存 `dependency:go-offline` |
-| 4 | Maven 下载速度慢 | 添加阿里云镜像 `backend/settings.xml` |
-| 5 | `spring-boot-maven-plugin` 缺少版本号 | 添加 `<version>${spring-boot.version}</version>` 消除警告 |
+| 1 | 触发脚本未认证，Jenkins 触发失败 | 添加 `--user greada:API_TOKEN` 认证 + HTTP 状态码检查 |
+| 2 | Maven 容器运行权限不足导致清理 target 报错 | 指定 UID 1000 运行 Maven 容器 |
+| 3 | Maven 容器无法解析宿主机主机名 | 添加 `--network host` 网络模式 |
+| 4 | findFiles 步骤依赖 Jenkins 插件 | 替换为纯 `sh` + `grep -oE` shell 命令解析测试结果 |
+| 5 | Alpine 无 `bc` 命令导致通过率计算失败 | 替换为 `awk` 浮点运算 |
+| 6 | Groovy 三单引号字符串中 `\` 解析异常 | 改用 ERE（扩展正则）替代 PCRE |
+| 7 | curl 请求无法路由到宿主机服务 | 改用 `docker run --network host curlimages/curl` |
+| 8 | 前端 CiStatus.vue 响应结构解析错误 | 解包 `res.data` → `res.data.data` |
 
 ## CI/CD 部署指南
 
@@ -267,9 +277,10 @@ Crontab 每 2 分钟检测 Git 仓库变更
     ↓
 Jenkins Pipeline:
     1. Checkout — 从 Gitee 拉取最新代码
-    2. Docker Build — 构建 backend + frontend 镜像
-    3. Deploy — 更新运行中的容器（不重启 MySQL）
-    4. Verify — 测试 API 和前端可用性
+    2. Test — `docker run --volumes-from` Maven 容器执行单元测试
+    3. Docker Build — 构建 backend + frontend 镜像
+    4. Deploy — 更新运行中的容器（不重启 MySQL）
+    5. Verify — 测试 API 和前端可用性
 ```
 
 ### 触发脚本配置
@@ -282,6 +293,8 @@ CLONE_DIR="$HOME/tp-code"
 JENKINS_URL="http://localhost:8088"
 JOB_NAME="test-platform-pipeline"
 LOG_FILE="/tmp/tp-cron.log"
+JENKINS_USER="greada"
+JENKINS_TOKEN="API_TOKEN"
 
 cd $CLONE_DIR || exit 1
 BEFORE=$(git rev-parse HEAD 2>/dev/null)
@@ -291,7 +304,13 @@ AFTER=$(git rev-parse origin/master 2>/dev/null)
 if [ "$BEFORE" != "$AFTER" ] && [ -n "$AFTER" ]; then
     echo "[$(date)] 检测到新提交，触发 Jenkins 构建" >> $LOG_FILE
     git pull -q
-    curl -s -X POST "${JENKINS_URL}/job/${JOB_NAME}/build" -o /dev/null
+    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -u "${JENKINS_USER}:${JENKINS_TOKEN}" \
+      -X POST "${JENKINS_URL}/job/${JOB_NAME}/build")
+    if [ "$HTTP_CODE" = "201" ]; then
+        echo "[$(date)] Jenkins 构建触发成功" >> $LOG_FILE
+    else
+        echo "[$(date)] Jenkins 触发失败（HTTP $HTTP_CODE）" >> $LOG_FILE
+    fi
 fi
 ```
 
@@ -440,6 +459,9 @@ UNIQUE KEY on (suite_id, case_id)
 | **POST** | **`/api/auth/login`** | **V3.2** 用户登录（返回 token + user） |
 | **POST** | **`/api/auth/register`** | **V3.2** 用户注册 |
 | **GET** | **`/api/auth/me`** | **V3.2** 获取当前用户信息（需 token） |
+| **POST** | **`/api/ci/builds`** | **V3.3** 创建构建记录（Jenkins 回调） |
+| **GET** | **`/api/ci/builds`** | **V3.3** 查询构建列表 |
+| **GET** | **`/api/ci/builds/latest`** | **V3.3** 查询最新构建 |
 
 详见 [API.md](API.md)（完整请求/响应示例）。
 
@@ -493,7 +515,7 @@ docker compose up -d
 
 **前端**：在 `frontend/` 目录执行 `npm run dev`，访问 `http://localhost:3000`
 
-**数据库**：依次执行 `init_v1.sql` → `init_v2.sql` → `init_v3.sql`，然后 `insert_test_case_v1.sql`（可选种子数据）。MySQL 连接默认 `root:1234@localhost:3306`。
+**数据库**：依次执行 `init_v1.sql` → `init_v2.sql` → `init_v3.sql` → `init_v4.sql`，然后 `insert_test_case_v1.sql`（可选种子数据）。MySQL 连接默认 `root:1234@localhost:3306`。
 
 ## AI 接入（V3.1）
 

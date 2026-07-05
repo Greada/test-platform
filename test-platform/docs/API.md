@@ -1154,3 +1154,111 @@ Token 有效期 **24 小时**，过期后需重新登录。
 ```
 
 前端自动在 Axios 请求拦截器中添加 token，在响应拦截器中捕获 401 时弹出错误提示并跳转登录页。
+
+---
+
+## CI 构建接口 (V3.3)
+
+### 创建构建记录
+
+```
+POST /ci/builds
+```
+
+Jenkins Pipeline 执行完成后回调此接口保存构建结果。
+
+**请求体**
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| buildNumber | Integer | Jenkins 构建编号 |
+| totalTests | Integer | 总用例数 |
+| passed | Integer | 通过数 |
+| failed | Integer | 失败数 |
+| passRate | String | 通过率（如 "85.71"） |
+| status | String | SUCCESS / FAILURE |
+| buildUrl | String | Jenkins 构建链接 |
+
+**请求示例**
+
+```json
+{
+  "buildNumber": 42,
+  "totalTests": 14,
+  "passed": 12,
+  "failed": 2,
+  "passRate": "85.71",
+  "status": "SUCCESS",
+  "buildUrl": "http://jenkins:8088/job/test-platform-pipeline/42/"
+}
+```
+
+**响应**
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": null
+}
+```
+
+---
+
+### 查询构建列表
+
+```
+GET /ci/builds
+```
+
+**响应示例**
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": [
+    {
+      "id": 1,
+      "buildNumber": 42,
+      "totalTests": 14,
+      "passed": 12,
+      "failed": 2,
+      "passRate": "85.71",
+      "status": "SUCCESS",
+      "buildUrl": "http://jenkins:8088/job/test-platform-pipeline/42/",
+      "createdAt": "2026-07-05T10:30:00",
+      "updatedAt": "2026-07-05T10:30:00"
+    }
+  ]
+}
+```
+
+---
+
+### 查询最新构建
+
+```
+GET /ci/builds/latest
+```
+
+**响应示例**
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "id": 1,
+    "buildNumber": 42,
+    "totalTests": 14,
+    "passed": 12,
+    "failed": 2,
+    "passRate": "85.71",
+    "status": "SUCCESS",
+    "buildUrl": "http://jenkins:8088/job/test-platform-pipeline/42/",
+    "createdAt": "2026-07-05T10:30:00",
+    "updatedAt": "2026-07-05T10:30:00"
+  }
+}
+```
