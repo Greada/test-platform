@@ -33,25 +33,9 @@ pipeline {
                 dir("${WORKSPACE}/test-platform") {
                     sh '''
                         echo "===== 运行单元测试 ($(find backend/src/test -name '*Test.java' | wc -l) 个测试文件) ====="
-                        mkdir -p "$HOME/.m2"
-                        printf '%s\n' \
-                          '<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"' \
-                          '  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"' \
-                          '  xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0' \
-                          '                      http://maven.apache.org/xsd/settings-1.0.0.xsd">' \
-                          '  <mirrors>' \
-                          '    <mirror>' \
-                          '      <id>aliyun</id>' \
-                          '      <mirrorOf>central</mirrorOf>' \
-                          '      <name>Aliyun Maven Mirror</name>' \
-                          '      <url>https://maven.aliyun.com/repository/public</url>' \
-                          '    </mirror>' \
-                          '  </mirrors>' \
-                          '</settings>' > "$HOME/.m2/settings.xml"
                         docker run --rm \\
                             -v "$PWD":/app \\
                             -w /app \\
-                            -v "$HOME/.m2":/root/.m2 \\
                             --network host \\
                             maven:3.9-eclipse-temurin-17 \\
                             mvn test -pl backend -am -B
