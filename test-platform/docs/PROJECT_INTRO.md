@@ -1,4 +1,4 @@
-# 全功能测试平台 V3.2
+# 全功能测试平台 V3.3
 
 > 📖 文档入口 — 从这里开始访问所有项目文档
 
@@ -7,18 +7,19 @@
 | 文档 | 说明 |
 |---|---|
 | **[PROJECT_INTRO.md](PROJECT_INTRO.md)** | 🏠 项目介绍（本文档） |
-| **[API.md](API.md)** | 📡 API 接口文档（V1 ~ V3.2） |
+| **[API.md](API.md)** | 📡 API 接口文档（V1 ~ V3.3） |
 | **[sql.md](sql.md)** | 🗄️ 数据库 ER 图与表结构 |
 | **[进度报告.md](进度报告.md)** | 📊 项目进度总览、里程碑、功能统计 |
 | **[开发进度.md](开发进度.md)** | 📝 分阶段详细任务跟踪与修复记录 |
 | **[阶段总结报告.md](阶段总结报告.md)** | 🏁 阶段总结、技术决策、经验教训 |
 | **[resume.html](resume.html)** | 🔄 开发恢复指南（下次继续用） |
+| **[Jenkinsfile](../Jenkinsfile)** | 🔧 CI/CD Pipeline 配置 |
 
 ---
 
 ## 项目定位
 
-一站式测试管理平台 V3.2，聚焦测试用例管理、执行、报告、日志展示、测试套件、执行报告统计、JSON Diff 分析、错误模式聚合、分类管理、AI 智能生成预期结果、OpenAPI 批量导入与 JWT 权限管理。
+一站式测试管理平台 V3.3，聚焦测试用例管理、执行、报告、日志展示、测试套件、执行报告统计、JSON Diff 分析、错误模式聚合、分类管理、AI 智能生成预期结果、OpenAPI 批量导入、JWT 权限管理与 CI/CD 自动化部署。
 
 ## 技术栈
 
@@ -30,6 +31,7 @@
 | 数据库 | MySQL | 5.7+ (驱动 8.0.33) |
 | 前端 | Vue 3 + Element Plus | — |
 | 构建 | Maven (父子模块) | — |
+| CI/CD | Jenkins + Docker Compose | — |
 
 ## 项目结构
 
@@ -44,9 +46,11 @@ test-platform/
 │   ├── 开发进度.md                       # 分阶段任务跟踪 📝
 │   ├── 阶段总结报告.md                   # 阶段总结报告 🏁
 │   └── resume.html                      # 开发恢复指南 🔄
+├── Jenkinsfile                           # 🔧 CI/CD Pipeline 配置
 ├── backend/
 │   ├── pom.xml
-│   ├── Dockerfile                        # 多阶段 Spring Boot 镜像
+│   ├── Dockerfile                        # 多阶段 Spring Boot 镜像（分层缓存）
+│   ├── settings.xml                      # 阿里云 Maven 镜像配置
 │   └── src/main/
 │       ├── java/com/testplatform/
 │       │   ├── TestPlatformApplication.java
@@ -94,6 +98,7 @@ test-platform/
 | V3   | 分类管理（树状 3 层） | ✅ 已完成 |
 | V3.1 | AI 智能生成预期结果 + OpenAPI 批量导入 | ✅ 已完成 |
 | V3.2 | JWT 权限管理（登录/注册/路由守卫） | ✅ 已完成 |
+| V3.3 | Jenkins CI/CD 自动化部署（Pipeline + crontab 自动触发） | ✅ 已完成 |
 | Docker | Docker 容器化（Dockerfile + Nginx + docker-compose） | ✅ 已完成 |
 
 ### Phase 1 — 已完成文件
@@ -200,6 +205,16 @@ test-platform/
 | 13 | JwtAuthFilter + SecurityConfig 增加 401/403 JSON 响应 | ✅ |
 | 14 | 前端 401 时显示后端错误提示后跳转登录页 | ✅ |
 
+### V3.3 — 已完成：CI/CD 自动化部署
+
+| # | 内容 | 状态 |
+|---|---|---|
+| 1 | Jenkinsfile Pipeline 配置 | ✅ |
+| 2 | Dockerfile 分层缓存优化（依赖层独立缓存） | ✅ |
+| 3 | 阿里云 Maven 镜像（settings.xml） | ✅ |
+| 4 | Docker Compose 容器化编排 | ✅ |
+| 5 | crontab 定时检测 Git 变更，自动触发 Jenkins 构建 | ✅ |
+
 ### V1 修复与增强记录
 
 | # | 问题 | 修复 |
@@ -228,6 +243,71 @@ test-platform/
 | 1 | token 过期后后端返回 403，前端无法判断 | JwtAuthFilter 在 token 无效时直接返回 401 JSON，不再放行 |
 | 2 | 无自定义认证入口点，未认证请求无明确错误响应 | SecurityConfig 添加 AuthenticationEntryPoint（401）和 AccessDeniedHandler（403） |
 | 3 | 前端 401 跳转时不显示原因 | 前端拦截器先弹后端错误提示（如"token过期或无效"），1.5 秒后跳转登录页 |
+
+### V3.3 修复与增强记录
+
+| # | 问题 | 修复 |
+|---|---|---|
+| 1 | Jenkins 容器内 localhost 无法访问宿主机容器 | Verify 阶段改用 `docker run --network host` 测试 |
+| 2 | `docker compose -f` 和 `-p` 在容器内不可用 | 改用 `dir()` 切换到项目目录，省去参数 |
+| 3 | Maven 每次构建都从中央仓库下载依赖 | Dockerfile 增加分层缓存 `dependency:go-offline` |
+| 4 | Maven 下载速度慢 | 添加阿里云镜像 `backend/settings.xml` |
+| 5 | `spring-boot-maven-plugin` 缺少版本号 | 添加 `<version>${spring-boot.version}</version>` 消除警告 |
+
+## CI/CD 部署指南
+
+### 自动化流程
+
+```
+本地 git push
+    ↓
+Crontab 每 2 分钟检测 Git 仓库变更
+    ↓
+检测到新提交 → 调用 Jenkins API 触发构建
+    ↓
+Jenkins Pipeline:
+    1. Checkout — 从 Gitee 拉取最新代码
+    2. Docker Build — 构建 backend + frontend 镜像
+    3. Deploy — 更新运行中的容器（不重启 MySQL）
+    4. Verify — 测试 API 和前端可用性
+```
+
+### 触发脚本配置
+
+服务器上 `/opt/tp-trigger.sh` 负责检测 Git 变更：
+
+```bash
+#!/bin/bash
+CLONE_DIR="$HOME/tp-code"
+JENKINS_URL="http://localhost:8088"
+JOB_NAME="test-platform-pipeline"
+LOG_FILE="/tmp/tp-cron.log"
+
+cd $CLONE_DIR || exit 1
+BEFORE=$(git rev-parse HEAD 2>/dev/null)
+git fetch origin master -q
+AFTER=$(git rev-parse origin/master 2>/dev/null)
+
+if [ "$BEFORE" != "$AFTER" ] && [ -n "$AFTER" ]; then
+    echo "[$(date)] 检测到新提交，触发 Jenkins 构建" >> $LOG_FILE
+    git pull -q
+    curl -s -X POST "${JENKINS_URL}/job/${JOB_NAME}/build" -o /dev/null
+fi
+```
+
+Crontab 配置（每 2 分钟执行）：
+
+```bash
+*/2 * * * * /bin/bash /opt/tp-trigger.sh
+```
+
+### 构建优化
+
+| 优化项 | 说明 |
+|--------|------|
+| **Docker 分层缓存** | `COPY pom.xml` 和 `RUN dependency:go-offline` 独立一层，`pom.xml` 不变时跳过依赖下载 |
+| **阿里云 Maven 镜像** | `settings.xml` 配置阿里云镜像，依赖下载速度提升数倍 |
+| **镜像清理** | 构建后自动执行 `docker image prune -f`，避免无用镜像堆积 |
 
 ## 数据库设计
 

@@ -1,8 +1,8 @@
-# 全功能测试平台 V3.2 — Docker
+# 全功能测试平台 V3.3 — Docker + CI/CD
 
 一站式测试管理平台，支持测试用例管理（分类树）、HTTP 执行（GET/POST/PUT/PATCH/DELETE）、JSON 字段子集匹配、测试套件、执行报告、JSON Diff 可视分析与错误模式聚合。
 
-**技术栈**：Java 17 / Spring Boot 3.3.6 / MyBatis-Plus 3.5.9 / MySQL 5.7+ / Vue 3 + Element Plus / Nginx / Docker
+**技术栈**：Java 17 / Spring Boot 3.3.6 / MyBatis-Plus 3.5.9 / MySQL 5.7+ / Vue 3 + Element Plus / Nginx / Docker / Jenkins CI/CD
 
 ## Docker 部署（推荐）
 
@@ -34,6 +34,7 @@ cd frontend && npm install && npm run dev
 | V3 | 分类管理（树状 3 层） |
 | V3.1 | AI 生成预期结果 + OpenAPI 批量导入 |
 | V3.2 | JWT 权限管理（登录/注册/路由守卫） |
+| V3.3 | Jenkins CI/CD 自动化部署（Pipeline + crontab 自动触发） |
 | Docker | 容器化部署（Dockerfile + Nginx + docker-compose） |
 
 ---
