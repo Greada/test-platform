@@ -61,6 +61,8 @@ pipeline {
 
         // ====================================================================
         // 4. 验证 — 检查容器状态 + API 可用性
+        //    注意：Jenkins 容器内 localhost 不等于宿主机 localhost，
+        //    所以用 docker exec 从容器内部测试，或用 docker run --network host
         // ====================================================================
         stage('Verify') {
             steps {
@@ -73,7 +75,8 @@ pipeline {
                     sleep 15
 
                     echo "===== 测试登录 API ====="
-                    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \\
+                    HTTP_CODE=$(docker run --rm --network host curlimages/curl:latest \\
+                        -s -o /dev/null -w "%{http_code}" \\
                         -X POST http://localhost:8080/api/auth/login \\
                         -H 'Content-Type: application/json' \\
                         -d '{"username":"admin","password":"admin123"}')
@@ -86,8 +89,9 @@ pipeline {
                     fi
 
                     echo "===== 测试前端 ====="
-                    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \\
-                        http://localhost:80/)
+                    HTTP_CODE=$(docker run --rm --network host curlimages/curl:latest \\
+                        -s -o /dev/null -w "%{http_code}" \\
+                        http://localhost/)
 
                     if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "302" ]; then
                         echo "✅ 前端正常，HTTP 状态码: $HTTP_CODE"
