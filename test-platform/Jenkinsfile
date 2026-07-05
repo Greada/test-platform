@@ -1,0 +1,172 @@
+// ============================================================================
+// Jenkinsfile — 全功能测试平台 CI/CD Pipeline
+// 运行环境：Jenkins 容器（挂载 docker.sock） + Docker Compose
+// 目标服务器：192.168.0.10
+// ============================================================================
+
+pipeline {
+    // 任意可用 agent 即可，因为 docker build 走的是宿主机 Docker 守护进程
+    agent any
+
+    // ========================================================================
+    // 环境变量
+    // ========================================================================
+    environment {
+        // 项目根目录（Jenkins 自动 checkout 到 WORKSPACE）
+        PROJECT_ROOT = "${WORKSPACE}"
+
+        // Docker Compose 文件所在目录
+        COMPOSE_DIR = "${WORKSPACE}"
+
+        // Docker Compose 项目名称，避免与服务器上其他 compose 项目冲突
+        COMPOSE_PROJECT_NAME = "test-platform"
+
+        // Maven 本地仓库缓存目录（挂载到宿主机的 m2 缓存，加速重复构建）
+        // Jenkins 容器需映射 -v /root/.m2:/root/.m2
+        MAVEN_CACHE = "/root/.m2"
+    }
+
+    // ========================================================================
+    // 阶段定义
+    // ========================================================================
+    stages {
+
+        // 1. 代码检出 — 从 Gitee 拉取最新代码
+        //    仓库是公开的，不需要凭证（Credentials）
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        // 2. 编译后端 — 利用 Maven 官方镜像编译 Java 代码
+        //    为什么不用 Dockerfile 编译？因为 Dockerfile 把编译和打包合在一起，
+        //    Jenkins 分开做可以更清晰、缓存更好
+        //    注意：这里编译出的 jar 会被后续的 docker build 使用
+        //    但我们的 Dockerfile 是 COPY backend/src 然后内部 mvn package，
+        //    所以实际上不需要这步单独编译，由 Dockerfile 自身多阶段构建完成
+        stage('Backend Compile') {
+            steps {
+                script {
+                    // 用 Maven 官方镜像在 WORKSPACE 内执行编译
+                    // -v 挂载 maven 缓存目录，加速重复构建
+                    docker.image('maven:3.9-eclipse-temurin-17-alpine').inside(
+                        "-v ${MAVEN_CACHE}:/root/.m2"
+                    ) {
+                        sh 'mvn -B package -DskipTests -pl backend'
+                    }
+                }
+            }
+            // post 子段：即使编译失败也继续（因为 Dockerfile 自身也会编译）
+            // 实际生产建议去掉这个 stage，完全依赖 Dockerfile 的多阶段构建
+        }
+
+        // 3. 构建 Docker 镜像 — 利用 Dockerfile 多阶段构建
+        //    用宿主机 Docker 守护进程来构建镜像
+        stage('Docker Build') {
+            steps {
+                sh '''
+                    echo "===== 构建后端镜像 ====="
+                    docker compose \\
+                        -p ${COMPOSE_PROJECT_NAME} \\
+                        -f ${COMPOSE_DIR}/docker-compose.yml \\
+                        build backend
+
+                    echo "===== 构建前端镜像 ====="
+                    docker compose \\
+                        -p ${COMPOSE_PROJECT_NAME} \\
+                        -f ${COMPOSE_DIR}/docker-compose.yml \\
+                        build frontend
+                '''
+            }
+        }
+
+        // 4. 部署 — 用新镜像替换运行中的容器（不重启 MySQL）
+        //    只有 backend 和 frontend 需要重启
+        stage('Deploy') {
+            steps {
+                sh '''
+                    echo "===== 更新容器 ====="
+                    docker compose \\
+                        -p ${COMPOSE_PROJECT_NAME} \\
+                        -f ${COMPOSE_DIR}/docker-compose.yml \\
+                        up -d backend frontend
+
+                    echo "===== 清理旧镜像 ====="
+                    docker image prune -f
+                '''
+            }
+        }
+
+        // 5. 验证 — 检查容器状态 + 调用 API 确认正常
+        stage('Verify') {
+            steps {
+                sh '''
+                    echo "===== 容器状态 ====="
+                    docker ps --filter "name=tp-" \\
+                        --format "table {{.Names}}\\t{{.Status}}\\t{{.Ports}}"
+
+                    echo "===== 等待服务启动 ====="
+                    sleep 15
+
+                    echo "===== 测试登录 API ====="
+                    # -s 静默模式，-o /dev/null 丢弃响应体，-w "%{http_code}" 只输出状态码
+                    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \\
+                        -X POST http://localhost:8080/api/auth/login \\
+                        -H 'Content-Type: application/json' \\
+                        -d '{"username":"admin","password":"admin123"}')
+
+                    if [ "$HTTP_CODE" = "200" ]; then
+                        echo "✅ 后端 API 正常，HTTP 状态码: $HTTP_CODE"
+                    else
+                        echo "❌ 后端 API 异常，HTTP 状态码: $HTTP_CODE"
+                        exit 1
+                    fi
+
+                    echo "===== 测试前端 ====="
+                    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \\
+                        http://localhost:80/)
+
+                    if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "302" ]; then
+                        echo "✅ 前端正常，HTTP 状态码: $HTTP_CODE"
+                    else
+                        echo "❌ 前端异常，HTTP 状态码: $HTTP_CODE"
+                        exit 1
+                    fi
+
+                    echo ""
+                    echo "✅✅✅ 部署全部通过 ✅✅✅"
+                '''
+            }
+        }
+    }
+
+    // ========================================================================
+    // 构建后处理
+    // ========================================================================
+    post {
+        // 无论成功还是失败，都打印最终的容器列表
+        always {
+            sh '''
+                echo "===== 最终容器状态 ====="
+                docker ps --filter "name=tp-" --format "table {{.Names}}\\t{{.Status}}"
+            '''
+        }
+
+        // 失败时输出关键日志
+        failure {
+            sh '''
+                echo "===== 后端最近日志 ====="
+                docker logs tp-backend --tail 50 2>&1 || echo "无日志"
+            '''
+        }
+
+        // 成功通知（可扩展：钉钉/企业微信/邮件）
+        success {
+            echo "✅ 部署成功完成"
+        }
+
+        // 清理工作空间（可选，保持 Jenkins 磁盘整洁）
+        cleanup { deleteDir() }
+    }
+}
