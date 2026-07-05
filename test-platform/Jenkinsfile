@@ -34,9 +34,20 @@ pipeline {
                     sh '''
                         echo "===== 运行单元测试 ($(find backend/src/test -name '*Test.java' | wc -l) 个测试文件) ====="
                         mkdir -p "$HOME/.m2"
-                        # 清理可能残留的目录（之前失败挂载遗留的），确保是文件
-                        [ -d "$HOME/.m2/settings.xml" ] && rm -rf "$HOME/.m2/settings.xml"
-                        cp "$PWD/backend/settings.xml" "$HOME/.m2/settings.xml"
+                        printf '%s\n' \
+                          '<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"' \
+                          '  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"' \
+                          '  xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0' \
+                          '                      http://maven.apache.org/xsd/settings-1.0.0.xsd">' \
+                          '  <mirrors>' \
+                          '    <mirror>' \
+                          '      <id>aliyun</id>' \
+                          '      <mirrorOf>central</mirrorOf>' \
+                          '      <name>Aliyun Maven Mirror</name>' \
+                          '      <url>https://maven.aliyun.com/repository/public</url>' \
+                          '    </mirror>' \
+                          '  </mirrors>' \
+                          '</settings>' > "$HOME/.m2/settings.xml"
                         docker run --rm \\
                             -v "$PWD":/app \\
                             -w /app \\
