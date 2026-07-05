@@ -25,6 +25,10 @@
           <el-icon><TrendCharts /></el-icon>
           <span>执行报告</span>
         </el-menu-item>
+        <el-menu-item index="/ci">
+          <el-icon><Monitor /></el-icon>
+          <span>CI 状态</span>
+        </el-menu-item>
         <el-menu-item index="/docs">
           <el-icon><Reading /></el-icon>
           <span>文档</span>
@@ -58,6 +62,7 @@ import {
   List,
   TrendCharts,
   Reading,
+  Monitor,
   UserFilled,
 } from '@element-plus/icons-vue'
 

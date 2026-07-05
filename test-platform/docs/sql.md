@@ -71,6 +71,19 @@ erDiagram
         DATETIME create_time
     }
 
+    ci_build {
+        BIGINT id PK
+        INT build_number "Jenkins 构建编号"
+        INT total_tests "总用例数"
+        INT passed "通过数"
+        INT failed "失败数"
+        DECIMAL pass_rate "通过率%"
+        VARCHAR status "SUCCESS/FAILURE"
+        VARCHAR build_url "Jenkins 构建链接"
+        DATETIME created_at
+        DATETIME updated_at
+    }
+
 ## 版本记录
 
 | 版本 | 变更内容 |

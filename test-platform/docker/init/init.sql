@@ -111,6 +111,20 @@ CREATE TABLE IF NOT EXISTS test_category (
 INSERT IGNORE INTO `user` (`username`, `password`, `display_name`, `role`)
 VALUES ('admin', '$2a$10$ikuTUlx1bNz3j/fr6EB0m.YH9SDLj0k9RmNZPW36AsJ0gccTUbB0K', '管理员', 'ADMIN');
 
+-- V4: CI/CD 构建记录
+CREATE TABLE IF NOT EXISTS ci_build (
+    id BIGINT(20) AUTO_INCREMENT PRIMARY KEY,
+    build_number INT NOT NULL COMMENT 'Jenkins 构建编号',
+    total_tests INT DEFAULT 0 COMMENT '总用例数',
+    passed INT DEFAULT 0 COMMENT '通过数',
+    failed INT DEFAULT 0 COMMENT '失败数',
+    pass_rate DECIMAL(5,2) DEFAULT 0.00 COMMENT '通过率 %',
+    status VARCHAR(20) NOT NULL DEFAULT 'SUCCESS' COMMENT 'SUCCESS/FAILURE',
+    build_url VARCHAR(500) DEFAULT '' COMMENT 'Jenkins 构建链接',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='CI/CD 构建记录';
+
 -- 12 条种子数据（TC-001 ~ TC-012）
 INSERT INTO test_case (test_no, name, request_url, request_method, request_headers, request_params, expected_result)
 VALUES

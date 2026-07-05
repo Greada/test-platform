@@ -46,6 +46,26 @@ pipeline {
             post {
                 always {
                     junit 'test-platform/backend/target/surefire-reports/*.xml'
+                    script {
+                        def total = 0, passed = 0, failed = 0
+                        def reports = findFiles(glob: 'test-platform/backend/target/surefire-reports/TEST-*.xml')
+                        reports.each { report ->
+                            def xml = readFile report.path
+                            def tests = (xml =~ /tests="(\d+)"/).collect { it[1] as int }.sum() ?: 0
+                            def failures = (xml =~ /failures="(\d+)"/).collect { it[1] as int }.sum() ?: 0
+                            def errors = (xml =~ /errors="(\d+)"/).collect { it[1] as int }.sum() ?: 0
+                            total += tests
+                            failed += failures + errors
+                            passed += tests - failures - errors
+                        }
+                        def rate = total > 0 ? String.format("%.2f", passed * 100.0 / total) : "0"
+                        def status = failed > 0 ? "FAILURE" : "SUCCESS"
+                        sh """
+                            curl -s -X POST http://localhost:8080/api/ci/builds \\
+                                -H 'Content-Type: application/json' \\
+                                -d '{"buildNumber":${env.BUILD_NUMBER},"totalTests":${total},"passed":${passed},"failed":${failed},"passRate":${rate},"status":"${status}","buildUrl":"${env.BUILD_URL}"}'
+                        """
+                    }
                 }
             }
         }

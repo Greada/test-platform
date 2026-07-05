@@ -6,6 +6,7 @@ import TestSuiteList from '../views/TestSuiteList.vue'
 import TestSuiteDetail from '../views/TestSuiteDetail.vue'
 import ExecutionReportList from '../views/ExecutionReportList.vue'
 import ExecutionReportDetail from '../views/ExecutionReportDetail.vue'
+import CiStatus from '../views/CiStatus.vue'
 import Login from '../views/Login.vue'
 
 const routes = [
@@ -17,6 +18,7 @@ const routes = [
     {path: '/suites/:id', name: 'TestSuiteDetail', component: TestSuiteDetail},
     {path: '/reports', name: 'ExecutionReportList', component: ExecutionReportList},
     {path: '/reports/:id', name: 'ExecutionReportDetail', component: ExecutionReportDetail},
+    {path: '/ci', name: 'CiStatus', component: CiStatus},
     {path: '/:pathMatch(.*)*', name: 'NotFound', redirect: '/'},
 ]
 const router = createRouter({
