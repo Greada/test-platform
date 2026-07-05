@@ -12,18 +12,10 @@
 pipeline {
     agent any
 
-    environment {
-        // 项目代码在仓库子目录 test-platform/ 下
-        // WORKSPACE 是 Jenkins checkout 的根目录（即仓库根目录）
-        PROJECT_DIR = "${WORKSPACE}/test-platform"
-
-    }
-
     stages {
 
         // ====================================================================
         // 1. 代码检出 — 从 Gitee 拉取最新代码
-        //    仓库公开，不需要填写凭证（Credentials）
         // ====================================================================
         stage('Checkout') {
             steps {
@@ -32,44 +24,43 @@ pipeline {
         }
 
         // ====================================================================
-        // 2. 构建 Docker 镜像 — 利用 Dockerfile 多阶段构建
-        //    backend/Dockerfile 内部完成 Maven 编译 + JRE 打包
-        //    frontend/Dockerfile 内部完成 npm ci + npm run build + Nginx
-        //    不需要在 Jenkins 中单独做编译，减少依赖
+        // 2. 构建 Docker 镜像
+        //    dir() 切换到项目目录后，docker compose 会自动找到
+        //    docker-compose.yml；不需要 -f 参数
         // ====================================================================
         stage('Docker Build') {
             steps {
-                sh '''
-                    echo "===== 构建后端镜像 ====="
-                    docker compose -f ${PROJECT_DIR}/docker-compose.yml build backend
+                dir("${WORKSPACE}/test-platform") {
+                    sh '''
+                        echo "===== 构建后端镜像 ====="
+                        docker compose build backend
 
-                    echo "===== 构建前端镜像 ====="
-                    docker compose -f ${PROJECT_DIR}/docker-compose.yml build frontend
-                '''
+                        echo "===== 构建前端镜像 ====="
+                        docker compose build frontend
+                    '''
+                }
             }
         }
 
         // ====================================================================
         // 3. 部署 — 用新镜像替换运行中的容器
-        //    只重建 backend 和 frontend，不碰 MySQL 服务
-        //    compose 会检测到同名的 tp-backend/tp-frontend 容器并自动替换
         // ====================================================================
         stage('Deploy') {
             steps {
-                sh '''
-                    echo "===== 更新容器 ====="
-                    docker compose -f ${PROJECT_DIR}/docker-compose.yml up -d backend frontend
+                dir("${WORKSPACE}/test-platform") {
+                    sh '''
+                        echo "===== 更新容器 ====="
+                        docker compose up -d backend frontend
 
-                    echo "===== 清理旧镜像 ====="
-                    docker image prune -f
-                '''
+                        echo "===== 清理旧镜像 ====="
+                        docker image prune -f
+                    '''
+                }
             }
         }
 
         // ====================================================================
         // 4. 验证 — 检查容器状态 + API 可用性
-        //    登录 API 返回 200 代表后端正常工作
-        //    前端返回 200/302 代表 Nginx 正常分发
         // ====================================================================
         stage('Verify') {
             steps {
@@ -116,7 +107,6 @@ pipeline {
     // 构建后处理
     // ========================================================================
     post {
-        // 无论成功还是失败，都打印当前容器列表
         always {
             sh '''
                 echo "===== 最终容器状态 ====="
@@ -124,7 +114,6 @@ pipeline {
             '''
         }
 
-        // 部署失败时输出后端日志最后 50 行，方便排查
         failure {
             sh '''
                 echo "===== 后端最近日志 ====="
@@ -136,7 +125,6 @@ pipeline {
             echo "✅ 部署成功完成"
         }
 
-        // 清理工作空间，释放 Jenkins 磁盘空间
         cleanup {
             deleteDir()
         }
