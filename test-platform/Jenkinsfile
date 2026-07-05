@@ -26,25 +26,23 @@ pipeline {
         // ====================================================================
         // 2. 运行单元测试 — 测试失败则阻断部署
         //     使用 maven:3.9-eclipse-temurin-17 容器执行，与 Dockerfile
-        //     builder 阶段保持一致。挂载 settings.xml 使用阿里云镜像加速。
+        //     builder 阶段保持一致。
         // ====================================================================
         stage('Test') {
             steps {
                 sh '''
-                    echo "===== 调试：工作空间结构 ====="
-                    find . -name "pom.xml" -type f
                     echo "===== 运行单元测试 ====="
                     docker run --rm \\
                         -v "$WORKSPACE":/app \\
                         -w /app \\
                         --network host \\
                         maven:3.9-eclipse-temurin-17 \\
-                        bash -c "find . -name 'pom.xml' && mvn test -f backend/pom.xml -B"
+                        mvn test -f test-platform/backend/pom.xml -B
                 '''
             }
             post {
                 always {
-                    junit 'backend/target/surefire-reports/*.xml'
+                    junit 'test-platform/backend/target/surefire-reports/*.xml'
                 }
             }
         }
