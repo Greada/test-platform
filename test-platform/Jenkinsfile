@@ -35,16 +35,16 @@ pipeline {
                         echo "===== 运行单元测试 ($(find backend/src/test -name '*Test.java' | wc -l) 个测试文件) ====="
                         docker run --rm \\
                             -v "$PWD":/app \\
-                            -w /app/backend \\
+                            -w /app \\
                             --network host \\
                             maven:3.9-eclipse-temurin-17 \\
-                            mvn test -B
+                            mvn test -f backend/pom.xml -B
                     '''
                 }
             }
             post {
                 always {
-                    junit 'target/surefire-reports/*.xml'
+                    junit 'backend/target/surefire-reports/*.xml'
                 }
             }
         }
