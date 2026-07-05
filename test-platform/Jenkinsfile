@@ -24,7 +24,35 @@ pipeline {
         }
 
         // ====================================================================
-        // 2. 构建 Docker 镜像
+        // 2. 运行单元测试 — 测试失败则阻断部署
+        //     使用 maven:3.9-eclipse-temurin-17 容器执行，与 Dockerfile
+        //     builder 阶段保持一致。挂载 settings.xml 使用阿里云镜像加速。
+        // ====================================================================
+        stage('Test') {
+            steps {
+                dir("${WORKSPACE}/test-platform") {
+                    sh '''
+                        echo "===== 运行单元测试 ($(find backend/src/test -name '*Test.java' | wc -l) 个测试文件) ====="
+                        docker run --rm \\
+                            -v "$PWD":/app \\
+                            -w /app \\
+                            -v "$HOME/.m2":/root/.m2 \\
+                            -v "$PWD/backend/settings.xml":/root/.m2/settings.xml \\
+                            --network host \\
+                            maven:3.9-eclipse-temurin-17 \\
+                            mvn test -pl backend -am -B
+                    '''
+                }
+            }
+            post {
+                always {
+                    junit 'backend/target/surefire-reports/*.xml'
+                }
+            }
+        }
+
+        // ====================================================================
+        // 3. 构建 Docker 镜像
         //    dir() 切换到项目目录后，docker compose 会自动找到
         //    docker-compose.yml；不需要 -f 参数
         // ====================================================================
@@ -43,7 +71,7 @@ pipeline {
         }
 
         // ====================================================================
-        // 3. 部署 — 用新镜像替换运行中的容器
+        // 4. 部署 — 用新镜像替换运行中的容器
         // ====================================================================
         stage('Deploy') {
             steps {
@@ -60,7 +88,7 @@ pipeline {
         }
 
         // ====================================================================
-        // 4. 验证 — 检查容器状态 + API 可用性
+        // 5. 验证 — 检查容器状态 + API 可用性
         //    注意：Jenkins 容器内 localhost 不等于宿主机 localhost，
         //    所以用 docker exec 从容器内部测试，或用 docker run --network host
         // ====================================================================
