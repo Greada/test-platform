@@ -37,10 +37,9 @@ pipeline {
                             -v "$PWD":/app \\
                             -w /app \\
                             -v "$HOME/.m2":/root/.m2 \\
-                            -v "$PWD/backend/settings.xml":/usr/share/maven/conf/settings.xml \\
                             --network host \\
                             maven:3.9-eclipse-temurin-17 \\
-                            mvn test -pl backend -am -B
+                            mvn test -pl backend -am -B -s /app/backend/settings.xml
                     '''
                 }
             }
