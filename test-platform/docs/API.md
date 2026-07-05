@@ -16,7 +16,7 @@ Base URL: `http://localhost:8080/api`
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
-| code | int | 200 成功，400 业务错误，500 服务端异常 |
+| code | int | 200 成功，400 业务错误，401 未认证/token 过期，403 权限不足，500 服务端异常 |
 | message | string | 提示信息 |
 | data | T | 响应数据（泛型） |
 
@@ -1119,4 +1119,38 @@ GET /auth/me
 Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 ```
 
-Token 有效期 **24 小时**，过期后需重新登录。前端自动在 Axios 请求拦截器中添加 token，并在 401 时自动跳转登录页。
+Token 有效期 **24 小时**，过期后需重新登录。
+
+### 认证错误响应
+
+**未携带 token 或 token 过期**
+
+```json
+{
+  "code": 401,
+  "message": "未登录或登录已过期，请重新登录",
+  "data": null
+}
+```
+
+**token 无效/过期**（携带了 Bearer token 但无效）
+
+```json
+{
+  "code": 401,
+  "message": "token过期或者无效，请重新登录",
+  "data": null
+}
+```
+
+**权限不足**
+
+```json
+{
+  "code": 403,
+  "message": "权限不足",
+  "data": null
+}
+```
+
+前端自动在 Axios 请求拦截器中添加 token，在响应拦截器中捕获 401 时弹出错误提示并跳转登录页。

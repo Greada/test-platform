@@ -197,6 +197,8 @@ test-platform/
 | 10 | Axios 请求拦截器自动带 Bearer Token + 401 跳登录 | ✅ |
 | 11 | 路由导航守卫（未登录跳 /login） | ✅ |
 | 12 | App.vue 导航栏显示用户名 + 退出 | ✅ |
+| 13 | JwtAuthFilter + SecurityConfig 增加 401/403 JSON 响应 | ✅ |
+| 14 | 前端 401 时显示后端错误提示后跳转登录页 | ✅ |
 
 ### V1 修复与增强记录
 
@@ -218,6 +220,14 @@ test-platform/
 | 5 | ExecutionReportServiceImpl 全部 return null | 注入 Mapper + 完整实现 |
 | 6 | ExecutionReport 字段名与数据库不匹配 | `executionTime` → `executeTime` |
 | 7 | 批量添加用例慢（循环 N 次 API） | 新增 batchAddCases 批量接口，前端一次调用 |
+
+### V3.2 修复与增强记录
+
+| # | 问题 | 修复 |
+|---|---|---|
+| 1 | token 过期后后端返回 403，前端无法判断 | JwtAuthFilter 在 token 无效时直接返回 401 JSON，不再放行 |
+| 2 | 无自定义认证入口点，未认证请求无明确错误响应 | SecurityConfig 添加 AuthenticationEntryPoint（401）和 AccessDeniedHandler（403） |
+| 3 | 前端 401 跳转时不显示原因 | 前端拦截器先弹后端错误提示（如"token过期或无效"），1.5 秒后跳转登录页 |
 
 ## 数据库设计
 
