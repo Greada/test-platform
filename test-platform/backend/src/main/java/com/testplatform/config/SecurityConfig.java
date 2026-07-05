@@ -1,5 +1,10 @@
 package com.testplatform.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.testplatform.common.Result;
+
+import jakarta.servlet.http.HttpServletResponse;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -17,6 +22,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 public class SecurityConfig {
     private final JwtAuthFilter jwtAuthFilter;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public SecurityConfig(JwtAuthFilter jwtAuthFilter) {
         this.jwtAuthFilter = jwtAuthFilter;
@@ -36,7 +42,34 @@ public class SecurityConfig {
                                         .authenticated())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .formLogin(AbstractHttpConfigurer::disable)
-                .httpBasic(AbstractHttpConfigurer::disable);
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .exceptionHandling(
+                        ex ->
+                                ex.authenticationEntryPoint(
+                                                (request, response, authException) -> {
+                                                    response.setStatus(
+                                                            HttpServletResponse.SC_UNAUTHORIZED);
+                                                    response.setContentType(
+                                                            "application/json;charset=UTF-8");
+                                                    response.getWriter()
+                                                            .write(
+                                                                    objectMapper.writeValueAsString(
+                                                                            Result.error(
+                                                                                    401,
+                                                                                    "未登录或登录已过期，请重新登录")));
+                                                })
+                                        .accessDeniedHandler(
+                                                (request, response, accessDeniedException) -> {
+                                                    response.setStatus(
+                                                            HttpServletResponse.SC_FORBIDDEN);
+                                                    response.setContentType(
+                                                            "application/json;charset=UTF-8");
+                                                    response.getWriter()
+                                                            .write(
+                                                                    objectMapper.writeValueAsString(
+                                                                            Result.error(
+                                                                                    403, "权限不足")));
+                                                }));
         return http.build();
     }
 }

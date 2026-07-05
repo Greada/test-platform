@@ -20,7 +20,9 @@ api.interceptors.response.use(
         if (error.response?.status === 401) {
             localStorage.removeItem('token')
             localStorage.removeItem('user')
-            window.location.href = '/login'
+            const msg = error.response?.data?.message || '登录已过期，请重新登录'
+            ElMessage.error(msg)
+            setTimeout(() => window.location.href = '/login', 1500)
             return Promise.reject(error)
         }
         const msg = error.response?.data?.message || error.message || '请求失败'
