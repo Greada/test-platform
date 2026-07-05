@@ -59,7 +59,7 @@ pipeline {
                             passed=$((passed + t - f_cnt - e))
                         done
                         if [ "$total" -gt 0 ]; then
-                            rate=$(echo "scale=2; $passed * 100 / $total" | bc)
+                            rate=$(awk "BEGIN {printf \"%.2f\", $passed * 100 / $total}")
                             status="SUCCESS"; [ "$failed" -gt 0 ] && status="FAILURE"
                             printf '{"buildNumber":%s,"totalTests":%s,"passed":%s,"failed":%s,"passRate":%s,"status":"%s","buildUrl":"%s"}' \
                                 "$BUILD_NUMBER" "$total" "$passed" "$failed" "$rate" "$status" "$BUILD_URL" > /tmp/build-payload.json
