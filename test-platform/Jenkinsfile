@@ -50,9 +50,9 @@ pipeline {
                         total=0; passed=0; failed=0
                         for f in test-platform/backend/target/surefire-reports/TEST-*.xml; do
                             [ ! -f "$f" ] && continue
-                            t=$(grep -oP 'tests="\K\d+' "$f" | awk '{s+=$1} END{print s}')
-                            f_cnt=$(grep -oP 'failures="\K\d+' "$f" | awk '{s+=$1} END{print s}')
-                            e=$(grep -oP 'errors="\K\d+' "$f" | awk '{s+=$1} END{print s}')
+                            t=$(grep -oE 'tests="[0-9]+' "$f" | grep -oE '[0-9]+' | awk '{s+=$1} END{print s}')
+                            f_cnt=$(grep -oE 'failures="[0-9]+' "$f" | grep -oE '[0-9]+' | awk '{s+=$1} END{print s}')
+                            e=$(grep -oE 'errors="[0-9]+' "$f" | grep -oE '[0-9]+' | awk '{s+=$1} END{print s}')
                             t=${t:-0}; f_cnt=${f_cnt:-0}; e=${e:-0}
                             total=$((total + t))
                             failed=$((failed + f_cnt + e))
