@@ -35,7 +35,8 @@ pipeline {
                         docker run --rm \\
                             --volumes-from "$(hostname)" \\
                             -w "$WORKSPACE/test-platform" \\
-                            -v "maven-repo:/root/.m2" \\
+                            -v "maven-repo:/tmp/.m2" \\
+                            -e HOME=/tmp \\
                             --network host \\
                             --user 1000:1000 \\
                             maven:3.9-eclipse-temurin-17 \\
