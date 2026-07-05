@@ -59,6 +59,7 @@
 </template>
 
 <script setup>
+import { formatJson } from '../utils/format'
 
 const props = defineProps({
   result: {type: Object, default: null},
@@ -67,16 +68,6 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['applyFix'])
-
-function formatJson(str) {
-  if (!str) return ''
-  try {
-    const parsed = JSON.parse(str)
-    return JSON.stringify(deepUnescape(parsed), null, 2)
-  } catch {
-    return str
-  }
-}
 
 function deepUnescape(obj) {
   if (typeof obj === 'string') {

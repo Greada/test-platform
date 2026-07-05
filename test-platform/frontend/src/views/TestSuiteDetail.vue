@@ -129,7 +129,10 @@ async function removeCase(caseId) {
     await suiteApi.removeCase(route.params.id, caseId)
     ElMessage.success('已移除')
     await fetchCases()
-  } catch {
+  } catch (e) {
+    if (e !== 'cancel' && e?.message !== 'cancel') {
+      ElMessage.error('移除失败: ' + (e.response?.data?.message || e.message))
+    }
   }
 }
 

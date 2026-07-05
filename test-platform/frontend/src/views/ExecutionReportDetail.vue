@@ -120,18 +120,16 @@ async function showLog(row) {
   diffActual.value = ''
   logVisible.value = true
 
-  let res
   try {
-    res = await diffApi.get(row.id)
+    const res = await diffApi.get(row.id)
     if (res.data.code === 200 && res.data.data) {
       diffResult.value = res.data.data
+      diffExpected.value = res.data.data.expectedResult || ''
+      diffActual.value = res.data.data.actualResult || ''
     }
-  } catch {
-    // ignore
+  } catch (e) {
+    ElMessage.error('加载日志失败: ' + (e.response?.data?.message || e.message))
   }
-
-  diffExpected.value = res?.data?.data?.expectedResult || ''
-  diffActual.value = res?.data?.data?.actualResult || ''
 }
 
 function handleApplyFix(suggested) {

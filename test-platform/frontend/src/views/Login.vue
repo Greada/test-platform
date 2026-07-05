@@ -42,7 +42,6 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { User, Lock, Edit } from '@element-plus/icons-vue'
 import { authApi } from '../api/auth'
 
 const router = useRouter()

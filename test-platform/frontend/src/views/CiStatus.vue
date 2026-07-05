@@ -2,6 +2,9 @@
     <div class="ci-page">
         <h2 class="page-title">CI/CD 构建状态</h2>
 
+        <el-alert v-if="error" :title="error" type="error" show-icon closable
+            @close="error = ''" style="margin-bottom:20px" />
+
         <el-card v-if="latest" class="summary-card" shadow="never">
             <div class="stats-row">
                 <div class="stat-box">
@@ -40,7 +43,7 @@
             </div>
         </el-card>
 
-        <el-card v-if="!latest && !loading" shadow="never" class="empty-card">
+        <el-card v-if="!latest && !loading && !error" shadow="never" class="empty-card">
             <el-empty description="暂无构建记录" />
         </el-card>
 
@@ -56,8 +59,16 @@
             >
                 <el-table-column prop="buildNumber" label="构建 #" width="90" />
                 <el-table-column prop="totalTests" label="用例数" width="80" align="center" />
-                <el-table-column prop="passed" label="✅ 通过" width="80" align="center" />
-                <el-table-column prop="failed" label="❌ 失败" width="80" align="center" />
+                <el-table-column prop="passed" label="通过" width="80" align="center">
+                    <template #default>
+                        <el-icon color="#67c23a"><CircleCheckFilled /></el-icon>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="failed" label="失败" width="80" align="center">
+                    <template #default>
+                        <el-icon color="#f56c6c"><CircleCloseFilled /></el-icon>
+                    </template>
+                </el-table-column>
                 <el-table-column label="通过率" width="160">
                     <template #default="scope">
                         <el-progress
@@ -85,11 +96,13 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { CircleCheckFilled, CircleCloseFilled } from '@element-plus/icons-vue'
 import { getLatestBuild, getBuildList } from '../api/ci'
 
 const latest = ref(null)
 const builds = ref([])
 const loading = ref(true)
+const error = ref('')
 
 function rateClass(rate) {
     const n = Number(rate)
@@ -114,7 +127,7 @@ onMounted(async () => {
         latest.value = latestRes.data.data
         builds.value = listRes.data.data || []
     } catch (e) {
-        console.error('获取构建状态失败', e)
+        error.value = '获取构建状态失败: ' + (e.response?.data?.message || e.message)
     } finally {
         loading.value = false
     }

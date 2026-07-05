@@ -55,7 +55,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   Document,
@@ -67,7 +67,11 @@ import {
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
-const user = ref(JSON.parse(localStorage.getItem('user') || 'null'))
+let savedUser = null
+try {
+  savedUser = JSON.parse(localStorage.getItem('user'))
+} catch {}
+const user = ref(savedUser)
 
 function handleLogout() {
   localStorage.removeItem('token')

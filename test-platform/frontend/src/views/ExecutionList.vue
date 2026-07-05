@@ -61,6 +61,8 @@ onMounted(() => {
   if (route.query.testCaseId) {
     testCaseId.value = Number(route.query.testCaseId)
     fetchRecords()
+  } else {
+    loading.value = false
   }
 })
 

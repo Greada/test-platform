@@ -145,7 +145,7 @@ import { categoryApi, testCaseApi } from '../api'
 import CategoryTree from '../components/CategoryTree.vue'
 import CategoryDialog from '../components/CategoryDialog.vue'
 import TestCaseEditPanel from './TestCaseEdit.vue'
-import { formatDate } from '../utils/format'
+import { formatDate, formatJson } from '../utils/format'
 
 const list = ref([])
 const loading = ref(true)
@@ -220,9 +220,9 @@ async function fetchCategories() {
   try {
     const res = await categoryApi.list()
     allCategories.value = res.data.data || []
-  } catch {
-    // ignore
-  }
+    } catch (e) {
+      ElMessage.error('加载分类列表失败')
+    }
 }
 
 async function handleCategoryChange(category) {
@@ -298,15 +298,6 @@ function showHistoryLog(row) {
   historyLogVisible.value = true
 }
 
-function formatJson(text) {
-  if (!text) return '-'
-  try {
-    return JSON.stringify(JSON.parse(text), null, 2)
-  } catch {
-    return text
-  }
-}
-
 async function remove(id) {
   try {
     await ElMessageBox.confirm('确定要删除这个用例吗？', '确认删除', {
@@ -317,7 +308,10 @@ async function remove(id) {
     await api.delete('/testcases/' + id)
     ElMessage.success('已删除')
     await fetchList()
-  } catch {
+  } catch (e) {
+    if (e !== 'cancel' && e?.message !== 'cancel') {
+      ElMessage.error('删除失败: ' + (e.response?.data?.message || e.message))
+    }
   }
 }
 
