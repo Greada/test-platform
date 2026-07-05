@@ -111,8 +111,8 @@ onMounted(async () => {
             getLatestBuild(),
             getBuildList()
         ])
-        latest.value = latestRes.data
-        builds.value = listRes.data
+        latest.value = latestRes.data.data
+        builds.value = listRes.data.data || []
     } catch (e) {
         console.error('获取构建状态失败', e)
     } finally {
