@@ -33,13 +33,15 @@ pipeline {
                 dir("${WORKSPACE}/test-platform") {
                     sh '''
                         echo "===== 运行单元测试 ($(find backend/src/test -name '*Test.java' | wc -l) 个测试文件) ====="
+                        mkdir -p "$HOME/.m2"
+                        cp "$PWD/backend/settings.xml" "$HOME/.m2/settings.xml" 2>/dev/null || true
                         docker run --rm \\
                             -v "$PWD":/app \\
                             -w /app \\
                             -v "$HOME/.m2":/root/.m2 \\
                             --network host \\
                             maven:3.9-eclipse-temurin-17 \\
-                            mvn test -pl backend -am -B -s /app/backend/settings.xml
+                            mvn test -pl backend -am -B
                     '''
                 }
             }
