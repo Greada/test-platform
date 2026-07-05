@@ -17,8 +17,6 @@ pipeline {
         // WORKSPACE 是 Jenkins checkout 的根目录（即仓库根目录）
         PROJECT_DIR = "${WORKSPACE}/test-platform"
 
-        // Docker Compose 项目名称，避免与服务器上其他 compose 项目冲突
-        COMPOSE_PROJECT_NAME = "test-platform"
     }
 
     stages {
@@ -43,16 +41,10 @@ pipeline {
             steps {
                 sh '''
                     echo "===== 构建后端镜像 ====="
-                    docker compose \\
-                        -p ${COMPOSE_PROJECT_NAME} \\
-                        -f ${PROJECT_DIR}/docker-compose.yml \\
-                        build backend
+                    docker compose -f ${PROJECT_DIR}/docker-compose.yml build backend
 
                     echo "===== 构建前端镜像 ====="
-                    docker compose \\
-                        -p ${COMPOSE_PROJECT_NAME} \\
-                        -f ${PROJECT_DIR}/docker-compose.yml \\
-                        build frontend
+                    docker compose -f ${PROJECT_DIR}/docker-compose.yml build frontend
                 '''
             }
         }
@@ -66,10 +58,7 @@ pipeline {
             steps {
                 sh '''
                     echo "===== 更新容器 ====="
-                    docker compose \\
-                        -p ${COMPOSE_PROJECT_NAME} \\
-                        -f ${PROJECT_DIR}/docker-compose.yml \\
-                        up -d backend frontend
+                    docker compose -f ${PROJECT_DIR}/docker-compose.yml up -d backend frontend
 
                     echo "===== 清理旧镜像 ====="
                     docker image prune -f
