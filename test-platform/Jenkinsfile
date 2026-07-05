@@ -46,26 +46,28 @@ pipeline {
             post {
                 always {
                     junit 'test-platform/backend/target/surefire-reports/*.xml'
-                    script {
-                        def total = 0, passed = 0, failed = 0
-                        def reports = findFiles(glob: 'test-platform/backend/target/surefire-reports/TEST-*.xml')
-                        reports.each { report ->
-                            def xml = readFile report.path
-                            def tests = (xml =~ /tests="(\d+)"/).collect { it[1] as int }.sum() ?: 0
-                            def failures = (xml =~ /failures="(\d+)"/).collect { it[1] as int }.sum() ?: 0
-                            def errors = (xml =~ /errors="(\d+)"/).collect { it[1] as int }.sum() ?: 0
-                            total += tests
-                            failed += failures + errors
-                            passed += tests - failures - errors
-                        }
-                        def rate = total > 0 ? String.format("%.2f", passed * 100.0 / total) : "0"
-                        def status = failed > 0 ? "FAILURE" : "SUCCESS"
-                        sh """
-                            curl -s -X POST http://localhost:8080/api/ci/builds \\
-                                -H 'Content-Type: application/json' \\
-                                -d '{"buildNumber":${env.BUILD_NUMBER},"totalTests":${total},"passed":${passed},"failed":${failed},"passRate":${rate},"status":"${status}","buildUrl":"${env.BUILD_URL}"}'
-                        """
-                    }
+                    sh '''
+                        total=0; passed=0; failed=0
+                        for f in test-platform/backend/target/surefire-reports/TEST-*.xml; do
+                            [ ! -f "$f" ] && continue
+                            t=$(grep -oP 'tests="\K\d+' "$f" | awk '{s+=$1} END{print s}')
+                            f_cnt=$(grep -oP 'failures="\K\d+' "$f" | awk '{s+=$1} END{print s}')
+                            e=$(grep -oP 'errors="\K\d+' "$f" | awk '{s+=$1} END{print s}')
+                            t=${t:-0}; f_cnt=${f_cnt:-0}; e=${e:-0}
+                            total=$((total + t))
+                            failed=$((failed + f_cnt + e))
+                            passed=$((passed + t - f_cnt - e))
+                        done
+                        if [ "$total" -gt 0 ]; then
+                            rate=$(echo "scale=2; $passed * 100 / $total" | bc)
+                            status="SUCCESS"; [ "$failed" -gt 0 ] && status="FAILURE"
+                            printf '{"buildNumber":%s,"totalTests":%s,"passed":%s,"failed":%s,"passRate":%s,"status":"%s","buildUrl":"%s"}' \
+                                "$BUILD_NUMBER" "$total" "$passed" "$failed" "$rate" "$status" "$BUILD_URL" > /tmp/build-payload.json
+                            curl -s -X POST http://localhost:8080/api/ci/builds \
+                                -H 'Content-Type: application/json' \
+                                -d @/tmp/build-payload.json
+                        fi
+                    '''
                 }
             }
         }
