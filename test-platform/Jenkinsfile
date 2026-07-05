@@ -31,13 +31,15 @@ pipeline {
         stage('Test') {
             steps {
                 sh '''
+                    echo "===== 调试：工作空间结构 ====="
+                    find . -name "pom.xml" -type f
                     echo "===== 运行单元测试 ====="
                     docker run --rm \\
                         -v "$WORKSPACE":/app \\
                         -w /app \\
                         --network host \\
                         maven:3.9-eclipse-temurin-17 \\
-                        mvn test -f backend/pom.xml -B
+                        bash -c "find . -name 'pom.xml' && mvn test -f backend/pom.xml -B"
                 '''
             }
             post {
