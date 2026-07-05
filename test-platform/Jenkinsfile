@@ -32,33 +32,16 @@ pipeline {
         }
 
         // ====================================================================
-        // 2. 构建 Docker 镜像 — 利用 Dockerfile 多阶段构建
-        //    backend/Dockerfile 内部完成 Maven 编译 + JRE 打包
-        //    frontend/Dockerfile 内部完成 npm ci + npm run build + Nginx
-        //    不需要在 Jenkins 中单独做编译，减少依赖
+        // 2. 构建并部署 — 利用 docker compose up -d --build 一步完成
+        //    --build 会自动对比 Dockerfile 和镜像缓存，有变化才重建
+        //    backend/frontend 容器有固定名称（container_name），会被自动替换
+        //    MySQL 容器不受影响
         // ====================================================================
-        stage('Docker Build') {
+        stage('Build & Deploy') {
             steps {
                 sh '''
-                    echo "===== 构建后端镜像 ====="
-                    docker compose -f ${PROJECT_DIR}/docker-compose.yml build backend
-
-                    echo "===== 构建前端镜像 ====="
-                    docker compose -f ${PROJECT_DIR}/docker-compose.yml build frontend
-                '''
-            }
-        }
-
-        // ====================================================================
-        // 3. 部署 — 用新镜像替换运行中的容器
-        //    只重建 backend 和 frontend，不碰 MySQL 服务
-        //    compose 会检测到同名的 tp-backend/tp-frontend 容器并自动替换
-        // ====================================================================
-        stage('Deploy') {
-            steps {
-                sh '''
-                    echo "===== 更新容器 ====="
-                    docker compose -f ${PROJECT_DIR}/docker-compose.yml up -d backend frontend
+                    echo "===== 构建并部署后端 + 前端 ====="
+                    docker compose -f ${PROJECT_DIR}/docker-compose.yml up -d --build backend frontend
 
                     echo "===== 清理旧镜像 ====="
                     docker image prune -f
@@ -67,7 +50,7 @@ pipeline {
         }
 
         // ====================================================================
-        // 4. 验证 — 检查容器状态 + API 可用性
+        // 3. 验证 — 检查容器状态 + API 可用性
         //    登录 API 返回 200 代表后端正常工作
         //    前端返回 200/302 代表 Nginx 正常分发
         // ====================================================================
