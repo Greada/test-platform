@@ -55,12 +55,14 @@ if [ "$PR_COUNT" -eq 0 ]; then
 fi
 
 # ---- Step 2: 遍历每个 PR ----------------------------------------------------
-echo "$PR_LIST" | grep -o '"number":[0-9]*,"title":"[^"]*","head":[^}]*}' | while IFS= read -r pr_item; do
-    PR_NUMBER=$(echo "$pr_item" | sed 's/.*"number":\([0-9]*\).*/\1/')
+# 先提取所有 PR 编号，逐个处理（用临时文件避免管道 set -e 问题）
+PR_NUMBERS=$(echo "$PR_LIST" | grep -o '"number":[0-9]*' | grep -o '[0-9]*') || true
+echo "$PR_NUMBERS" | while IFS= read -r PR_NUMBER; do
+    [ -z "$PR_NUMBER" ] && continue
     # 获取完整 PR 信息
     PR_DETAIL=$(curl -sS "${GITEE_API}/repos/${GITEE_OWNER}/${GITEE_REPO}/pulls/${PR_NUMBER}?access_token=${GITEE_TOKEN}")
     HEAD_SHA=$(echo "$PR_DETAIL" | grep -o '"sha":"[^"]*"' | head -1 | sed 's/"sha":"//;s/"//')
-    HEAD_REF=$(echo "$PR_DETAIL" | grep -o '"ref":"[^"]*"' | head -1 | sed 's/"ref":"//;s/"//')
+    HEAD_REF=$(echo "$PR_DETAIL" | grep -o '"head":[^}]*}' | grep -o '"ref":"[^"]*"' | head -1 | sed 's/"ref":"//;s/"//')
     BASE_REF=$(echo "$PR_DETAIL" | grep -o '"base":[^}]*}' | grep -o '"ref":"[^"]*"' | sed 's/"ref":"//;s/"//')
     PR_TITLE=$(echo "$PR_DETAIL" | grep -o '"title":"[^"]*"' | head -1 | sed 's/"title":"//;s/"//')
 
