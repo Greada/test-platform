@@ -221,6 +221,7 @@ test-platform/
 | 9 | 前端 CiStatus.vue（/ci 路由，统计卡片 + 构建历史表格） | ✅ |
 | 10 | crontab 定时检测 Git 变更，自动触发 Jenkins 构建 | ✅ |
 | 11 | 触发脚本认证（--user greada:API_TOKEN + HTTP 状态码检查） | ✅ |
+| 12 | PR 构建流水线（pr-poller.sh 自动轮询 Gitee PR + 触发构建 + 回写 Commit Status） | ✅ |
 
 ### V1 修复与增强记录
 
@@ -266,24 +267,58 @@ test-platform/
 
 ## CI/CD 部署指南
 
-### 自动化流程
+### 双流水线架构
+
+项目有两套 Jenkins 流水线，分别处理不同场景：
+
+| 流水线 | Jenkins Job | 触发方式 | 作用 |
+|---|---|---|---|
+| **主分支构建** | `test-platform-pipeline` | Crontab 每 2 分钟检测 main 分支 | 完整 CI/CD：Test → Build → Deploy → Verify |
+| **PR 构建** | `test-platform-pr-build` | `pr-poller.sh` 每 2 分钟轮询 Gitee PR | 仅 CI：Test → 后端 Build → 回写 Gitee Commit Status |
+
+### 自动化流程（主分支）
 
 ```
-本地 git push
+开发者 git push main
     ↓
-Crontab 每 2 分钟检测 Git 仓库变更
+Crontab 每 2 分钟检测 Git 仓库变更（tp-trigger.sh）
     ↓
 检测到新提交 → 调用 Jenkins API 触发构建
     ↓
-Jenkins Pipeline:
+Jenkins Pipeline (test-platform-pipeline):
     1. Checkout — 从 Gitee 拉取最新代码
-    2. Test — `docker run --volumes-from` Maven 容器执行单元测试
+    2. Test — Maven 容器执行单元测试
     3. Docker Build — 构建 backend + frontend 镜像
-    4. Deploy — 更新运行中的容器（不重启 MySQL）
+    4. Deploy — 更新运行中的容器
     5. Verify — 测试 API 和前端可用性
 ```
 
+### PR 构建流程
+
+```
+开发者 fork 仓库 → 提交 PR 到 main
+    ↓
+pr-poller.sh 每 2 分钟轮询 Gitee API 获取 open PR
+    ↓
+检测到新 PR（或新 commit）→ 在 Gitee 设置 pending 状态
+    ↓
+触发 Jenkins PR 构建 (test-platform-pr-build):
+    1. Checkout PR 源分支
+    2. Test — 单元测试
+    3. Docker Build — 仅构建后端镜像（验证编译通过）
+    ↓
+构建通过/失败 → 回写 Gitee Commit Status（success/failure）
+    ↓
+PR 页面显示 CI 状态 ✅/❌
+    ↓
+仓库 Owner Review 代码 → 人工在 Gitee 上点击"合入"
+    ↓
+main 分支更新 → 主分支流水线自动触发部署
+```
+
 ### 触发脚本配置
+
+#### 主分支触发脚本（/opt/tp-trigger.sh）
 
 服务器上 `/opt/tp-trigger.sh` 负责检测 Git 变更：
 
@@ -319,6 +354,39 @@ Crontab 配置（每 2 分钟执行）：
 ```bash
 */2 * * * * /bin/bash /opt/tp-trigger.sh
 ```
+
+#### PR 轮询脚本（scripts/pr-poller.sh + scripts/pr-report.sh）
+
+这两个脚本位于仓库 `test-platform/scripts/` 目录下，需要部署到服务器 `/opt/`：
+
+| 脚本 | 作用 |
+|---|---|
+| `pr-poller.sh` | 轮询 Gitee API 获取 open PR，触发 Jenkins 构建，设置 pending 状态 |
+| `pr-report.sh` | Jenkinsfile 调用的辅助脚本，回写 success/failure 状态 |
+
+**配置凭据**：在服务器 `/opt/.env.ci` 中配置（已加入 `.gitignore`，不会提交到仓库）：
+
+```
+GITEE_OWNER=greada
+GITEE_REPO=test-platform
+GITEE_TOKEN=你的Gitee私人令牌
+JENKINS_URL=http://localhost:8088
+JENKINS_USER=greada
+JENKINS_TOKEN=你的Jenkins API Token
+```
+
+**Jenkins 侧配置（手动操作一次）：**
+
+1. 新建 Jenkins Job `test-platform-pr-poller`
+   - 类型：Freestyle project
+   - 构建触发器：`Build periodically` → `H/2 * * * *`
+   - 构建步骤：`Execute shell` → `/bin/bash /opt/pr-poller.sh`
+
+2. 新建 Jenkins Job `test-platform-pr-build`
+   - 类型：Pipeline
+   - 参数化构建：4 个 String parameter — `PR_NUMBER`、`PR_SHA`、`PR_HEAD_REF`、`PR_BASE_REF`
+   - Pipeline from SCM：`test-platform/Jenkinsfile`
+   - 轻量级 checkout：勾选
 
 ### 构建优化
 

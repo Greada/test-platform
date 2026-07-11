@@ -3,43 +3,107 @@
 // 运行环境：Jenkins 容器（挂载 docker.sock） + Docker Compose
 // 目标服务器：192.168.0.10
 // 仓库地址：https://gitee.com/greada/test-platform.git
-// 注意事项：
-//   1. Jenkins 容器需挂载 /var/run/docker.sock 以调用宿主机 Docker
-//   2. 项目代码在仓库的 test-platform/ 子目录下
-//   3. 只需安装 Git 和 Pipeline 两个插件即可运行
+//
+// 双环境支持：
+//   - 测试环境（test）：:81/:8081/:3308，容器名 tp-test-*
+//   - 生产环境（prod）：:80/:8080/:3307，容器名 tp-*
+//
+// 触发方式：
+//   - Crontab 自动触发 → 默认 prod
+//   - Jenkins 手动触发 → 可选 auto/test/prod
+//   - PR 构建 → 由 pr-poller.sh 触发，只跑 Test + 后端 Build + 回写状态
 // ============================================================================
 
 pipeline {
     agent any
 
+    parameters {
+        choice(name: 'DEPLOY_ENV', choices: ['auto', 'test', 'prod'],
+               description: '部署环境：auto 根据分支自动判断，test 强制测试环境，prod 强制生产环境')
+        string(name: 'PR_NUMBER', defaultValue: '', description: 'PR 编号（非 PR 构建时留空）')
+        string(name: 'PR_SHA', defaultValue: '', description: 'PR 最新 commit SHA')
+        string(name: 'PR_HEAD_REF', defaultValue: '', description: 'PR 源分支名')
+        string(name: 'PR_BASE_REF', defaultValue: '', description: 'PR 目标分支名')
+    }
+
     stages {
 
         // ====================================================================
-        // 1. 代码检出 — 从 Gitee 拉取最新代码
+        // 0. 模式判断 — PR 构建 vs 普通分支构建
         // ====================================================================
-        stage('Checkout') {
+        stage('Resolve Mode') {
             steps {
-                checkout scm
+                script {
+                    env.IS_PR = (params.PR_NUMBER ?: '') ? 'true' : 'false'
+                    echo "===== 构建模式: ${env.IS_PR == 'true' ? 'PR #' + params.PR_NUMBER : '普通分支'} ====="
+                }
             }
         }
 
         // ====================================================================
-        // 2. 运行单元测试 — 测试失败则阻断部署
-        //     直接在 Jenkins 容器内安装 Maven 运行，避免 Docker
-        //     跨容器卷挂载路径不一致的问题。
+        // 1. 代码检出 — 从 Gitee 拉取最新代码
+        //    如果是 PR 构建，检出 PR 的源分支
+        // ====================================================================
+        stage('Checkout') {
+            steps {
+                script {
+                    if (env.IS_PR == 'true' && params.PR_HEAD_REF) {
+                        checkout([
+                            $class: 'GitSCM',
+                            branches: [[name: params.PR_HEAD_REF]],
+                            userRemoteConfigs: [[url: 'https://gitee.com/greada/test-platform.git']],
+                            extensions: [
+                                [$class: 'LocalBranch', localBranch: "pr-${params.PR_NUMBER}"],
+                                [$class: 'CleanCheckout']
+                            ]
+                        ])
+                    } else {
+                        checkout scm
+                    }
+                }
+            }
+        }
+
+        // ====================================================================
+        // 1.5 环境判断 — 确定部署到测试环境还是生产环境
+        //     auto 模式：main → prod，其他分支 → test
+        //     手动模式：直接使用参数值
+        //     PR 模式：跳过（PR 不部署）
+        // ====================================================================
+        stage('Resolve Env') {
+            when { expression { env.IS_PR != 'true' } }
+            steps {
+                script {
+                    if (params.DEPLOY_ENV == 'auto') {
+                        def branch = env.BRANCH_NAME ?: ''
+                        if (branch == 'main' || branch == '') {
+                            env.DEPLOY_TARGET = 'prod'
+                        } else {
+                            env.DEPLOY_TARGET = 'test'
+                        }
+                    } else {
+                        env.DEPLOY_TARGET = params.DEPLOY_ENV
+                    }
+                    echo "===== 部署目标: ${env.DEPLOY_TARGET} ====="
+                }
+            }
+        }
+
+        // ====================================================================
+        // 2. 运行单元测试 — 测试失败则阻断部署/PR
         // ====================================================================
         stage('Test') {
             steps {
                     sh '''
                         echo "===== 运行单元测试 ====="
-                        docker run --rm \\
-                            --volumes-from "$(hostname)" \\
-                            -w "$WORKSPACE/test-platform" \\
-                            -v "maven-repo:/tmp/.m2" \\
-                            -e HOME=/tmp \\
-                            --network host \\
-                            --user 1000:1000 \\
-                            maven:3.9-eclipse-temurin-17 \\
+                        docker run --rm \
+                            --volumes-from "$(hostname)" \
+                            -w "$WORKSPACE/test-platform" \
+                            -v "maven-repo:/tmp/.m2" \
+                            -e HOME=/tmp \
+                            --network host \
+                            --user 1000:1000 \
+                            maven:3.9-eclipse-temurin-17 \
                             mvn test -f backend/pom.xml -B -s backend/settings.xml
                     '''
             }
@@ -59,12 +123,14 @@ pipeline {
                             passed=$((passed + t - f_cnt - e))
                         done
                         if [ "$total" -gt 0 ]; then
+                            CI_PORT=8080
+                            [ "$DEPLOY_TARGET" = "test" ] && CI_PORT=8081
                             rate=$(awk 'BEGIN {printf "%.2f", '"$passed"' * 100 / '"$total"' }')
                             status="SUCCESS"; [ "$failed" -gt 0 ] && status="FAILURE"
                             printf '{"buildNumber":%s,"totalTests":%s,"passed":%s,"failed":%s,"passRate":%s,"status":"%s","buildUrl":"%s"}' \
                                 "$BUILD_NUMBER" "$total" "$passed" "$failed" "$rate" "$status" "$BUILD_URL" | \
                             docker run --rm -i --network host curlimages/curl:latest \
-                                -s -X POST http://localhost:8080/api/ci/builds \
+                                -s -X POST http://localhost:$CI_PORT/api/ci/builds \
                                 -H 'Content-Type: application/json' \
                                 --data-binary @- || true
                         fi
@@ -75,32 +141,52 @@ pipeline {
 
         // ====================================================================
         // 3. 构建 Docker 镜像
-        //    dir() 切换到项目目录后，docker compose 会自动找到
-        //    docker-compose.yml；不需要 -f 参数
+        //     PR 模式：只构建后端（验证编译通过），跳过前端
+        //     普通模式：完整构建 backend + frontend
         // ====================================================================
         stage('Docker Build') {
             steps {
                 dir("${WORKSPACE}/test-platform") {
-                    sh '''
-                        echo "===== 构建后端镜像 ====="
-                        docker compose build backend
+                    script {
+                        if (env.IS_PR == 'true') {
+                            sh '''
+                                echo "===== [PR 模式] 仅构建后端镜像 ====="
+                                docker compose -f docker-compose.yml build backend
+                            '''
+                        } else {
+                            sh '''
+                                COMPOSE_FILE="docker-compose.yml"
+                                [ "$DEPLOY_TARGET" = "test" ] && COMPOSE_FILE="docker-compose.test.yml"
 
-                        echo "===== 构建前端镜像 ====="
-                        docker compose build frontend
-                    '''
+                                echo "===== 使用 $COMPOSE_FILE 构建 ====="
+
+                                echo "===== 构建后端镜像 ====="
+                                docker compose -f "$COMPOSE_FILE" build backend
+
+                                echo "===== 构建前端镜像 ====="
+                                docker compose -f "$COMPOSE_FILE" build frontend
+                            '''
+                        }
+                    }
                 }
             }
         }
 
         // ====================================================================
-        // 4. 部署 — 用新镜像替换运行中的容器
+        // 4. 部署 — PR 模式跳过
         // ====================================================================
         stage('Deploy') {
+            when { expression { env.IS_PR != 'true' } }
             steps {
                 dir("${WORKSPACE}/test-platform") {
                     sh '''
+                        COMPOSE_FILE="docker-compose.yml"
+                        [ "$DEPLOY_TARGET" = "test" ] && COMPOSE_FILE="docker-compose.test.yml"
+
+                        echo "===== 使用 $COMPOSE_FILE 部署 ====="
+
                         echo "===== 更新容器 ====="
-                        docker compose up -d backend frontend
+                        docker compose -f "$COMPOSE_FILE" up -d backend frontend
 
                         echo "===== 清理旧镜像 ====="
                         docker image prune -f
@@ -110,49 +196,80 @@ pipeline {
         }
 
         // ====================================================================
-        // 5. 验证 — 检查容器状态 + API 可用性
-        //    注意：Jenkins 容器内 localhost 不等于宿主机 localhost，
-        //    所以用 docker exec 从容器内部测试，或用 docker run --network host
+        // 5. 验证 — PR 模式跳过
         // ====================================================================
         stage('Verify') {
+            when { expression { env.IS_PR != 'true' } }
             steps {
                 sh '''
+                    echo "===== 部署目标: $DEPLOY_TARGET ====="
+
+                    CONTAINER_FILTER="tp-"
+                    [ "$DEPLOY_TARGET" = "test" ] && CONTAINER_FILTER="tp-test-"
+
                     echo "===== 容器状态 ====="
-                    docker ps --filter "name=tp-" \\
-                        --format "table {{.Names}}\\t{{.Status}}\\t{{.Ports}}"
+                    docker ps --filter "name=$CONTAINER_FILTER" \
+                        --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
                     echo "===== 等待服务启动 ====="
                     sleep 15
 
-                    echo "===== 测试登录 API ====="
-                    HTTP_CODE=$(docker run --rm --network host curlimages/curl:latest \\
-                        -s -o /dev/null -w "%{http_code}" \\
-                        -X POST http://localhost:8080/api/auth/login \\
-                        -H 'Content-Type: application/json' \\
+                    if [ "$DEPLOY_TARGET" = "test" ]; then
+                        BACKEND_PORT=8081
+                        FRONTEND_URL="http://localhost:81"
+                    else
+                        BACKEND_PORT=8080
+                        FRONTEND_URL="http://localhost:80"
+                    fi
+
+                    echo "===== 测试登录 API (端口 $BACKEND_PORT) ====="
+                    HTTP_CODE=$(docker run --rm --network host curlimages/curl:latest \
+                        -s -o /dev/null -w "%{http_code}" \
+                        -X POST http://localhost:$BACKEND_PORT/api/auth/login \
+                        -H 'Content-Type: application/json' \
                         -d '{"username":"admin","password":"admin123"}')
 
                     if [ "$HTTP_CODE" = "200" ]; then
-                        echo "✅ 后端 API 正常，HTTP 状态码: $HTTP_CODE"
+                        echo "后端 API 正常，HTTP 状态码: $HTTP_CODE"
                     else
-                        echo "❌ 后端 API 异常，HTTP 状态码: $HTTP_CODE"
+                        echo "后端 API 异常，HTTP 状态码: $HTTP_CODE"
                         exit 1
                     fi
 
-                    echo "===== 测试前端 ====="
-                    HTTP_CODE=$(docker run --rm --network host curlimages/curl:latest \\
-                        -s -o /dev/null -w "%{http_code}" \\
-                        http://localhost/)
+                    echo "===== 测试前端 ($FRONTEND_URL) ====="
+                    HTTP_CODE=$(docker run --rm --network host curlimages/curl:latest \
+                        -s -o /dev/null -w "%{http_code}" \
+                        $FRONTEND_URL)
 
                     if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "302" ]; then
-                        echo "✅ 前端正常，HTTP 状态码: $HTTP_CODE"
+                        echo "前端正常，HTTP 状态码: $HTTP_CODE"
                     else
-                        echo "❌ 前端异常，HTTP 状态码: $HTTP_CODE"
+                        echo "前端异常，HTTP 状态码: $HTTP_CODE"
                         exit 1
                     fi
 
                     echo ""
-                    echo "✅✅✅ 部署全部通过 ✅✅✅"
+                    echo "部署全部通过（$DEPLOY_TARGET 环境）"
                 '''
+            }
+        }
+
+        // ====================================================================
+        // 6. PR 状态报告 — 仅 PR 模式执行
+        //     向 Gitee API 回写 ci/jenkins commit status
+        // ====================================================================
+        stage('Report PR Status') {
+            when { expression { env.IS_PR == 'true' } }
+            steps {
+                script {
+                    def ciStatus = currentBuild.result == 'SUCCESS' || currentBuild.result == null ? 'success' : 'failure'
+                    withEnv(["CI_STATUS=${ciStatus}"]) {
+                        sh '''
+                            echo "===== 回写 PR #${PR_NUMBER} 构建状态: ${CI_STATUS} ====="
+                            bash test-platform/scripts/pr-report.sh
+                        '''
+                    }
+                }
             }
         }
     }
@@ -162,21 +279,28 @@ pipeline {
     // ========================================================================
     post {
         always {
-            sh '''
-                echo "===== 最终容器状态 ====="
-                docker ps --filter "name=tp-" --format "table {{.Names}}\\t{{.Status}}"
-            '''
+            script {
+                if (env.IS_PR == 'true') {
+                    echo "===== PR #${params.PR_NUMBER} 构建完成 ====="
+                }
+            }
         }
 
         failure {
-            sh '''
-                echo "===== 后端最近日志 ====="
-                docker logs tp-backend --tail 50 2>&1 || echo "无日志"
-            '''
+            script {
+                if (env.IS_PR == 'true') {
+                    withEnv(["CI_STATUS=failure"]) {
+                        sh '''
+                            echo "===== [失败] 回写 PR #${PR_NUMBER} 构建状态 ====="
+                            bash test-platform/scripts/pr-report.sh
+                        '''
+                    }
+                }
+            }
         }
 
         success {
-            echo "✅ 部署成功完成"
+            echo "构建/部署成功完成"
         }
 
         cleanup {
