@@ -45,7 +45,7 @@ log "===== PR Poller 开始 ====="
 
 # ---- Step 1: 获取所有 open PR ------------------------------------------------
 PR_LIST=$(curl -sS "${GITEE_API}/repos/${GITEE_OWNER}/${GITEE_REPO}/pulls?state=open&access_token=${GITEE_TOKEN}")
-PR_COUNT=$(echo "$PR_LIST" | grep -o '"number":[0-9]*' | wc -l)
+PR_COUNT=$(echo "$PR_LIST" | grep -o '"number":[0-9]*' | wc -l) || true
 log "发现 ${PR_COUNT} 个 open PR"
 
 # ---- Step 1.5: 没有 open PR 时直接退出 ---------------------------------------
