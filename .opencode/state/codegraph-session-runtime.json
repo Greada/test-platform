@@ -1,14 +1,14 @@
 {
   "projectId": "",
   "defaultAgentId": "opencode",
-  "stateFilePath": "E:\\Java_all\\code\\test-platform\\.opencode\\state\\codegraph-session-runtime.json",
+  "stateFilePath": "D:\\Java_all\\code\\test-platform\\.opencode\\state\\codegraph-session-runtime.json",
   "lastWorkflowState": null,
   "pendingReviewCommit": null,
   "lastContextSessionId": null,
   "lastContextSessionState": null,
   "lastContextAccessMode": null,
   "lastContextOwnerUserKey": null,
-  "activeScenario": "default",
+  "activeScenario": "resume",
   "recentUsedContextItems": [],
   "lastCommitFingerprint": null,
   "lastCommitStatus": null

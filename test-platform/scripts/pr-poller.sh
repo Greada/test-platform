@@ -75,6 +75,9 @@ for PR_NUMBER in $PR_NUMBERS; do
     # 如果提取失败，回退到主仓库
     HEAD_OWNER="${HEAD_OWNER:-$GITEE_OWNER}"
     HEAD_REPO="${HEAD_REPO:-$GITEE_REPO}"
+    # 提取 fork 仓库的 clone URL（用于 Jenkins checkout）
+    HEAD_CLONE_URL=$(echo "$PR_DETAIL" | grep -o '"head":{[^}]*"html_url":"[^"]*"' | grep -o '"html_url":"[^"]*"' | sed 's/"html_url":"//;s/"//') || true
+    HEAD_CLONE_URL="${HEAD_CLONE_URL:-https://gitee.com/${HEAD_OWNER}/${HEAD_REPO}.git}"
 
     log "PR #${PR_NUMBER}: ${PR_TITLE} (${HEAD_REF} → ${BASE_REF}) SHA=${HEAD_SHA} 仓库=${HEAD_OWNER}/${HEAD_REPO}"
 
@@ -121,7 +124,10 @@ for PR_NUMBER in $PR_NUMBERS; do
         --data-urlencode "PR_NUMBER=${PR_NUMBER}" \
         --data-urlencode "PR_SHA=${HEAD_SHA}" \
         --data-urlencode "PR_HEAD_REF=${HEAD_REF}" \
-        --data-urlencode "PR_BASE_REF=${BASE_REF}")
+        --data-urlencode "PR_BASE_REF=${BASE_REF}" \
+        --data-urlencode "HEAD_OWNER=${HEAD_OWNER}" \
+        --data-urlencode "HEAD_REPO=${HEAD_REPO}" \
+        --data-urlencode "HEAD_REPO_URL=${HEAD_CLONE_URL}")
 
     if [ "$HTTP_CODE" = "201" ]; then
         log "  ✅ Jenkins 构建已触发 (HTTP 201)"

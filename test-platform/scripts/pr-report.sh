@@ -27,11 +27,13 @@ else
     exit 1
 fi
 
-: "${GITEE_OWNER:?未设置 GITEE_OWNER}"
-: "${GITEE_REPO:?未设置 GITEE_REPO}"
 : "${GITEE_TOKEN:?未设置 GITEE_TOKEN}"
 : "${PR_SHA:?未设置 PR_SHA}"
 : "${CI_STATUS:?未设置 CI_STATUS}"
+
+# HEAD_OWNER/HEAD_REPO 可覆盖 GITEE_OWNER/GITEE_REPO（PR 模式下 commit 在 fork 仓库）
+TARGET_OWNER="${HEAD_OWNER:-${GITEE_OWNER:?未设置 GITEE_OWNER 或 HEAD_OWNER}}"
+TARGET_REPO="${HEAD_REPO:-${GITEE_REPO:?未设置 GITEE_REPO 或 HEAD_REPO}}"
 
 GITEE_API="https://gitee.com/api/v5"
 JENKINS_JOB="test-platform-pr-build"
@@ -51,14 +53,14 @@ else
     CI_DESC="${CI_DESC:-CI 状态: ${CI_STATUS}}"
 fi
 
-echo "[pr-report] PR #${PR_NUMBER} SHA=${PR_SHA} → ${CI_STATUS}"
+echo "[pr-report] PR #${PR_NUMBER} SHA=${PR_SHA} → ${CI_STATUS} (repo=${TARGET_OWNER}/${TARGET_REPO})"
 
 # 回写 Gitee commit status
 STATUS_PAYLOAD=$(printf '{"state":"%s","target_url":"%s","description":"%s","context":"ci/jenkins"}' \
     "$CI_STATUS" "$BUILD_URL" "$CI_DESC")
 
 HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
-    "${GITEE_API}/repos/${GITEE_OWNER}/${GITEE_REPO}/statuses/${PR_SHA}?access_token=${GITEE_TOKEN}" \
+    "${GITEE_API}/repos/${TARGET_OWNER}/${TARGET_REPO}/statuses/${PR_SHA}?access_token=${GITEE_TOKEN}" \
     -H 'Content-Type: application/json' \
     -d "$STATUS_PAYLOAD")
 
