@@ -50,11 +50,11 @@ pipeline {
         stage('Checkout') {
             steps {
                 script {
-                    if (env.IS_PR == 'true' && params.PR_HEAD_REF) {
+                    if (env.IS_PR == 'true' && params.PR_SHA) {
                         def cloneUrl = params.HEAD_REPO_URL ?: 'https://gitee.com/greada/test-platform.git'
                         checkout([
                             $class: 'GitSCM',
-                            branches: [[name: params.PR_HEAD_REF]],
+                            branches: [[name: params.PR_SHA]],
                             userRemoteConfigs: [[url: cloneUrl]],
                             extensions: [
                                 [$class: 'LocalBranch', localBranch: "pr-${params.PR_NUMBER}"],

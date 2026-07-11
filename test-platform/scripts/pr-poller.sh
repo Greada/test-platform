@@ -65,8 +65,8 @@ for PR_NUMBER in $PR_NUMBERS; do
     # 获取完整 PR 信息
     PR_DETAIL=$(curl -sS "${GITEE_API}/repos/${GITEE_OWNER}/${GITEE_REPO}/pulls/${PR_NUMBER}?access_token=${GITEE_TOKEN}")
     HEAD_SHA=$(echo "$PR_DETAIL" | grep -o '"sha":"[^"]*"' | head -1 | sed 's/"sha":"//;s/"//') || true
-    HEAD_REF=$(echo "$PR_DETAIL" | grep -o '"head":[^}]*}' | grep -o '"ref":"[^"]*"' | head -1 | sed 's/"ref":"//;s/"//') || true
-    BASE_REF=$(echo "$PR_DETAIL" | grep -o '"base":[^}]*}' | grep -o '"ref":"[^"]*"' | sed 's/"ref":"//;s/"//') || true
+    HEAD_REF=$(echo "$PR_DETAIL" | grep -P -o '"head":\{"label":"[^"]*","ref":"[^"]*"' | sed 's/.*"ref":"//;s/"//') || true
+    BASE_REF=$(echo "$PR_DETAIL" | grep -P -o '"base":\{"label":"[^"]*","ref":"[^"]*"' | sed 's/.*"ref":"//;s/"//') || true
     PR_TITLE=$(echo "$PR_DETAIL" | grep -o '"title":"[^"]*"' | head -1 | sed 's/"title":"//;s/"//') || true
     # 提取 fork 仓库 full_name（用于后续 Gitee API 调用，commit 在 fork 仓库上）
     HEAD_REPO_FULL=$(echo "$PR_DETAIL" | grep -o '"head":{[^}]*"full_name":"[^"]*"' | grep -o '"full_name":"[^"]*"' | sed 's/"full_name":"//;s/"//') || true
