@@ -20,6 +20,8 @@ if [ -f /opt/.env.ci ]; then
     source /opt/.env.ci
 elif [ -f "${SCRIPT_DIR}/.env.ci" ]; then
     source "${SCRIPT_DIR}/.env.ci"
+elif [ -f /var/jenkins_home/.env.ci ]; then
+    source /var/jenkins_home/.env.ci
 else
     echo "[ERROR] .env.ci 未找到，请创建在 /opt/ 或脚本同目录"
     exit 1
