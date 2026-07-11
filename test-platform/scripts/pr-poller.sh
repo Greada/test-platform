@@ -55,18 +55,24 @@ if [ "$PR_COUNT" -eq 0 ]; then
 fi
 
 # ---- Step 2: 遍历每个 PR ----------------------------------------------------
-# 先提取所有 PR 编号，逐个处理（用临时文件避免管道 set -e 问题）
 PR_NUMBERS=$(echo "$PR_LIST" | grep -o '"number":[0-9]*' | grep -o '[0-9]*') || true
-echo "$PR_NUMBERS" | while IFS= read -r PR_NUMBER; do
-    [ -z "$PR_NUMBER" ] && continue
+
+for PR_NUMBER in $PR_NUMBERS; do
     # 获取完整 PR 信息
     PR_DETAIL=$(curl -sS "${GITEE_API}/repos/${GITEE_OWNER}/${GITEE_REPO}/pulls/${PR_NUMBER}?access_token=${GITEE_TOKEN}")
-    HEAD_SHA=$(echo "$PR_DETAIL" | grep -o '"sha":"[^"]*"' | head -1 | sed 's/"sha":"//;s/"//')
-    HEAD_REF=$(echo "$PR_DETAIL" | grep -o '"head":[^}]*}' | grep -o '"ref":"[^"]*"' | head -1 | sed 's/"ref":"//;s/"//')
-    BASE_REF=$(echo "$PR_DETAIL" | grep -o '"base":[^}]*}' | grep -o '"ref":"[^"]*"' | sed 's/"ref":"//;s/"//')
-    PR_TITLE=$(echo "$PR_DETAIL" | grep -o '"title":"[^"]*"' | head -1 | sed 's/"title":"//;s/"//')
+    HEAD_SHA=$(echo "$PR_DETAIL" | grep -o '"sha":"[^"]*"' | head -1 | sed 's/"sha":"//;s/"//') || true
+    HEAD_REF=$(echo "$PR_DETAIL" | grep -o '"head":[^}]*}' | grep -o '"ref":"[^"]*"' | head -1 | sed 's/"ref":"//;s/"//') || true
+    BASE_REF=$(echo "$PR_DETAIL" | grep -o '"base":[^}]*}' | grep -o '"ref":"[^"]*"' | sed 's/"ref":"//;s/"//') || true
+    PR_TITLE=$(echo "$PR_DETAIL" | grep -o '"title":"[^"]*"' | head -1 | sed 's/"title":"//;s/"//') || true
+    # 提取 fork 仓库 full_name（用于后续 Gitee API 调用，commit 在 fork 仓库上）
+    HEAD_REPO_FULL=$(echo "$PR_DETAIL" | grep -o '"head":{[^}]*"full_name":"[^"]*"' | grep -o '"full_name":"[^"]*"' | sed 's/"full_name":"//;s/"//') || true
+    HEAD_OWNER=$(echo "$HEAD_REPO_FULL" | cut -d/ -f1) || true
+    HEAD_REPO=$(echo "$HEAD_REPO_FULL" | cut -d/ -f2) || true
+    # 如果提取失败，回退到主仓库
+    HEAD_OWNER="${HEAD_OWNER:-$GITEE_OWNER}"
+    HEAD_REPO="${HEAD_REPO:-$GITEE_REPO}"
 
-    log "PR #${PR_NUMBER}: ${PR_TITLE} (${HEAD_REF} → ${BASE_REF}) SHA=${HEAD_SHA}"
+    log "PR #${PR_NUMBER}: ${PR_TITLE} (${HEAD_REF} → ${BASE_REF}) SHA=${HEAD_SHA} 仓库=${HEAD_OWNER}/${HEAD_REPO}"
 
     if [ -z "$HEAD_SHA" ]; then
         log "  ⚠️  无法获取 SHA，跳过"
@@ -80,30 +86,28 @@ echo "$PR_NUMBERS" | while IFS= read -r PR_NUMBER; do
         continue
     fi
 
-    # ---- Step 4: 检查 Gitee commit status ------------------------------------
-    STATUS_JSON=$(curl -sS "${GITEE_API}/repos/${GITEE_OWNER}/${GITEE_REPO}/commits/${HEAD_SHA}/status?access_token=${GITEE_TOKEN}")
-    EXISTING_STATUS=$(echo "$STATUS_JSON" | grep -o '"ci/jenkins"' | head -1)
+    # ---- Step 4: 检查 Gitee commit status（使用 fork 仓库）-------------------
+    STATUS_JSON=$(curl -sS "${GITEE_API}/repos/${HEAD_OWNER}/${HEAD_REPO}/commits/${HEAD_SHA}/status?access_token=${GITEE_TOKEN}")
+    EXISTING_STATUS=$(echo "$STATUS_JSON" | grep -o '"ci/jenkins"' | head -1) || true
 
     if [ -n "$EXISTING_STATUS" ]; then
-        # 已有 ci/jenkins 状态，检查是否还在 pending
-        CI_STATE=$(echo "$STATUS_JSON" | grep -o '"ci/jenkins","state":"[^"]*"' | sed 's/.*"state":"//;s/"//')
+        CI_STATE=$(echo "$STATUS_JSON" | grep -o '"ci/jenkins","state":"[^"]*"' | sed 's/.*"state":"//;s/"//') || true
         if [ "$CI_STATE" = "pending" ]; then
             log "  构建进行中（pending），跳过"
-            # 仍然写入 done log 避免重复触发
-            echo "$KEY" >> "$DONE_LOG"
+            echo "$KEY" >> "$DONE_LOG" || true
             continue
         fi
         log "  已有状态: ${CI_STATE}，跳过"
-        echo "$KEY" >> "$DONE_LOG"
+        echo "$KEY" >> "$DONE_LOG" || true
         continue
     fi
 
-    # ---- Step 5: 设置 pending 状态 -------------------------------------------
+    # ---- Step 5: 设置 pending 状态（使用 fork 仓库）--------------------------
     PENDING_PAYLOAD=$(printf '{"state":"pending","target_url":"%s/job/%s/","description":"CI 构建中…","context":"ci/jenkins"}' \
         "$JENKINS_URL" "$JENKINS_JOB")
-    curl -sS -X POST "${GITEE_API}/repos/${GITEE_OWNER}/${GITEE_REPO}/statuses/${HEAD_SHA}?access_token=${GITEE_TOKEN}" \
+    curl -sS -X POST "${GITEE_API}/repos/${HEAD_OWNER}/${HEAD_REPO}/statuses/${HEAD_SHA}?access_token=${GITEE_TOKEN}" \
         -H 'Content-Type: application/json' \
-        -d "$PENDING_PAYLOAD" > /dev/null
+        -d "$PENDING_PAYLOAD" > /dev/null || true
     log "  已设置 pending 状态"
 
     # ---- Step 6: 触发 Jenkins PR 构建 ------------------------------------------
@@ -121,7 +125,7 @@ echo "$PR_NUMBERS" | while IFS= read -r PR_NUMBER; do
         log "  ❌ Jenkins 触发失败 (HTTP ${HTTP_CODE})"
     fi
 
-    echo "$KEY" >> "$DONE_LOG"
+    echo "$KEY" >> "$DONE_LOG" || true
 done
 
 log "===== PR Poller 结束 ====="
