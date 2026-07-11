@@ -24,9 +24,6 @@ pipeline {
         string(name: 'PR_SHA', defaultValue: '', description: 'PR 最新 commit SHA')
         string(name: 'PR_HEAD_REF', defaultValue: '', description: 'PR 源分支名')
         string(name: 'PR_BASE_REF', defaultValue: '', description: 'PR 目标分支名')
-        string(name: 'HEAD_OWNER', defaultValue: '', description: 'PR fork 仓库所有者')
-        string(name: 'HEAD_REPO', defaultValue: '', description: 'PR fork 仓库名')
-        string(name: 'HEAD_REPO_URL', defaultValue: '', description: 'PR fork 仓库 clone URL')
     }
 
     stages {
@@ -45,17 +42,16 @@ pipeline {
 
         // ====================================================================
         // 1. 代码检出 — 从 Gitee 拉取最新代码
-        //    如果是 PR 构建，检出 PR 的源分支
+        //    如果是 PR 构建，检出 refs/pull/N/head 获取 PR 源码
         // ====================================================================
         stage('Checkout') {
             steps {
                 script {
-                    if (env.IS_PR == 'true' && params.PR_SHA) {
-                        def cloneUrl = params.HEAD_REPO_URL ?: 'https://gitee.com/greada/test-platform.git'
+                    if (env.IS_PR == 'true' && params.PR_NUMBER) {
                         checkout([
                             $class: 'GitSCM',
-                            branches: [[name: params.PR_SHA]],
-                            userRemoteConfigs: [[url: cloneUrl]],
+                            branches: [[name: "refs/pull/${params.PR_NUMBER}/head"]],
+                            userRemoteConfigs: [[url: 'https://gitee.com/greada/test-platform.git']],
                             extensions: [
                                 [$class: 'LocalBranch', localBranch: "pr-${params.PR_NUMBER}"],
                                 [$class: 'CleanCheckout']
@@ -267,10 +263,10 @@ pipeline {
             steps {
                 script {
                     def ciStatus = currentBuild.result == 'SUCCESS' || currentBuild.result == null ? 'success' : 'failure'
-                    withEnv(["CI_STATUS=${ciStatus}", "HEAD_OWNER=${params.HEAD_OWNER}", "HEAD_REPO=${params.HEAD_REPO}"]) {
+                    withEnv(["CI_STATUS=${ciStatus}"]) {
                         sh '''
                             echo "===== 回写 PR #${PR_NUMBER} 构建状态: ${CI_STATUS} ====="
-                            bash test-platform/scripts/pr-report.sh
+                            bash test-platform/scripts/pr-report.sh || true
                         '''
                     }
                 }
@@ -293,10 +289,10 @@ pipeline {
         failure {
             script {
                 if (env.IS_PR == 'true') {
-                    withEnv(["CI_STATUS=failure", "HEAD_OWNER=${params.HEAD_OWNER}", "HEAD_REPO=${params.HEAD_REPO}"]) {
+                    withEnv(["CI_STATUS=failure"]) {
                         sh '''
                             echo "===== [失败] 回写 PR #${PR_NUMBER} 构建状态 ====="
-                            bash test-platform/scripts/pr-report.sh
+                            bash test-platform/scripts/pr-report.sh || true
                         '''
                     }
                 }

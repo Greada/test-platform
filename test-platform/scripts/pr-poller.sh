@@ -68,18 +68,8 @@ for PR_NUMBER in $PR_NUMBERS; do
     HEAD_REF=$(echo "$PR_DETAIL" | grep -P -o '"head":\{"label":"[^"]*","ref":"[^"]*"' | sed 's/.*"ref":"//;s/"//') || true
     BASE_REF=$(echo "$PR_DETAIL" | grep -P -o '"base":\{"label":"[^"]*","ref":"[^"]*"' | sed 's/.*"ref":"//;s/"//') || true
     PR_TITLE=$(echo "$PR_DETAIL" | grep -o '"title":"[^"]*"' | head -1 | sed 's/"title":"//;s/"//') || true
-    # 提取 fork 仓库 full_name（用于后续 Gitee API 调用，commit 在 fork 仓库上）
-    HEAD_REPO_FULL=$(echo "$PR_DETAIL" | grep -o '"head":{[^}]*"full_name":"[^"]*"' | grep -o '"full_name":"[^"]*"' | sed 's/"full_name":"//;s/"//') || true
-    HEAD_OWNER=$(echo "$HEAD_REPO_FULL" | cut -d/ -f1) || true
-    HEAD_REPO=$(echo "$HEAD_REPO_FULL" | cut -d/ -f2) || true
-    # 如果提取失败，回退到主仓库
-    HEAD_OWNER="${HEAD_OWNER:-$GITEE_OWNER}"
-    HEAD_REPO="${HEAD_REPO:-$GITEE_REPO}"
-    # 提取 fork 仓库的 clone URL（用于 Jenkins checkout）
-    HEAD_CLONE_URL=$(echo "$PR_DETAIL" | grep -o '"head":{[^}]*"html_url":"[^"]*"' | grep -o '"html_url":"[^"]*"' | sed 's/"html_url":"//;s/"//') || true
-    HEAD_CLONE_URL="${HEAD_CLONE_URL:-https://gitee.com/${HEAD_OWNER}/${HEAD_REPO}.git}"
 
-    log "PR #${PR_NUMBER}: ${PR_TITLE} (${HEAD_REF} → ${BASE_REF}) SHA=${HEAD_SHA} 仓库=${HEAD_OWNER}/${HEAD_REPO}"
+    log "PR #${PR_NUMBER}: ${PR_TITLE} (${HEAD_REF} → ${BASE_REF}) SHA=${HEAD_SHA}"
 
     if [ -z "$HEAD_SHA" ]; then
         log "  ⚠️  无法获取 SHA，跳过"
@@ -93,8 +83,8 @@ for PR_NUMBER in $PR_NUMBERS; do
         continue
     fi
 
-    # ---- Step 4: 检查 Gitee commit status（使用 fork 仓库）-------------------
-    STATUS_JSON=$(curl -sS "${GITEE_API}/repos/${HEAD_OWNER}/${HEAD_REPO}/commits/${HEAD_SHA}/status?access_token=${GITEE_TOKEN}")
+    # ---- Step 4: 检查 Gitee commit status（用主仓库，refs/pull/N/head 的 SHA 在主仓库可查）---
+    STATUS_JSON=$(curl -sS "${GITEE_API}/repos/${GITEE_OWNER}/${GITEE_REPO}/commits/${HEAD_SHA}/status?access_token=${GITEE_TOKEN}")
     EXISTING_STATUS=$(echo "$STATUS_JSON" | grep -o '"ci/jenkins"' | head -1) || true
 
     if [ -n "$EXISTING_STATUS" ]; then
@@ -109,10 +99,10 @@ for PR_NUMBER in $PR_NUMBERS; do
         continue
     fi
 
-    # ---- Step 5: 设置 pending 状态（使用 fork 仓库）--------------------------
+    # ---- Step 5: 设置 pending 状态（用主仓库）--------------------------------
     PENDING_PAYLOAD=$(printf '{"state":"pending","target_url":"%s/job/%s/","description":"CI 构建中…","context":"ci/jenkins"}' \
         "$JENKINS_URL" "$JENKINS_JOB")
-    curl -sS -X POST "${GITEE_API}/repos/${HEAD_OWNER}/${HEAD_REPO}/statuses/${HEAD_SHA}?access_token=${GITEE_TOKEN}" \
+    curl -sS -X POST "${GITEE_API}/repos/${GITEE_OWNER}/${GITEE_REPO}/statuses/${HEAD_SHA}?access_token=${GITEE_TOKEN}" \
         -H 'Content-Type: application/json' \
         -d "$PENDING_PAYLOAD" > /dev/null || true
     log "  已设置 pending 状态"
@@ -122,12 +112,7 @@ for PR_NUMBER in $PR_NUMBERS; do
     HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -u "${JENKINS_USER}:${JENKINS_TOKEN}" \
         -X POST "$TRIGGER_URL" \
         --data-urlencode "PR_NUMBER=${PR_NUMBER}" \
-        --data-urlencode "PR_SHA=${HEAD_SHA}" \
-        --data-urlencode "PR_HEAD_REF=${HEAD_REF}" \
-        --data-urlencode "PR_BASE_REF=${BASE_REF}" \
-        --data-urlencode "HEAD_OWNER=${HEAD_OWNER}" \
-        --data-urlencode "HEAD_REPO=${HEAD_REPO}" \
-        --data-urlencode "HEAD_REPO_URL=${HEAD_CLONE_URL}")
+        --data-urlencode "PR_SHA=${HEAD_SHA}")
 
     if [ "$HTTP_CODE" = "201" ]; then
         log "  ✅ Jenkins 构建已触发 (HTTP 201)"
