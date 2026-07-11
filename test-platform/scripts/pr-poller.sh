@@ -117,3 +117,4 @@ echo "$PR_LIST" | grep -o '"number":[0-9]*,"title":"[^"]*","head":[^}]*}' | whil
 done
 
 log "===== PR Poller 结束 ====="
+exit 0
