@@ -48,6 +48,12 @@ PR_LIST=$(curl -sS "${GITEE_API}/repos/${GITEE_OWNER}/${GITEE_REPO}/pulls?state=
 PR_COUNT=$(echo "$PR_LIST" | grep -o '"number":[0-9]*' | wc -l)
 log "发现 ${PR_COUNT} 个 open PR"
 
+# ---- Step 1.5: 没有 open PR 时直接退出 ---------------------------------------
+if [ "$PR_COUNT" -eq 0 ]; then
+    log "没有 open PR，退出"
+    exit 0
+fi
+
 # ---- Step 2: 遍历每个 PR ----------------------------------------------------
 echo "$PR_LIST" | grep -o '"number":[0-9]*,"title":"[^"]*","head":[^}]*}' | while IFS= read -r pr_item; do
     PR_NUMBER=$(echo "$pr_item" | sed 's/.*"number":\([0-9]*\).*/\1/')
