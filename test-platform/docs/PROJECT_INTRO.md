@@ -333,8 +333,8 @@ JENKINS_TOKEN="API_TOKEN"
 
 cd $CLONE_DIR || exit 1
 BEFORE=$(git rev-parse HEAD 2>/dev/null)
-git fetch origin master -q
-AFTER=$(git rev-parse origin/master 2>/dev/null)
+git fetch origin main -q
+AFTER=$(git rev-parse origin/main 2>/dev/null)
 
 if [ "$BEFORE" != "$AFTER" ] && [ -n "$AFTER" ]; then
     echo "[$(date)] 检测到新提交，触发 Jenkins 构建" >> $LOG_FILE
