@@ -34,6 +34,8 @@ fi
 
 GITEE_API="https://gitee.com/api/v5"
 JENKINS_JOB="test-platform-pr-build"
+# 容器内访问 Jenkins 用 8080（宿主机映射 8088→容器 8080）
+JENKINS_INTERNAL_URL="${JENKINS_INTERNAL_URL:-http://localhost:8080}"
 DONE_LOG="/tmp/pr-poller-done.log"
 LOG_FILE="/tmp/pr-poller.log"
 
@@ -111,7 +113,7 @@ for PR_NUMBER in $PR_NUMBERS; do
     log "  已设置 pending 状态"
 
     # ---- Step 6: 触发 Jenkins PR 构建 ------------------------------------------
-    TRIGGER_URL="${JENKINS_URL}/job/${JENKINS_JOB}/buildWithParameters"
+    TRIGGER_URL="${JENKINS_INTERNAL_URL}/job/${JENKINS_JOB}/buildWithParameters"
     HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -u "${JENKINS_USER}:${JENKINS_TOKEN}" \
         -X POST "$TRIGGER_URL" \
         --data-urlencode "PR_NUMBER=${PR_NUMBER}" \
