@@ -1,4 +1,4 @@
-# 全功能测试平台
+# 全功能测试平台 V3.3
 
 ## 项目入口
 
@@ -6,17 +6,22 @@
 
 ## 技术栈
 
-Spring Boot 3.3.6 + MyBatis-Plus 3.5.9 + MySQL 5.7 + Vue 3 + Element Plus + Vite 5
+Spring Boot 3.3.6 + MyBatis-Plus 3.5.9 + MySQL 5.7 + Vue 3 + Element Plus + Vite 5 + Docker + Jenkins CI/CD
 
 ## 启动命令
 
 ```bash
-# 数据库初始化（依次执行）
+# Docker 部署（推荐）
+cp .env.example .env
+# 编辑 .env 填入 DB_PASSWORD
+docker compose up -d
+# 访问 http://localhost（前端） / http://localhost:8080（后端 API）
+# Docker 部署自动执行 docker/init/init.sql（V1~V4 合并版全量 DDL + 种子数据）
+
+# 本地开发 — 数据库初始化（逐文件执行，仅本地开发需要）
 test-platform/backend/src/main/resources/sql/init_v1.sql
 test-platform/backend/src/main/resources/sql/insert_test_case_v1.sql
-# V2.1+ 升级
 test-platform/backend/src/main/resources/sql/init_v2.sql
-# V3 (分类) + V3.2 (用户)
 test-platform/backend/src/main/resources/sql/init_v3.sql
 
 # 后端 — 在 test-platform/ 下
@@ -35,21 +40,23 @@ npm install && npm run dev
 ```
 test-platform/
 ├── backend/src/main/java/com/testplatform/
-│   ├── config/     — CorsConfig, SecurityConfig, RestTemplateConfig, JwtUtil, JwtAuthFilter, PasswordEncoderConfig
-│   ├── common/     — Result, HttpResult, JsonDiffResult, ErrorPatternItem/Result, GlobalExceptionHandler
-│   ├── controller/ — Auth, TestCase, Execution, TestSuite, ExecutionReport, Category, Ai（7 个 Controller）
-│   ├── entity/     — User, TestCase, ExecutionRecord, TestSuite, TestSuiteCase, ExecutionReport, TestCategory
-│   ├── mapper/     — 7 个 Mapper（对应 7 个 Entity）
+│   ├── config/     — CorsConfig, SecurityConfig, RestTemplateConfig, JwtUtil, JwtAuthFilter, PasswordEncoderConfig, AiConfig
+│   ├── common/     — Result, HttpResult, JsonDiffResult, ErrorPatternItem/Result, GlobalExceptionHandler, EndpointDef
+│   ├── controller/ — Auth, TestCase, Execution, TestSuite, ExecutionReport, Category, Ai, CiBuild（8 个 Controller）
+│   ├── entity/     — User, TestCase, ExecutionRecord, TestSuite, TestSuiteCase, ExecutionReport, TestCategory, CiBuild
+│   ├── mapper/     — 8 个 Mapper（对应 8 个 Entity）
+│   ├── dto/        — CategoryNode
+│   ├── util/       — OpenApiParser, SchemaToJsonGenerator
 │   └── service/    — UserService, TestCaseSvc, ExecutionSvc, HttpExecutor, TestSuiteSvc, ExecutionReportSvc,
-│                     JsonDiffService, ErrorPatternService, CategoryService, AiService + impl/
+│                     JsonDiffService, ErrorPatternService, CategoryService, AiService, CiBuildService + impl/
 └── frontend/src/
-    ├── api/index.js, auth.js
+    ├── api/index.js, auth.js, ci.js
     ├── router/index.js
-    └── views/ — Login, TestCaseList, TestCaseEdit, ExecutionList, TestSuiteList/Detail, ExecutionReportList/Detail, DocView
+    └── views/ — Login, TestCaseList, TestCaseEdit, ExecutionList, TestSuiteList/Detail, ExecutionReportList/Detail, DocView, CiStatus
     └── components/ — CategoryTree, CategoryDialog, JsonDiffViewer, ErrorPatternCard
 ```
 
-## V3.2 已完成（全部）
+## V3.3 已完成（全部）
 
 | 阶段 | 内容 |
 |---|---|
@@ -59,6 +66,8 @@ test-platform/
 | V3 | 分类管理（树状 3 层 + 联级 CRUD） |
 | V3.1 | AI 智能生成预期结果 + OpenAPI 批量导入 |
 | V3.2 | JWT 权限管理（登录/注册/路由守卫 + Axios token 拦截） |
+| V3.3 | Docker 容器化（多阶段构建 + Compose 三服务 + Nginx 反代） |
+| V3.3 | Jenkins CI/CD Pipeline（Checkout→Test→Build→Deploy→Verify）+ CI 构建状态页 |
 
 ## 执行结果匹配逻辑
 
@@ -76,16 +85,22 @@ test-platform/
 - MyBatis-Plus 3.5.9: `BaseMapper.insert(T)` 与 `insert(Collection<T>)` 重载冲突 → 测试文件需显式类型转换或用 `-D"maven.test.skip=true"` 跳过测试编译
 - PowerShell 下 Maven `-D` 属性需引号包裹（如 `-D"maven.test.skip=true"`）否则被解析为生命周期阶段
 - 未用 `spring-boot-starter-parent` 时，`spring-boot-maven-plugin` 需显式声明 `<goal>repackage</goal>` 否则生成普通 JAR 而非 fat JAR
+- Jenkins 容器内 `localhost` ≠ 宿主机 `localhost`，Jenkinsfile 中需用 `--network host` 或 `docker run --network host curlimages/curl` 访问宿主机服务
+- Docker Compose MySQL 需 `healthcheck` + `depends_on: condition: service_healthy` 确保后端启动时 DB 已就绪
+- Jenkinsfile 中 Shell 字符串内不能用 Groovy DSL（如 `findFiles`），需用纯 sh 脚本解析 surefire 报告
+- `bc` 在 Alpine 镜像中不存在，Jenkinsfile 中浮点运算需用 `awk` 替代
 
 ## 注意事项
 
 - **有测试但无法编译**：`backend/src/test/java/` 下有测试文件，但因 MyBatis-Plus 3.5.9 `BaseMapper.insert(T)` 与 `insert(Collection<T>)` 重载冲突无法编译，需用 `-D"maven.test.skip=true"` 跳过
-- **无 CI/CD**：无 Maven Wrapper、无 GitHub Actions、无 Makefile
+- **CI/CD**：Jenkins Pipeline（`Jenkinsfile`），Jenkins 容器需挂载 `/var/run/docker.sock` 以调用宿主机 Docker
 - **无 Linter/Formatter**：前端无 ESLint/Prettier，后端无 Checkstyle
 - 前端开发时确保后端已启动（vite proxy `/api` → localhost:8080）
 - SQL 初始化必须先 `init_v1.sql` 再 `init_v2.sql` 再 `init_v3.sql`（增量 DDL）
 - 12 条种子数据（TC-001 ~ TC-012）用于自测验证
 - **V3.2 开始所有接口需要 JWT token**，先访问 `/login` 用 `admin/admin123` 登录
+- **V3.3 Docker 部署**需 `.env` 文件（参考 `.env.example`），`docker/init/init.sql` 是 V1~V4 合并版全量 DDL
+- **CI API 无需鉴权**：`/api/ci/**` 在 SecurityConfig 中 `permitAll()`，供 Jenkins Pipeline 推送构建结果
 
 ## 文档
 
