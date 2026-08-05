@@ -663,7 +663,7 @@ GET /execution-reports/{id}/error-patterns
 - 双栏 JSON 对比（左侧预期、右侧实际，递归格式化显示）
 - 差异明细表格（字段路径 + 类型 + 预期值 + 实际值）
 - 修复建议区域 + 一键应用按钮（存入 localStorage）
-- 嵌套 JSON 自动展开（deepUnescape 递归处理）
+- 使用 CircleCheckFilled、Loading、Sunny 等 Element Plus 图标组件渲染状态标识
 
 ---
 

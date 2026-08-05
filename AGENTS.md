@@ -43,13 +43,14 @@ test-platform/
 │   └── service/    — UserService, TestCaseSvc, ExecutionSvc, HttpExecutor, TestSuiteSvc, ExecutionReportSvc,
 │                     JsonDiffService, ErrorPatternService, CategoryService, AiService + impl/
 └── frontend/src/
-    ├── api/index.js, auth.js
+    ├── api/index.js, auth.js, ci.js
     ├── router/index.js
-    └── views/ — Login, TestCaseList, TestCaseEdit, ExecutionList, TestSuiteList/Detail, ExecutionReportList/Detail, DocView
+    ├── composables/useConfirmDelete.js
+    └── views/ — Login, TestCaseList, TestCaseEdit, ExecutionList, TestSuiteList/Detail, ExecutionReportList/Detail, DocView, CiStatus
     └── components/ — CategoryTree, CategoryDialog, JsonDiffViewer, ErrorPatternCard
 ```
 
-## V3.2 已完成（全部）
+## V4 已完成（全部）
 
 | 阶段 | 内容 |
 |---|---|
@@ -59,6 +60,10 @@ test-platform/
 | V3 | 分类管理（树状 3 层 + 联级 CRUD） |
 | V3.1 | AI 智能生成预期结果 + OpenAPI 批量导入 |
 | V3.2 | JWT 权限管理（登录/注册/路由守卫 + Axios token 拦截） |
+| V3.3 | Jenkins CI/CD 自动化部署（Pipeline + Test 阶段 + 构建结果推送） |
+| V3.4 | PR 构建流水线（Gitee API 轮询 + Commit Status 回写） |
+| V4 | CI Build 构建记录持久化 + 前端看板 |
+| **前端优化** | **代码质量修复 + 性能优化 + 安全加固 + composable 抽取 + 路由懒加载** |
 
 ## 执行结果匹配逻辑
 

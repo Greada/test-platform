@@ -79,9 +79,10 @@ test-platform/
     ├── vite.config.js
     └── src/
         ├── main.js + App.vue
-        ├── api/index.js + auth.js
+        ├── api/index.js + auth.js + ci.js
         ├── router/index.js
         ├── utils/format.js
+        ├── composables/useConfirmDelete.js
         ├── components/ (CategoryTree + CategoryDialog + JsonDiffViewer + ErrorPatternCard)
         └── views/ (Login + TestCaseList + TestCaseEdit + ExecutionList + DocView
                      + TestSuiteList + TestSuiteDetail + ExecutionReportList + ExecutionReportDetail + CiStatus)
@@ -101,6 +102,7 @@ test-platform/
 | V3.3 | Jenkins CI/CD 自动化部署（Pipeline + Test 阶段 + 构建结果推送） | ✅ 已完成 |
 | V4 | ci_build 表 + CI API（构建记录持久化 + 前端看板） | ✅ 已完成 |
 | Docker | Docker 容器化（Dockerfile + Nginx + docker-compose） | ✅ 已完成 |
+| **前端优化** | **代码质量修复 + 性能优化 + 安全加固 + composable 抽取 + 路由懒加载** | ✅ 已完成 |
 
 ### Phase 1 — 已完成文件
 
@@ -264,6 +266,25 @@ test-platform/
 | 6 | Groovy 三单引号字符串中 `\` 解析异常 | 改用 ERE（扩展正则）替代 PCRE |
 | 7 | curl 请求无法路由到宿主机服务 | 改用 `docker run --network host curlimages/curl` |
 | 8 | 前端 CiStatus.vue 响应结构解析错误 | 解包 `res.data` → `res.data.data` |
+
+### 前端优化（V4.1）
+
+| # | 内容 | 状态 |
+|---|---|---|
+| 1 | errorHandler 注册时机修复（mount 前注册） | ✅ |
+| 2 | loadingId 状态管理优化（finally 块重置） | ✅ |
+| 3 | 删除取消后多余请求修复（TestSuiteList / CategoryDialog） | ✅ |
+| 4 | 401 跳转改用 router.push + 防重复跳转标记 | ✅ |
+| 5 | App.vue 挂载时调用 authApi.me() 校验用户数据 | ✅ |
+| 6 | TestCaseEdit 保存按钮 loading 防重复提交 | ✅ |
+| 7 | ExecutionReportDetail 三个 API 串行改 Promise.all 并行 | ✅ |
+| 8 | 路由组件全部改为懒加载（dynamic import） | ✅ |
+| 9 | main.js 全局注册 Element Plus Icons | ✅ |
+| 10 | CategoryTree 删除死代码（selectedCategory + 未使用 CSS） | ✅ |
+| 11 | JsonDiffViewer 删除死代码（deepUnescape）+ 替换旧版图标 | ✅ |
+| 12 | Login.vue 注册表单增加密码/用户名长度校验 | ✅ |
+| 13 | 抽取 useConfirmDelete composable（TestCaseList / TestSuiteList / TestSuiteDetail 复用） | ✅ |
+| 14 | TestSuiteDetail executeSuite 使用 finally 优化 | ✅ |
 
 ## CI/CD 部署指南
 
