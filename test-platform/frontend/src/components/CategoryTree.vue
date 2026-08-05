@@ -2,7 +2,7 @@
   <div class="category-tree-wrapper">
     <div class="tree-header">
       <span>分类</span>
-      <el-button size="small" text @click="emitEvent('manage')">
+      <el-button size="small" text @click="emit('manage')">
         <el-icon><Setting /></el-icon>
       </el-button>
     </div>
@@ -35,12 +35,10 @@ import { categoryApi } from '../api'
 import { ElMessage } from 'element-plus'
 import { Setting, Loading } from '@element-plus/icons-vue'
 
-const emitEvent = defineEmits(['categoryChange'])
+const emit = defineEmits(['categoryChange'])
 const treeData = ref([])
 const treeLoading = ref(true)
 const selectedCategoryId = ref(null)
-
-const selectedCategory = ref(null)
 
 onMounted(async () => {
   await fetchTree()
@@ -60,9 +58,8 @@ async function fetchTree() {
 }
 
 function handleNodeClick(data) {
-  selectedCategory.value = data
   selectedCategoryId.value = data.id
-  emitEvent('categoryChange', data)
+  emit('categoryChange', data)
 }
 
 defineExpose({ fetchTree })
@@ -97,27 +94,10 @@ defineExpose({ fetchTree })
   padding: 0 5px;
 }
 
-.tree-node-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  flex: 1;
-}
-
 .tree-node-label {
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.tree-node-count {
-  font-size: 11px;
-  color: #909399;
-  background-color: #f0f2f5;
-  padding: 0 5px;
-  border-radius: 8px;
-  margin-left: 4px;
 }
 </style>

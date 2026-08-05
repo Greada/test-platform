@@ -1,5 +1,6 @@
 import axios from 'axios'
-import { ElMessage } from 'element-plus'
+import {ElMessage} from 'element-plus'
+import router from '../router'
 
 const api = axios.create({
     baseURL: '/api',
@@ -14,15 +15,18 @@ api.interceptors.request.use(config => {
     return config
 })
 
+let isRedirecting = false
+
 api.interceptors.response.use(
     response => response,
     error => {
-        if (error.response?.status === 401) {
+        if (error.response?.status === 401 && !isRedirecting) {
+            isRedirecting = true
             localStorage.removeItem('token')
             localStorage.removeItem('user')
             const msg = error.response?.data?.message || '登录已过期，请重新登录'
             ElMessage.error(msg)
-            setTimeout(() => window.location.href = '/login', 1500)
+            router.push('/login')
             return Promise.reject(error)
         }
         const msg = error.response?.data?.message || error.message || '请求失败'

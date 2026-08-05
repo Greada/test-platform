@@ -54,7 +54,7 @@
         </div>
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" @click="save">保存</el-button>
+        <el-button type="primary" :loading="saving" @click="save">保存</el-button>
         <el-button @click="$emit('cancel')">取消</el-button>
       </el-form-item>
     </el-form>
@@ -79,6 +79,7 @@ const emit = defineEmits(['save', 'cancel'])
 const formRef = ref(null)
 const loading = ref(false)
 const aiLoading = ref(false)
+const saving = ref(false)
 
 const isEdit = computed(() => !!props.editId)
 
@@ -124,6 +125,7 @@ onMounted(async () => {
 async function save() {
   const valid = await formRef.value.validate().catch(() => false)
   if (!valid) return
+  saving.value = true
   try {
     if (isEdit.value) {
       await api.put('/testcases/' + props.editId, form.value)
@@ -134,6 +136,8 @@ async function save() {
     emit('save')
   } catch (e) {
     ElMessage.error('保存失败')
+  } finally {
+    saving.value = false
   }
 }
 
