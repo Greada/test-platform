@@ -20,12 +20,3 @@ pipeline {
         }
     }
 }
-        }
-
-        stage('Test') {
-            steps {
-                sh 'mvn test -f backend/pom.xml'
-            }
-        }
-    }
-}
