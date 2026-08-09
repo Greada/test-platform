@@ -22,13 +22,25 @@ stage('Test') {
 ```
 
 **结果**:❌ FAILED
-**报错**:`mvn: command not found`
-**原因**:Jenkins 容器没装 Maven
+**报错**:
+```
+/var/jenkins_home/workspace/test-platform-learn@tmp/durable-4df22bd3/script.sh.copy: 1: mvn: not found
+```
+
+**报错拆解**:
+- `/var/jenkins_home/workspace/test-platform-learn/` — Jenkins 把代码拉到这里了 ✅(Git 认证已修复)
+- `@tmp/durable-xxx/script.sh.copy` — Jenkins 把 `sh '...'` 转成临时脚本执行
+- `mvn: not found` — 容器内找不到 mvn 命令
+
+**原因**:
+- `jenkins/jenkins:lts-jdk17` 镜像只有 Jenkins 核心 + JDK 17,**没有 Maven**
+- Jenkins 容器只负责"调度",真正的构建工具通过临时容器按需启动
 
 **学到的**:
 - `sh '...'` 单行 shell 命令(step,不是 Groovy 内置)
 - Jenkins 容器 ≠ 装了所有工具的容器
-- CI 里要用"按需起容器"模式
+- CI 里要用"容器化构建工具"模式 — Maven/Node 等通过 `docker run` 按需起临时容器,用完即弃
+- 好处:Jenkins 容器保持轻量;不同项目可用不同版本工具;工具升级只换镜像 tag
 
 ---
 

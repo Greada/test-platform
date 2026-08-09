@@ -20,6 +20,10 @@
 - [ ] Lesson 8 — 状态回写(Report PR Status + post.failure)
 - [ ] Lesson 9 — 并行优化 + 回滚(parallel + 镜像 tag + 回滚 Job)
 
+## 补充知识
+
+- [Docker Compose 容器编排教程](docker-compose-orchestration.md) — 为 Lesson 2/3 打基础
+
 ## 文件约定
 - `test-platform/Jenkinsfile.new` — 本课程逐课构建的新 pipeline
 - `test-platform/Jenkinsfile` — 旧版,保留作参考,不动
