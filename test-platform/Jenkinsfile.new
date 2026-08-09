@@ -1,17 +1,7 @@
 // ============================================================================
 // Jenkinsfile.new — 从 0 重建(学习用)
-// Lesson 0: 最小骨架
-// ============================================================================
-//
-// 【任务】填完下面 3 个 ____ 让这个 pipeline 能跑通
-//
-// 【提示】
-//   1. agent 后面填:表示"任意节点"的英文单词(3 个字母)
-//   2. stage('...') 括号里填:阶段名,自己起(比如 Hello / Lesson0)
-//   3. steps 块里填:用 echo 打印一句话(参考:echo 'Hello from Lesson 0')
-//
-// 【验证】保存后在 Jenkins 的 test-platform-learn Job 点 Build Now,
-//        看 Console Output 出现 SUCCESS 和你 echo 的话即通过。
+// Lesson 0:  最小骨架
+// Lesson 1a: Test stage(天真版 — 预期失败:mvn not found)
 // ============================================================================
 
 pipeline {
@@ -21,6 +11,20 @@ pipeline {
         stage('hello') {
             steps {
                 echo 'hello'
+            }
+        }
+        stage('Test') {
+            steps {
+                sh 'mvn test -f backend/pom.xml'
+            }
+        }
+    }
+}
+        }
+
+        stage('Test') {
+            steps {
+                sh 'mvn test -f backend/pom.xml'
             }
         }
     }
