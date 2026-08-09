@@ -2,7 +2,8 @@
 // Jenkinsfile.new — 从 0 重建(学习用)
 // Lesson 0:  最小骨架
 // Lesson 1a: Test stage(天真版 — 预期失败:mvn not found)
-// Lesson 1b: Test stage(docker run 共享 workspace — 填 2 个空)
+// Lesson 1b: Test stage(docker run 共享 workspace)
+// Lesson 1c: Test stage(Maven 依赖缓存)
 // ============================================================================
 
 pipeline {
@@ -20,8 +21,9 @@ pipeline {
                     docker run --rm \
                         --volumes-from "${HOSTNAME}" \
                         -w "$WORKSPACE/test-platform" \
+                        -v "maven-repo:/tmp/.m2" \
                         maven:3.9-eclipse-temurin-17 \
-                        mvn test -f backend/pom.xml
+                        mvn test -f backend/pom.xml -Dmaven.repo.local=/tmp/.m2/repository
                 '''
             }
         }
