@@ -4,6 +4,7 @@
 // Lesson 1a: Test stage(天真版 — 预期失败:mvn not found)
 // Lesson 1b: Test stage(docker run 共享 workspace)
 // Lesson 1c: Test stage(Maven 依赖缓存)
+// Lesson 1d: Test stage(健壮性参数 + 阿里云源)
 // ============================================================================
 
 pipeline {
@@ -22,8 +23,11 @@ pipeline {
                         --volumes-from "${HOSTNAME}" \
                         -w "$WORKSPACE/test-platform" \
                         -v "maven-repo:/tmp/.m2" \
+                        -e HOME=/tmp \
+                        --network host \
+                        --user 1000:1000 \
                         maven:3.9-eclipse-temurin-17 \
-                        mvn test -f backend/pom.xml -Dmaven.repo.local=/tmp/.m2/repository
+                        mvn test -f backend/pom.xml -B -s backend/settings.xml
                 '''
             }
         }

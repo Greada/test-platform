@@ -47,52 +47,141 @@ stage('Test') {
 ### 2.2 小步 1b — docker run 共享 workspace
 
 **概念**:
-- `docker run` 临时容器:用完即弃
+- `docker run --rm` 临时容器:用完即弃,`--rm` 让容器退出后自动删除,不占磁盘
 - `--volumes-from "$(hostname)"`:共享 Jenkins 容器的所有卷,这样 Maven 容器能看到 workspace 里的代码
+  - `hostname` 是 Linux 系统自带命令(非 Docker 专有)
+  - Docker 给容器分配 hostname = 容器 ID 前 12 位(通过 UTS namespace)
+  - `$(hostname)` 命令替换取容器 ID;`${HOSTNAME}` 读环境变量也能取到(两者等价)
 - `-w "$WORKSPACE/test-platform"`:设工作目录
-- `maven:3.9-eclipse-temurin-17`:含 Maven 3.9 + JDK 17
+  - `$WORKSPACE` 是 Jenkins 注入的环境变量,指向 `/var/jenkins_home/workspace/test-platform-learn`
+  - 代码在 `$WORKSPACE/test-platform/` 下(因 Script Path 是 `test-platform/Jenkinsfile.new`)
+- `maven:3.9-eclipse-temurin-17`:含 Maven 3.9 + JDK 17(项目要求 Java 17)
+- `sh '''...'''` 三引号:多行 shell 命令(对比 Lesson 0 的 `echo` 是 Groovy 内置)
 
 **写的代码**:
-<!-- 跑通后填 -->
+```groovy
+stage('Test') {
+    steps {
+        sh '''
+            docker run --rm \
+                --volumes-from "${HOSTNAME}" \
+                -w "$WORKSPACE/test-platform" \
+                maven:3.9-eclipse-temurin-17 \
+                mvn test -f backend/pom.xml
+        '''
+    }
+}
+```
 
-**结果**:
-**报错/现象**:
+**结果**:✅ SUCCESS
+```
+Tests run: 91, Failures: 0, Errors: 0, Skipped: 0
+BUILD SUCCESS
+Total time: 05:08 min
+```
+
+**踩的坑**:
+- 第一版写 `--volumes-from "${hostname}"`(小写),变量不存在,展开成空字符串
+- `${变量名}` 是变量引用,`$(命令)` 是命令替换,两者不同
+- 修正为 `${HOSTNAME}`(大写,读环境变量)或 `$(hostname)`(命令替换)均可
+
+**5 分钟花在哪**:
+- 大量时间花在 `Downloaded from central: https://repo.maven.apache.org/...`
+- 下载的依赖存在临时 Maven 容器内部,`--rm` 退出后全丢
+- 下次构建又要重新下载全部依赖 → 这就是 1c 要解决的问题
+
 **学到的**:
+- `sh '...'` 单行 vs `sh '''...'''` 多行的区别
+- `docker run --rm` 临时容器模式(用完即弃)
+- `--volumes-from` 跨容器共享文件
+- `$WORKSPACE` 是 Jenkins 注入的环境变量
+- `${变量}` vs `$(命令)` 的区别(shell 语法)
+- `hostname` 是 Linux 命令,Docker 给容器分配 hostname=容器 ID 前 12 位
 
 ---
 
 ### 2.3 小步 1c — 加 Maven 依赖缓存
 
 **概念**:
-- 1b 慢的原因:每次重新下载所有 Maven 依赖
-- Docker 命名卷 `maven-repo`:跨构建复用本地仓库
-- 第一次还是慢(下载并存入缓存),第二次飞快(用缓存)
+- 1b 慢的原因:依赖下载到容器内部,`--rm` 退出后全丢,下次又重下
+- Docker 命名卷 `maven-repo`:永久存储,跨构建复用依赖
+- 第一次还是慢(下载并存入卷),第二次飞快(用卷里的缓存)
+- 坑:Maven 默认仓库在 `$HOME/.m2`,容器 root 的 HOME=/root,但卷挂载在 /tmp/.m2 → 路径不一致缓存不生效
+- 解法:加 `-Dmaven.repo.local=/tmp/.m2/repository` 强制 Maven 用挂载路径(为 1d 的 `-e HOME=/tmp` 衔接做准备)
 
 **写的代码**:
-<!-- 跑通后填 -->
+```groovy
+sh '''
+    docker run --rm \
+        --volumes-from "${HOSTNAME}" \
+        -w "$WORKSPACE/test-platform" \
+        -v "maven-repo:/tmp/.m2" \
+        maven:3.9-eclipse-temurin-17 \
+        mvn test -f backend/pom.xml -Dmaven.repo.local=/tmp/.m2/repository
+'''
+```
 
-**结果**:
-**对比**(两次构建速度):
-- 第一次:
-- 第二次:
+**结果**:✅ SUCCESS
+```
+Tests run: 91, Failures: 0, Errors: 0, Skipped: 0
+BUILD SUCCESS
+```
+
+**对比(两次构建速度)**:
+- 第一次(Build #7):5 分 51 秒(下载依赖存入 maven-repo 卷,仍走中央仓库)
+- 第二次(Build #8):**16.2 秒** 🚀(maven-repo 卷有缓存,跳过下载)
+- 提速:**21 倍**!
+
+**踩的坑**:
+- 第一版漏写 `-Dmaven.repo.local=/tmp/.m2/repository`,缓存不生效(Maven 写 /root/.m2,卷在 /tmp/.m2 空着)
+- 拼写错误:`-Daemon` → `-Dmaven`(D 和 maven 之间不能丢字符);`respository` → `repository`
+
 **学到的**:
+- Docker 命名卷:永久存储,容器销毁后数据保留
+- Maven 仓库路径默认在 `$HOME/.m2/repository`,可通过 `-Dmaven.repo.local` 覆盖
+- 挂载路径和 Maven 实际写入路径必须一致,否则缓存不生效
+- 缓存的价值:21 倍提速,生产环境 N 次构建省下的时间是巨大的
+
+**Jenkins 目录访问**:
+- 宿主机路径:`/var/lib/docker/volumes/jenkins_home/_data`(需 sudo)
+- 容器内路径:`/var/jenkins_home`
+- 推荐用 `docker exec jenkins ls /var/jenkins_home` 访问(免 sudo,路径短)
+- 构建日志在 `jobs/test-platform-learn/builds/N/log`
 
 ---
 
 ### 2.4 小步 1d — 补全健壮性参数
 
 **概念**:
-- `-e HOME=/tmp`:Maven 写缓存需要 HOME 目录,避免权限报错
-- `--user 1000:1000`:非 root 运行,匹配 Jenkins workspace 文件权限
-- `--network host`:用宿主机网络(为 Lesson 5 推送测试结果做准备)
-- `-B`:Batch 模式,不显示下载进度条
-- `-s backend/settings.xml`:用阿里云镜像加速
+- `-e HOME=/tmp`:Maven 写 `.m2` 需要 HOME 目录。容器默认 HOME=/root,但 `--user 1000:1000` 后没 /root 写权限 → 强制 HOME=/tmp,Maven 写 /tmp/.m2(就是挂载的卷)
+- `--network host`:用宿主机网络栈(为 Lesson 5 推送测试结果到 localhost:8080 做准备)
+- `--user 1000:1000`:非 root 运行,匹配 Jenkins workspace 文件权限(UID 1000)。若 root 跑,target/ 目录属主变 root,Jenkins 清理权限报错
+- `-B`:Batch 模式,不显示下载进度条(日志干净)
+- `-s backend/settings.xml`:用项目里的阿里云 Maven 镜像,不走中央仓库(国外慢)
+- 参数依赖关系:`--user 1000:1000` → /root 无权限 → 必须 `-e HOME=/tmp` → 必须 `-v maven-repo:/tmp/.m2`,三个参数绑定,缺一报错
+- 1c → 1d 衔接:1c 的 `-Dmaven.repo.local=/tmp/.m2/repository` 可以去掉(因为 `-e HOME=/tmp` 后 Maven 默认路径自动变成 /tmp/.m2/repository),路径不变,缓存保留
 
 **最终 Test stage 代码**:
-<!-- 跑通后填最终版 -->
+```groovy
+sh '''
+    docker run --rm \
+        --volumes-from "${HOSTNAME}" \
+        -w "$WORKSPACE/test-platform" \
+        -v "maven-repo:/tmp/.m2" \
+        -e HOME=/tmp \
+        --network host \
+        --user 1000:1000 \
+        maven:3.9-eclipse-temurin-17 \
+        mvn test -f backend/pom.xml -B -s backend/settings.xml
+'''
+```
 
 **结果**:✅ SUCCESS,91 个测试通过
 **学到的**:
+- 三个参数有依赖关系(user/HOME/volume),必须一起加
+- `settings.xml` 已经配好阿里云源,但要用 `-s` 参数指定才生效
+- 1c 的缓存路径设计(挂 /tmp/.m2 + 指定路径)让 1d 衔接时缓存不丢
+- Batch 模式让日志可读
 
 ---
 
