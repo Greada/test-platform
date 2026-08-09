@@ -201,56 +201,63 @@ pipeline {
         stage('Verify') {
             when { expression { env.IS_PR != 'true' } }
             steps {
-                sh '''
-                    echo "===== 部署目标: $DEPLOY_TARGET ====="
+                withCredentials([
+                    usernamePassword(credentialsId: 'tp-login-cred',
+                        usernameVariable: 'TP_LOGIN_USER',
+                        passwordVariable: 'TP_LOGIN_PASS')
+                ]) {
+                    sh '''
+                        echo "===== 部署目标: $DEPLOY_TARGET ====="
 
-                    CONTAINER_FILTER="tp-"
-                    [ "$DEPLOY_TARGET" = "test" ] && CONTAINER_FILTER="tp-test-"
+                        CONTAINER_FILTER="tp-"
+                        [ "$DEPLOY_TARGET" = "test" ] && CONTAINER_FILTER="tp-test-"
 
-                    echo "===== 容器状态 ====="
-                    docker ps --filter "name=$CONTAINER_FILTER" \
-                        --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+                        echo "===== 容器状态 ====="
+                        docker ps --filter "name=$CONTAINER_FILTER" \
+                            --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
-                    echo "===== 等待服务启动 ====="
-                    sleep 15
+                        echo "===== 等待服务启动 ====="
+                        sleep 15
 
-                    if [ "$DEPLOY_TARGET" = "test" ]; then
-                        BACKEND_PORT=8081
-                        FRONTEND_URL="http://localhost:81"
-                    else
-                        BACKEND_PORT=8080
-                        FRONTEND_URL="http://localhost:80"
-                    fi
+                        if [ "$DEPLOY_TARGET" = "test" ]; then
+                            BACKEND_PORT=8081
+                            FRONTEND_URL="http://localhost:81"
+                        else
+                            BACKEND_PORT=8080
+                            FRONTEND_URL="http://localhost:80"
+                        fi
 
-                    echo "===== 测试登录 API (端口 $BACKEND_PORT) ====="
-                    HTTP_CODE=$(docker run --rm --network host curlimages/curl:latest \
-                        -s -o /dev/null -w "%{http_code}" \
-                        -X POST http://localhost:$BACKEND_PORT/api/auth/login \
-                        -H 'Content-Type: application/json' \
-                        -d '{"username":"admin","password":"admin123"}')
+                        echo "===== 测试登录 API (端口 $BACKEND_PORT) ====="
+                        LOGIN_BODY=$(printf '{"username":"%s","password":"%s"}' "$TP_LOGIN_USER" "$TP_LOGIN_PASS")
+                        HTTP_CODE=$(docker run --rm --network host curlimages/curl:latest \
+                            -s -o /dev/null -w "%{http_code}" \
+                            -X POST http://localhost:$BACKEND_PORT/api/auth/login \
+                            -H 'Content-Type: application/json' \
+                            -d "$LOGIN_BODY")
 
-                    if [ "$HTTP_CODE" = "200" ]; then
-                        echo "后端 API 正常，HTTP 状态码: $HTTP_CODE"
-                    else
-                        echo "后端 API 异常，HTTP 状态码: $HTTP_CODE"
-                        exit 1
-                    fi
+                        if [ "$HTTP_CODE" = "200" ]; then
+                            echo "后端 API 正常，HTTP 状态码: $HTTP_CODE"
+                        else
+                            echo "后端 API 异常，HTTP 状态码: $HTTP_CODE"
+                            exit 1
+                        fi
 
-                    echo "===== 测试前端 ($FRONTEND_URL) ====="
-                    HTTP_CODE=$(docker run --rm --network host curlimages/curl:latest \
-                        -s -o /dev/null -w "%{http_code}" \
-                        $FRONTEND_URL)
+                        echo "===== 测试前端 ($FRONTEND_URL) ====="
+                        HTTP_CODE=$(docker run --rm --network host curlimages/curl:latest \
+                            -s -o /dev/null -w "%{http_code}" \
+                            $FRONTEND_URL)
 
-                    if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "302" ]; then
-                        echo "前端正常，HTTP 状态码: $HTTP_CODE"
-                    else
-                        echo "前端异常，HTTP 状态码: $HTTP_CODE"
-                        exit 1
-                    fi
+                        if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "302" ]; then
+                            echo "前端正常，HTTP 状态码: $HTTP_CODE"
+                        else
+                            echo "前端异常，HTTP 状态码: $HTTP_CODE"
+                            exit 1
+                        fi
 
-                    echo ""
-                    echo "部署全部通过（$DEPLOY_TARGET 环境）"
-                '''
+                        echo ""
+                        echo "部署全部通过（$DEPLOY_TARGET 环境）"
+                    '''
+                }
             }
         }
 

@@ -1,0 +1,1 @@
+function i(n,o,e){if(!e)return"-";const t=new Date(e);if(isNaN(t.getTime()))return e;const r=a=>String(a).padStart(2,"0");return`${t.getFullYear()}-${r(t.getMonth()+1)}-${r(t.getDate())} ${r(t.getHours())}:${r(t.getMinutes())}:${r(t.getSeconds())}`}function s(n){if(!n)return"-";try{return JSON.stringify(JSON.parse(n),null,2)}catch{return n}}export{s as a,i as f};

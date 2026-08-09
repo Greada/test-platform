@@ -19,9 +19,10 @@ test-platform/backend/src/main/resources/sql/init_v2.sql
 # V3 (分类) + V3.2 (用户)
 test-platform/backend/src/main/resources/sql/init_v3.sql
 
-# 后端 — 在 test-platform/ 下
-mvn package -D"maven.test.skip=true" -pl backend && java -jar backend/target/test-platform-backend-1.0.0.jar
+# 后端 — 在 test-platform/ 下（测试已可正常编译运行，无需跳过）
+mvn package -pl backend && java -jar backend/target/test-platform-backend-1.0.0.jar
 # 或直接运行 TestPlatformApplication.main()，端口 8080
+# Docker 部署：cd test-platform && docker compose up -d（端口 80/8080/3307）
 
 # 前端 — 在 test-platform/frontend/ 下
 npm install && npm run dev
@@ -78,14 +79,15 @@ test-platform/
 - `JwtUtil.parseToken` 必须是 `parseClaimsJws`（带 `s`），不是 `parseClaimsJwt`（该 API 不校验签名）
 - Spring Boot 3: `antMatchers` → `requestMatchers`；`HttpComponentsClientHttpRequestFactory` → `SimpleClientHttpRequestFactory`（Duration 替代毫秒）
 - jjwt 0.9.1 → 0.12.6: `SigningKeyResolverAdapter` → 移除了，直接 `Keys.hmacShaKeyFor`；`parseClaimsJws` → `parseSignedClaims`
-- MyBatis-Plus 3.5.9: `BaseMapper.insert(T)` 与 `insert(Collection<T>)` 重载冲突 → 测试文件需显式类型转换或用 `-D"maven.test.skip=true"` 跳过测试编译
+- MyBatis-Plus 3.5.9: `BaseMapper.insert(T)` 与 `insert(Collection<T>)` 重载冲突 → **已解决**，测试文件使用 `any(TestCase.class)` 等显式类型匹配，`mvn test` 可正常编译运行（91 个测试全部通过）
 - PowerShell 下 Maven `-D` 属性需引号包裹（如 `-D"maven.test.skip=true"`）否则被解析为生命周期阶段
 - 未用 `spring-boot-starter-parent` 时，`spring-boot-maven-plugin` 需显式声明 `<goal>repackage</goal>` 否则生成普通 JAR 而非 fat JAR
 
 ## 注意事项
 
-- **有测试但无法编译**：`backend/src/test/java/` 下有测试文件，但因 MyBatis-Plus 3.5.9 `BaseMapper.insert(T)` 与 `insert(Collection<T>)` 重载冲突无法编译，需用 `-D"maven.test.skip=true"` 跳过
-- **无 CI/CD**：无 Maven Wrapper、无 GitHub Actions、无 Makefile
+- **有测试可正常编译运行**：`backend/src/test/java/` 下 7 个测试文件共 91 个单元测试，`mvn test` 全部通过（MyBatis-Plus insert 重载冲突已解决）
+- **有 CI/CD**：Jenkinsfile（7 阶段 Pipeline）+ docker-compose.yml（生产）/ docker-compose.test.yml（测试）+ scripts/pr-poller.sh（PR 轮询）+ scripts/pr-report.sh（状态回写）。详见 `test-platform/docs/本地部署与CICD搭建指南.md`
+- **无 Maven Wrapper**：本地构建需预装 Maven 3.9+（CI 使用 `maven:3.9-eclipse-temurin-17` 镜像）
 - **无 Linter/Formatter**：前端无 ESLint/Prettier，后端无 Checkstyle
 - 前端开发时确保后端已启动（vite proxy `/api` → localhost:8080）
 - SQL 初始化必须先 `init_v1.sql` 再 `init_v2.sql` 再 `init_v3.sql`（增量 DDL）
@@ -94,7 +96,7 @@ test-platform/
 
 ## 文档
 
-完整文档在 `test-platform/docs/`：PROJECT_INTRO, API, sql, 进度报告, 开发进度, 阶段总结, resume.html
+完整文档在 `test-platform/docs/`：PROJECT_INTRO, API, sql, 进度报告, 开发进度, 阶段总结, 优化计划, 本地部署与CICD搭建指南, resume.html
 
 
 <!-- open-mem-context -->
