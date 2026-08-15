@@ -8,7 +8,7 @@
 - [x] Lesson 0 — Jenkinsfile 骨架(最小 pipeline + Job 配置)
 - [x] Lesson 1 — 跑单元测试(Test stage + docker run maven)
 - [x] Lesson 1.5 — Dockerfile + Compose 动手实验(从零写 Dockerfile + compose build)
-- [ ] Lesson 2 — 构建镜像(Build stage + docker compose build)
+- [x] Lesson 2 — 构建镜像(Build stage + docker compose build)
 - [ ] Lesson 3 — 部署 + 验证(Deploy + Verify 轮询重试)
 
 ### Phase B — 工程化

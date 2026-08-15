@@ -206,12 +206,14 @@ pipeline {
 
 ### 2c 复盘
 
-- **状态**: (待跑)
+- **状态**: ✅ SUCCESS
 - **预期**: ✅ SUCCESS,分开构建 backend + frontend
 - **关键认知**:
   - 分开构建的好处:失败定位、缓存粒度、与生产 Jenkinsfile 一致
   - `docker compose build backend` 只构建 backend service
   - `docker compose build`(不带 service 名)构建所有 service
+  - Docker 缓存命中:2b 已构建过,2c 分开构建时各层 CACHED → 秒级完成
+  - `echo` 标记分隔日志:方便在 Jenkins Console 里定位哪个 service 的构建日志
 
 ## 五、Console Output 关键片段
 
