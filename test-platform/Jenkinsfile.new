@@ -5,6 +5,7 @@
 // Lesson 1b: Test stage(docker run 共享 workspace)
 // Lesson 1c: Test stage(Maven 依赖缓存)
 // Lesson 1d: Test stage(健壮性参数 + 阿里云源)
+// Lesson 2a: Build stage(天真版 — 预期失败:compose 文件找不到)
 // ============================================================================
 
 pipeline {
@@ -29,6 +30,11 @@ pipeline {
                         maven:3.9-eclipse-temurin-17 \
                         mvn test -f backend/pom.xml -B -s backend/settings.xml
                 '''
+            }
+        }
+        stage('Build') {
+            steps {
+                sh 'docker compose -f docker-compose.learn.yml build'
             }
         }
     }
