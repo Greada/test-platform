@@ -6,6 +6,9 @@
 // Lesson 1c: Test stage(Maven 依赖缓存)
 // Lesson 1d: Test stage(健壮性参数 + 阿里云源)
 // Lesson 2a: Build stage(天真版 — 预期失败:compose 文件找不到)
+// Lesson 2b: Build stage(dir() 切目录)
+// Lesson 2c: Build stage(分开构建 backend/frontend)
+// Lesson 3a: Deploy stage(docker compose up -d)
 // ============================================================================
 
 pipeline {
@@ -41,6 +44,13 @@ pipeline {
                         echo "===== 构建前端镜像 ====="
                         docker compose -f docker-compose.learn.yml build frontend
                     '''
+                }
+            }
+        }
+        stage('Deploy') {
+            steps {
+                dir("test-platform") {
+                    sh 'docker compose -f docker-compose.learn.yml up -d'
                 }
             }
         }
