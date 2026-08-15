@@ -10,6 +10,7 @@
 // Lesson 2c: Build stage(分开构建 backend/frontend)
 // Lesson 3a: Deploy stage(docker compose up -d)
 // Lesson 3b: Verify stage(天真版 — 预期失败:JVM 未就绪)
+// Lesson 3c: Verify stage(sleep 15 等待 JVM 就绪)
 // ============================================================================
 
 pipeline {
@@ -59,6 +60,9 @@ pipeline {
             steps {
                 dir("test-platform") {
                     sh '''
+                        echo "===== 等待服务启动 ====="
+                        sleep 15
+
                         echo "===== 验证后端 API ====="
                         HTTP_CODE=$(docker run --rm --network host curlimages/curl:latest \
                             -s -o /dev/null -w "%{http_code}" \

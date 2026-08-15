@@ -1,0 +1,75 @@
+# 会话规则与进度（下次会话直接生效）
+
+## 角色设定
+
+严谨的高级架构师兼 Code Agent。
+
+## 硬性规则（必须严格遵守）
+
+1. **零猜测**：用户明确确认前，禁止输出任何代码、目录结构、技术选型方案或实现草案
+2. **单线程提问**：每次回复只提 1 个核心问题，附带简要选项（A/B/C），不一次性抛多个问题
+3. **置信度仪表盘**：每次回答末尾必须更新全局置信度（如：当前置信度：90%），并列出剩余待确认事项概览（仅列标题）
+4. **解锁条件**：置信度达 90%-95% 才允许输出第一份完整实施方案或代码
+5. **先确认环境**：先确认 OS/版本/包管理器
+6. **Interface 先行**：先定义入出参 Interface 再写逻辑
+7. **异常分类处理**：异常必须分类，不许空 catch
+8. **变更亮红灯**：变更必须亮红灯警告
+9. **安全性能自检**：交付时附带安全与性能自检清单
+10. **及时更新文档**：每次变更后同步更新相关文档
+
+## 课程进度（截至 2026-08-15）
+
+### Phase A — 能跑起来(MVP)
+
+- [x] Lesson 0 — Jenkinsfile 骨架
+- [x] Lesson 1 — 跑单元测试（Test stage）
+- [x] Lesson 1.5 — Dockerfile + Compose 动手实验
+- [x] Lesson 2 — 构建镜像（Build stage）
+- [ ] Lesson 3 — 部署 + 验证（Deploy + Verify）
+  - [x] 3a — Deploy stage（docker compose up -d）✅ 成功
+  - [x] 3b — Verify stage（天真版，无 sleep）✅ 意外通过（3a 已部署，JVM 已就绪）
+  - [ ] 3c — 加 sleep 15（修正版）← **下次从这里继续**
+
+### Phase B — 工程化（未开始）
+- [ ] Lesson 4 — 参数化 + 双环境
+- [ ] Lesson 5 — 失败处理 + 产物
+- [ ] Lesson 6 — 规范化
+
+### Phase C — 高级（未开始）
+- [ ] Lesson 7 — PR 模式
+- [ ] Lesson 8 — 状态回写
+- [ ] Lesson 9 — 并行优化 + 回滚
+
+## 3c 待执行内容
+
+1. `Jenkinsfile-learn` Verify stage 开头加 `sleep 15` + `echo "===== 等待服务启动 ====="`
+2. `lesson-03-deploy-verify.md` 回填 3c 复盘
+3. `docs/notes/README.md` 勾选 L3 完成
+4. 提交 + push
+
+## 关键文件清单
+
+| 文件 | 说明 |
+|---|---|
+| `test-platform/Jenkinsfile-learn` | 学习版 pipeline（当前到 3b） |
+| `test-platform/docker-compose.learn.yml` | 学习版 compose（含 mysql/backend/frontend） |
+| `test-platform/backend/Dockerfile-learn` | 多阶段 backend Dockerfile（L1.5 产出） |
+| `test-platform/frontend/Dockerfile-learn` | 多阶段 frontend Dockerfile（L1.5 产出） |
+| `test-platform/docs/notes/lesson-03-deploy-verify.md` | L3 笔记 |
+| `test-platform/docs/notes/README.md` | 课程进度总览 |
+
+## 环境信息
+
+- OS: WSL2 Ubuntu (Running/2)
+- Docker: 29.7.2
+- Docker Compose: v5.4.0
+- Jenkins: jenkins/jenkins:lts-jdk17（端口 8088）
+- Jenkins Job: `test-platform-learn`（Script Path: `test-platform/Jenkinsfile-learn`）
+- 镜像源: daocloud + 1ms.run + xuanyuan（已修复失效源）
+- learn 环境端口: mysql=3309, backend=8090, frontend=82
+
+## 变更日志
+
+| 日期 | 变更 |
+|------|------|
+| 2026-08-15 | L1 复盘回填 + L1.5 完整 + L2 完整 + L3 3a/3b 完成 |

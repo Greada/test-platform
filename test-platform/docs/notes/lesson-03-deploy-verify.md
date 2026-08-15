@@ -252,9 +252,19 @@ pipeline {
 
 ### 3c 复盘
 
-- **状态**: (待跑)
+- **状态**: ✅ SUCCESS（sleep 15 保护首次部署场景）
+- **改动**: Verify stage 开头加 `sleep 15`
 - **关键认知**:
-  -
+  - `sleep 15` 是经验值，等 JVM 初始化完成
+  - 3b 意外通过是因为 3a 已部署过，JVM 早已就绪
+  - 首次部署时 Deploy 和 Verify 之间无时间间隔 → sleep 是必要的
+  - 生产 Jenkinsfile 用的也是 sleep 15
+  - 更健壮的方案是轮询重试（Phase B Lesson 5 会讲）
+- **L3 总结**:
+  - Deploy: `docker compose up -d` 按 depends_on 启动容器
+  - Verify: curl 验证 API + 前端页面
+  - 核心问题: 服务启动 ≠ 服务就绪 → sleep 等待
+  - learn compose 完整化: 补齐 mysql + healthcheck + environment + depends_on
 
 ## 五、Console Output 关键片段
 
