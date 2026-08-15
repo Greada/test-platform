@@ -195,11 +195,23 @@ pipeline {
 
 ### 2b 复盘
 
-- **状态**: (待跑)
-- **踩的坑**:
-  - 
+- **状态**: ✅ SUCCESS
+- **修复**: 加 `dir("test-platform")` 切到项目目录
 - **关键认知**:
-  - 
+  - `dir()` 是 Jenkins 内置 step,不是 shell 命令
+  - `dir("test-platform")` 相对于 `$WORKSPACE`,切到 `$WORKSPACE/test-platform/`
+  - 对比 L1 的 `-w`:L1 给临时 Maven 容器设目录,L2 给 Jenkins agent 本身设目录
+  - 两者解决同一问题(工作目录不对),但作用对象不同
+  - `dir()` 内的 `sh` 都在切后的目录执行
+
+### 2c 复盘
+
+- **状态**: (待跑)
+- **预期**: ✅ SUCCESS,分开构建 backend + frontend
+- **关键认知**:
+  - 分开构建的好处:失败定位、缓存粒度、与生产 Jenkinsfile 一致
+  - `docker compose build backend` 只构建 backend service
+  - `docker compose build`(不带 service 名)构建所有 service
 
 ## 五、Console Output 关键片段
 

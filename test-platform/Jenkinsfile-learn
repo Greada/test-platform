@@ -35,7 +35,12 @@ pipeline {
         stage('Build') {
             steps {
                 dir("test-platform") {
-                    sh 'docker compose -f docker-compose.learn.yml build'
+                    sh '''
+                        echo "===== 构建后端镜像 ====="
+                        docker compose -f docker-compose.learn.yml build backend
+                        echo "===== 构建前端镜像 ====="
+                        docker compose -f docker-compose.learn.yml build frontend
+                    '''
                 }
             }
         }
