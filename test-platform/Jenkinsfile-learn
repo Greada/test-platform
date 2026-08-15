@@ -9,6 +9,7 @@
 // Lesson 2b: Build stage(dir() 切目录)
 // Lesson 2c: Build stage(分开构建 backend/frontend)
 // Lesson 3a: Deploy stage(docker compose up -d)
+// Lesson 3b: Verify stage(天真版 — 预期失败:JVM 未就绪)
 // ============================================================================
 
 pipeline {
@@ -51,6 +52,29 @@ pipeline {
             steps {
                 dir("test-platform") {
                     sh 'docker compose -f docker-compose.learn.yml up -d'
+                }
+            }
+        }
+        stage('Verify') {
+            steps {
+                dir("test-platform") {
+                    sh '''
+                        echo "===== 验证后端 API ====="
+                        HTTP_CODE=$(docker run --rm --network host curlimages/curl:latest \
+                            -s -o /dev/null -w "%{http_code}" \
+                            -X POST http://localhost:8090/api/auth/login \
+                            -H 'Content-Type: application/json' \
+                            -d '{"username":"admin","password":"admin123"}')
+                        echo "Backend HTTP code: $HTTP_CODE"
+                        [ "$HTTP_CODE" = "200" ] || exit 1
+
+                        echo "===== 验证前端页面 ====="
+                        HTTP_CODE=$(docker run --rm --network host curlimages/curl:latest \
+                            -s -o /dev/null -w "%{http_code}" \
+                            http://localhost:82)
+                        echo "Frontend HTTP code: $HTTP_CODE"
+                        [ "$HTTP_CODE" = "200" ] || exit 1
+                    '''
                 }
             }
         }

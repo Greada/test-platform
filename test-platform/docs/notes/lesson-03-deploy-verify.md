@@ -220,11 +220,15 @@ pipeline {
 
 ### 3a 复盘
 
-- **状态**: (待跑)
+- **状态**: ✅ SUCCESS
 - **踩的坑**:
-  - 
+  - 无（mysql healthcheck + depends_on 自动处理启动顺序）
 - **关键认知**:
-  - 
+  - `docker compose up -d` 按 depends_on 依赖关系启动：mysql → backend → frontend
+  - healthcheck + `condition: service_healthy` 让 backend 等 mysql 真正就绪才启动
+  - `SPRING_DATASOURCE_URL` 必须用 environment 覆盖（localhost → mysql:3306）
+  - 首次部署：拉 mysql 镜像 + 执行 init.sql + JVM 启动，耗时较长
+  - `up -d` 返回后容器启动了，但服务不一定就绪（3b 会踩这个坑）
 
 ### 3b 复盘
 
