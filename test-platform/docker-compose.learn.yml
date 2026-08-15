@@ -2,7 +2,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: backend/Dockerfile.new
+      dockerfile: backend/Dockerfile-learn
     container_name: tp-learn-backend
     ports:
       - "8090:8080"
@@ -10,7 +10,7 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile.new
+      dockerfile: Dockerfile-learn
     container_name: tp-learn-frontend
     ports:
       - "82:80"

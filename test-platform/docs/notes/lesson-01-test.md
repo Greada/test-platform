@@ -54,7 +54,7 @@ stage('Test') {
   - `$(hostname)` 命令替换取容器 ID;`${HOSTNAME}` 读环境变量也能取到(两者等价)
 - `-w "$WORKSPACE/test-platform"`:设工作目录
   - `$WORKSPACE` 是 Jenkins 注入的环境变量,指向 `/var/jenkins_home/workspace/test-platform-learn`
-  - 代码在 `$WORKSPACE/test-platform/` 下(因 Script Path 是 `test-platform/Jenkinsfile.new`)
+  - 代码在 `$WORKSPACE/test-platform/` 下(因 Script Path 是 `test-platform/Jenkinsfile-learn`)
 - `maven:3.9-eclipse-temurin-17`:含 Maven 3.9 + JDK 17(项目要求 Java 17)
 - `sh '''...'''` 三引号:多行 shell 命令(对比 Lesson 0 的 `echo` 是 Groovy 内置)
 
@@ -191,7 +191,7 @@ sh '''
 
 ---
 
-## 三、最终 Jenkinsfile.new 结构(Lesson 1 完成时)
+## 三、最终 Jenkinsfile-learn 结构(Lesson 1 完成时)
 
 ```groovy
 pipeline {

@@ -119,7 +119,7 @@ CMD ["java", "-jar", "app.jar"]
 - 用错误的 context 构建 → 看报错
 - 再用正确的 context 构建 → 成功
 
-**天真版 Dockerfile.new(已写好):**
+**天真版 Dockerfile-learn(已写好):**
 
 ```dockerfile
 FROM maven:3.9-eclipse-temurin-17
@@ -148,7 +148,7 @@ CMD ["java", "-jar", "backend/target/test-platform-backend-1.0.0.jar"]
 
 ```bash
 cd /mnt/d/Java_all/code/test-platform/test-platform/backend
-docker build -f Dockerfile.new -t tp-backend-learn .
+docker build -f Dockerfile-learn -t tp-backend-learn .
 #                                              ↑ context = backend/
 ```
 
@@ -158,7 +158,7 @@ docker build -f Dockerfile.new -t tp-backend-learn .
 
 ```bash
 cd /mnt/d/Java_all/code/test-platform/test-platform
-docker build -f backend/Dockerfile.new -t tp-backend-learn .
+docker build -f backend/Dockerfile-learn -t tp-backend-learn .
 #                                                ↑ context = 项目根
 ```
 
@@ -175,7 +175,7 @@ docker build -f backend/Dockerfile.new -t tp-backend-learn .
 - 优化:把 `COPY pom.xml` 和 `COPY src` 分开,依赖层(pom)在前,代码层(src)在后
 - 改代码时:pom 没变 → 依赖层 CACHED → 只重新编译,不重下依赖
 
-**优化版 Dockerfile.new(1.5b 跑时更新):**
+**优化版 Dockerfile-learn(1.5b 跑时更新):**
 
 ```dockerfile
 FROM maven:3.9-eclipse-temurin-17
@@ -209,7 +209,7 @@ CMD ["java", "-jar", "backend/target/test-platform-backend-1.0.0.jar"]
 - 拆成两阶段:阶段 1 用 Maven 编译,阶段 2 只用 JRE 运行
 - `COPY --from=build` 从阶段 1 复制产物到阶段 2
 
-**多阶段版 Dockerfile.new(1.5c 跑时更新):**
+**多阶段版 Dockerfile-learn(1.5c 跑时更新):**
 
 ```dockerfile
 # 阶段 1:build(用 Maven+JDK 编译)
@@ -251,7 +251,7 @@ docker images tp-backend-learn
 - ⚠️ context 不同:backend 的 context 是项目根(`.`),frontend 的 context 是 `./frontend`
   - 所以 frontend Dockerfile 里的 COPY 路径**不带 `frontend/` 前缀**
 
-**你的任务:参照 1.5c 的 backend Dockerfile,写 `frontend/Dockerfile.new`**
+**你的任务:参照 1.5c 的 backend Dockerfile,写 `frontend/Dockerfile-learn`**
 
 提示:
 - 阶段 1:`FROM node:20-alpine AS build`,`COPY package*.json ./`,`RUN npm ci`,`COPY . .`,`RUN npm run build`
@@ -276,7 +276,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: backend/Dockerfile.new
+      dockerfile: backend/Dockerfile-learn
     container_name: tp-learn-backend
     ports:
       - "8090:8080"    # 用 8090 避开生产 8080
@@ -284,7 +284,7 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile.new
+      dockerfile: Dockerfile-learn
     container_name: tp-learn-frontend
     ports:
       - "82:80"         # 用 82 避开生产 80
@@ -307,11 +307,11 @@ docker compose -f docker-compose.learn.yml build backend
 
 | 文件 | 状态 |
 |------|------|
-| `backend/Dockerfile.new` | 多阶段版(1.5c 最终版) |
-| `frontend/Dockerfile.new` | 你写的多阶段版(1.5d 审过后) |
+| `backend/Dockerfile-learn` | 多阶段版(1.5c 最终版) |
+| `frontend/Dockerfile-learn` | 你写的多阶段版(1.5d 审过后) |
 | `docker-compose.learn.yml` | backend + frontend 两服务(1.5e) |
 
-这些文件在 Lesson 2 会被 Jenkinsfile.new 引用:`docker compose -f docker-compose.learn.yml build`
+这些文件在 Lesson 2 会被 Jenkinsfile-learn 引用:`docker compose -f docker-compose.learn.yml build`
 
 ---
 
@@ -322,16 +322,16 @@ docker compose -f docker-compose.learn.yml build backend
 - **状态**: ✅ 踩坑成功 + 修正成功
 - **镜像**: `tp-backend-learn:latest` = **1.26GB**(单阶段,含 Maven+JDK+源码+jar)
 - **踩的坑**:
-  - **build context 错误**:在 `backend/` 目录跑 `docker build -f Dockerfile.new .`
+  - **build context 错误**:在 `backend/` 目录跑 `docker build -f Dockerfile-learn .`
     - context = `backend/`,`COPY . .` 只复制了 backend/ 目录的内容到 /app
     - `RUN mvn package -f backend/pom.xml` 找不到 `backend/pom.xml`(因为 /app 里没有 backend/ 子目录,只有 pom.xml)
     - 报错:`POM file backend/pom.xml specified with the -f/--file command line argument does not exist`
-  - **修正**:回项目根跑 `docker build -f backend/Dockerfile.new .`
+  - **修正**:回项目根跑 `docker build -f backend/Dockerfile-learn .`
     - context = 项目根,`COPY . .` 复制整个项目,`backend/pom.xml` 路径正确
   - **意外发现**:构建用的是编辑前的旧版 Dockerfile(无 settings.xml 行)
     - 日志显示 `[1/4]` 到 `[4/4]`(4 步),新版应有 5 步(多了 COPY settings.xml)
     - Maven 走中央仓库(国外)→ 耗时 459.4s(~7.5 分钟)
-    - 当前 Dockerfile.new 已修复(加了 settings.xml),1.5b 重建时走阿里云会快很多
+    - 当前 Dockerfile-learn 已修复(加了 settings.xml),1.5b 重建时走阿里云会快很多
 - **关键认知**:
   - **build context 是 `docker build` 最后一个参数**,Dockerfile 里所有 COPY 路径都相对于它
   - `-f` 只指定 Dockerfile 位置,**不改变 context**
@@ -479,7 +479,7 @@ docker compose -f docker-compose.learn.yml build backend
 - **compose build vs docker build 对比**:
   | 命令 | 怎么找 Dockerfile | context 在哪 | 镜像名 |
   |------|------------------|-------------|--------|
-  | `docker build -f backend/Dockerfile.new -t tp-backend-learn .` | `-f` 手动指定 | 命令最后的 `.` | `-t` 手动指定 |
+  | `docker build -f backend/Dockerfile-learn -t tp-backend-learn .` | `-f` 手动指定 | 命令最后的 `.` | `-t` 手动指定 |
   | `docker compose -f docker-compose.learn.yml build backend` | 读 compose 文件 | 读 compose 文件 | compose 自动命名 |
 - **L1.5 三层优化全程总结**:
   | 优化 | 效果 | 手段 | 哪一步 |

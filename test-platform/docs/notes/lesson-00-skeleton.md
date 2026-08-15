@@ -50,7 +50,7 @@ sh 'echo hello'     // shell 命令,丢给 /bin/bash 执行
 
 ## 二、我写的代码
 
-<!-- 跑完后把 Jenkinsfile.new 的最终内容贴这里 -->
+<!-- 跑完后把 Jenkinsfile-learn 的最终内容贴这里 -->
 
 ```groovy
 pipeline {
@@ -92,7 +92,7 @@ pipeline {
 | **Repository URL** | `https://gitee.com/greada/test-platform.git` | Git 仓库地址 |
 | **Credentials** | (留空) | 公开仓库不用填;私有仓库要加 Gitee 用户名密码凭据 |
 | **Branches to build** | `*/main` | 检出哪个分支。`*/main` 表示 main 分支 |
-| **Script Path** | `test-platform/Jenkinsfile.new` | ⚠️ Jenkinsfile 在仓库里的相对路径。默认是 `Jenkinsfile`,我们用 `.new` 绕开旧文件 |
+| **Script Path** | `test-platform/Jenkinsfile-learn` | ⚠️ Jenkinsfile 在仓库里的相对路径。默认是 `Jenkinsfile`,我们用 `-learn` 绕开旧文件 |
 | **Lightweight checkout** | ✅ 勾上 | 只检出 Jenkinsfile 而非整个仓库,加快首次读取速度 |
 
 ### 3.3 SCM 是什么(踩坑详解)
@@ -113,7 +113,7 @@ Jenkins 支持多种 SCM:
 Checking out hudson.scm.NullSCM into ...
 ```
 
-`NullSCM` 是 Jenkins 的"空 SCM"兜底实现——表示"没有配置源代码管理"。Jenkins 不知道去哪拉代码,自然找不到 `Jenkinsfile.new`。
+`NullSCM` 是 Jenkins 的"空 SCM"兜底实现——表示"没有配置源代码管理"。Jenkins 不知道去哪拉代码,自然找不到 `Jenkinsfile-learn`。
 
 **解决**:SCM 必须手动改成 `Git`,改完后 Repository URL / Branches / Script Path 等 Git 字段才会出现。
 
@@ -128,9 +128,9 @@ Checking out hudson.scm.NullSCM into ...
    git fetch https://gitee.com/greada/test-platform.git
    git checkout main
    → 代码下载到 /var/jenkins_home/workspace/test-platform-learn/
-3. 读 Script Path = test-platform/Jenkinsfile.new
-   → 找到仓库里的 Jenkinsfile.new
-4. 解析 Jenkinsfile.new 的 Groovy 语法
+3. 读 Script Path = test-platform/Jenkinsfile-learn
+   → 找到仓库里的 Jenkinsfile-learn
+4. 解析 Jenkinsfile-learn 的 Groovy 语法
 5. 按 pipeline{} 里的定义逐个 stage 执行
 6. 全部成功 → 标记 SUCCESS(绿色)
 ```
@@ -138,9 +138,9 @@ Checking out hudson.scm.NullSCM into ...
 **关键认知**:
 - Jenkins **自动拉代码**,你不需要手动 git clone/pull
 - Jenkins 拉的是 **Gitee 远程仓库**的代码,不是你本地 Windows/WSL 里的代码
-- 所以 `Jenkinsfile.new` 必须先 **git push 到 Gitee**,Jenkins 才能读到
+- 所以 `Jenkinsfile-learn` 必须先 **git push 到 Gitee**,Jenkins 才能读到
 
-> ⚠️ **工作流提醒**:改 `Jenkinsfile.new` 后,必须 `git add && git commit && git push` 到 Gitee,再点 Build Now。否则 Jenkins 拉的还是旧版本。
+> ⚠️ **工作流提醒**:改 `Jenkinsfile-learn` 后,必须 `git add && git commit && git push` 到 Gitee,再点 Build Now。否则 Jenkins 拉的还是旧版本。
 
 ## 四、复盘
 
@@ -152,8 +152,8 @@ Checking out hudson.scm.NullSCM into ...
   - 解决:SCM 改成 `Git`,填好 Repository URL 和 Script Path 后保存
 - **关键认知**:
   - Jenkins 自动从 Gitee 拉代码,不需要本地手动 git clone
-  - 改 `Jenkinsfile.new` 后必须 `git push` 到 Gitee,Jenkins 才能读到新版本
-  - `Jenkinsfile.new` 是相对仓库根目录的路径,不是绝对路径
+  - 改 `Jenkinsfile-learn` 后必须 `git push` 到 Gitee,Jenkins 才能读到新版本
+  - `Jenkinsfile-learn` 是相对仓库根目录的路径,不是绝对路径
 - **下次注意**:
   - 建新 Pipeline Job 时,Definition 改完后立刻检查 SCM 下拉框是不是 Git
   - 配置完先 push 代码再 Build Now

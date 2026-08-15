@@ -26,13 +26,13 @@
 - [Docker Compose 容器编排教程](docker-compose-orchestration.md) — 为 Lesson 2/3 打基础
 
 ## 文件约定
-- `test-platform/Jenkinsfile.new` — 本课程逐课构建的新 pipeline
+- `test-platform/Jenkinsfile-learn` — 本课程逐课构建的新 pipeline
 - `test-platform/Jenkinsfile` — 旧版,保留作参考,不动
 - `test-platform/docs/notes/lesson-XX-*.md` — 每课笔记
 
 ## 学习节奏(每课固定 4 步)
 1. **我讲**:问题 + 概念 + 伪代码骨架
-2. **我写**:在 `Jenkinsfile.new` 里实现
+2. **我写**:在 `Jenkinsfile-learn` 里实现
 3. **跑/审**:Jenkins 跑看绿灯,或读文件审
 4. **复盘**:改进点 → 进下一课
 

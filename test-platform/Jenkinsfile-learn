@@ -1,5 +1,5 @@
 // ============================================================================
-// Jenkinsfile.new — 从 0 重建(学习用)
+// Jenkinsfile-learn — 从 0 重建(学习用)
 // Lesson 0:  最小骨架
 // Lesson 1a: Test stage(天真版 — 预期失败:mvn not found)
 // Lesson 1b: Test stage(docker run 共享 workspace)
@@ -34,7 +34,9 @@ pipeline {
         }
         stage('Build') {
             steps {
-                sh 'docker compose -f docker-compose.learn.yml build'
+                dir("test-platform") {
+                    sh 'docker compose -f docker-compose.learn.yml build'
+                }
             }
         }
     }
