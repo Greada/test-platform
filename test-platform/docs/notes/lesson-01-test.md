@@ -164,6 +164,7 @@ BUILD SUCCESS
 **最终 Test stage 代码**:
 ```groovy
 sh '''
+    rm -rf test-platform/backend/target
     docker run --rm \
         --volumes-from "${HOSTNAME}" \
         -w "$WORKSPACE/test-platform" \
@@ -180,6 +181,11 @@ sh '''
 **学到的**:
 - 三个参数有依赖关系(user/HOME/volume),必须一起加
 - `settings.xml` 已经配好阿里云源,但要用 `-s` 参数指定才生效
+- `rm -rf test-platform/backend/target` — 每次构建前清理 target 目录
+  - 原因:之前某次构建以 root 运行 Maven,target/ 下文件属主=root
+  - `--user 1000:1000` 的 Maven 无法覆盖 root 属主的文件 → `Operation not permitted`
+  - `rm -rf` 由 Jenkins 容器(root)执行 → 删掉 root 残留 → Maven 重新创建干净的 target/
+  - CI 最佳实践:每次构建从干净状态开始,避免残留文件干扰
 - 1c 的缓存路径设计(挂 /tmp/.m2 + 指定路径)让 1d 衔接时缓存不丢
 - Batch 模式让日志可读
 
