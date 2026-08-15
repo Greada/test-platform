@@ -5,7 +5,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
- * @author admin
+ * @author greada
  * @version 1.0.0
  */
 @SpringBootApplication

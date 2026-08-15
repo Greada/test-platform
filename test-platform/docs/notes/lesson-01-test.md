@@ -205,15 +205,46 @@ pipeline {
 
 ## 四、复盘
 
-- **构建编号**:
-- **状态**:
+- **构建编号**: #1–#8（#5 失败 = 1a 天真版；#7 = 1c 首次下载 5:51；#8 = 1c 缓存命中 16.2s = 最终成功构建）
+- **状态**: #8 ✅ SUCCESS（91 个测试全部通过）
 - **踩的坑**:
-  - 
+  - 1a: Jenkins 容器只有 JDK 无 Maven → `mvn: not found`；解决：用 `docker run` 起临时 Maven 容器
+  - 1b: `${hostname}` 小写不展开（shell 变量区分大小写）→ 改 `${HOSTNAME}` 或 `$(hostname)`
+  - 1c: 漏写 `-Dmaven.repo.local` 导致缓存不生效（Maven 写 /root/.m2，卷在 /tmp/.m2）；拼写错误 `respository` → `repository`
+  - 1d: `--user 1000:1000` → /root 无写权限 → 必须 `-e HOME=/tmp` → 必须 `-v maven-repo:/tmp/.m2`，三个参数绑定
 - **关键认知**:
-  - 
+  - Jenkins 容器 ≠ 全功能构建环境；用"临时容器 + --rm"按需启动工具，Jenkins 保持轻量
+  - 命名卷跨构建缓存依赖：第一次 5:51 → 第二次 16.2s（**21 倍提速**）
+  - `${变量}` 引用 vs `$(命令)` 替换 — shell 基础但容易混
+  - 参数依赖链：--user → HOME 无权限 → -e HOME → -v 卷路径，缺一报错
+  - 挂载路径与 Maven 实际写入路径必须一致，否则缓存空转
 - **下次注意**:
-  - 
+  - shell 变量大小写（HOSTNAME vs hostname）
+  - 卷挂载路径 vs 应用默认路径要对齐
+  - 有依赖关系的参数必须一起加，不能逐个试
 
 ## 五、Console Output 关键片段
 
-<!-- 贴关键日志 -->
+### 1a 失败（Build #5）
+
+```
+/var/jenkins_home/workspace/test-platform-learn@tmp/durable-xxx/script.sh.copy: 1: mvn: not found
+```
+
+### 1b 成功
+
+```
+Tests run: 91, Failures: 0, Errors: 0, Skipped: 0
+BUILD SUCCESS
+Total time:  05:08 min
+```
+
+### 1c 缓存命中（Build #8）
+
+```
+Tests run: 91, Failures: 0, Errors: 0, Skipped: 0
+BUILD SUCCESS
+Total time:  16.20 s
+```
+
+> 1b/1d 的具体构建编号未在正文中记录；#5 为 lastFailedBuild，#8 为 lastSuccessfulBuild。
