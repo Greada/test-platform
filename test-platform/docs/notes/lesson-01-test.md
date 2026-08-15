@@ -171,7 +171,6 @@ sh '''
         -v "maven-repo:/tmp/.m2" \
         -e HOME=/tmp \
         --network host \
-        --user 1000:1000 \
         maven:3.9-eclipse-temurin-17 \
         mvn test -f backend/pom.xml -B -s backend/settings.xml
 '''
@@ -179,13 +178,14 @@ sh '''
 
 **结果**:✅ SUCCESS,91 个测试通过
 **学到的**:
-- 三个参数有依赖关系(user/HOME/volume),必须一起加
 - `settings.xml` 已经配好阿里云源,但要用 `-s` 参数指定才生效
 - `rm -rf test-platform/backend/target` — 每次构建前清理 target 目录
   - 原因:之前某次构建以 root 运行 Maven,target/ 下文件属主=root
-  - `--user 1000:1000` 的 Maven 无法覆盖 root 属主的文件 → `Operation not permitted`
-  - `rm -rf` 由 Jenkins 容器(root)执行 → 删掉 root 残留 → Maven 重新创建干净的 target/
   - CI 最佳实践:每次构建从干净状态开始,避免残留文件干扰
+- 关于 `--user 1000:1000`(已移除):
+  - 原以为 workspace 文件属主是 UID 1000,实际是 root
+  - 加了 `--user 1000:1000` 后 Maven 无法在 root 属主的 backend/ 下创建 target/ → 失败
+  - 教训:加参数前先 `ls -la` 确认实际权限,不要假设
 - 1c 的缓存路径设计(挂 /tmp/.m2 + 指定路径)让 1d 衔接时缓存不丢
 - Batch 模式让日志可读
 
