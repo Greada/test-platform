@@ -32,7 +32,7 @@
 
 ### Phase B — 工程化（未开始）
 - [x] Lesson 4 — 参数化 + 双环境
-- [ ] Lesson 5 — 失败处理 + 产物
+- [x] Lesson 5 — 失败处理 + 产物
 - [ ] Lesson 6 — 规范化
 
 ### Phase C — 高级（未开始）
@@ -42,13 +42,13 @@
 
 ## 下次从这里继续
 
-- **Lesson 5** — 失败处理 + 产物（post + junit + CI 看板）— Phase B 第二课
+- **Lesson 6** — 规范化（options + 镜像锁版本）— Phase B 第三课
 
 ## 关键文件清单
 
 | 文件 | 说明 |
 |---|---|
-| `test-platform/Jenkinsfile-learn` | 学习版 pipeline（当前到 L4 完结） |
+| `test-platform/Jenkinsfile-learn` | 学习版 pipeline（当前到 L5 完结） |
 | `test-platform/docker-compose.learn.yml` | 学习版 compose（含 mysql/backend/frontend） |
 | `test-platform/backend/Dockerfile-learn` | 多阶段 backend Dockerfile（L1.5 产出） |
 | `test-platform/frontend/Dockerfile-learn` | 多阶段 frontend Dockerfile（L1.5 产出） |
@@ -72,3 +72,4 @@
 | 2026-08-15 | L1 复盘回填 + L1.5 完整 + L2 完整 + L3 3a/3b 完成 |
 | 2026-08-16 | L3 3c 验证通过（#16，真冷启动）+ lesson-03 第五节日志回填 |
 | 2026-08-16 | L4 参数化+双环境完成（4a/4b/4c 验证通过）+ lesson-04 笔记回填 |
+| 2026-08-16 | L5 失败处理+产物完成（5a/5b/5c 验证通过）+ lesson-05 笔记回填 |

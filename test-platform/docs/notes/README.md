@@ -13,7 +13,7 @@
 
 ### Phase B — 工程化
 - [x] Lesson 4 — 参数化 + 双环境(parameters + when)
-- [ ] Lesson 5 — 失败处理 + 产物(post + junit + CI 看板)
+- [x] Lesson 5 — 失败处理 + 产物(post + junit + CI 看板)
 - [ ] Lesson 6 — 规范化(options + 镜像锁版本)
 
 ### Phase C — 高级
