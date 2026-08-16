@@ -11,6 +11,7 @@
 // Lesson 3a: Deploy stage(docker compose up -d)
 // Lesson 3b: Verify stage(天真版 — 预期失败:JVM 未就绪)
 // Lesson 3c: Verify stage(sleep 15 等待 JVM 就绪)
+// Lesson 4:  参数化 + 双环境
 // ============================================================================
 
 pipeline {
@@ -24,6 +25,20 @@ pipeline {
 		stage('hello') {
 			steps {
 				echo 'hello'
+			}
+		}
+
+		stage('Resolve Env') {
+			steps {
+				script {
+					if (params.DEPLOY_ENV == 'auto') {
+						env.DEPLOY_TARGET = 'test' // learn 无分支，auto 默认 test
+					} else {
+						// "${params.DEPLOY_ENV}" 等价于 params.DEPLOY_ENV
+						env.DEPLOY_TARGET = params.DEPLOY_ENV
+					}
+					echo "===== 部署目标: ${env.DEPLOY_TARGET} ====="
+				}
 			}
 		}
 
