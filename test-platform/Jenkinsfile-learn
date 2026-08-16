@@ -68,11 +68,14 @@ pipeline {
 			steps {
 				dir("test-platform") {
 					sh '''
-                        echo "===== 构建后端镜像 ====="
-                        docker compose -f docker-compose.learn.yml build backend
-                        echo "===== 构建前端镜像 ====="
-                        docker compose -f docker-compose.learn.yml build frontend
-                    '''
+						COMPOSE_FILE="docker-compose.learn.yml"
+						[ "$DEPLOY_TARGET" = "test" ] && COMPOSE_FILE="docker-compose.learn.yml"
+						echo "===== 使用 $COMPOSE_FILE 构建 ====="
+						echo "===== 构建后端镜像 ====="
+						docker compose -f "$COMPOSE_FILE" build backend
+						echo "===== 构建前端镜像 ====="
+						docker compose -f "$COMPOSE_FILE" build frontend
+					'''
 				}
 			}
 		}
@@ -80,7 +83,13 @@ pipeline {
 		stage('Deploy') {
 			steps {
 				dir("test-platform") {
-					sh 'docker compose -f docker-compose.learn.yml up -d'
+					//sh 'docker compose -f docker-compose.learn.yml up -d'
+					sh '''
+						COMPOSE_FILE="docker-compose.learn.yml"
+						[ "$DEPLOY_TARGET" = "test" ] && COMPOSE_FILE="docker-compose.learn.yml"
+						echo "===== 使用 $COMPOSE_FILE 部署 ====="
+						docker compose -f "$COMPOSE_FILE" up -d
+					'''
 				}
 			}
 		}
@@ -109,6 +118,17 @@ pipeline {
                         [ "$HTTP_CODE" = "200" ] || exit 1
                     '''
 				}
+			}
+		}
+
+		stage('Notify') {
+			when {
+				expression {
+					env.DEPLOY_TARGET == 'prod'
+				}
+			}
+			steps {
+				echo '===== prod 部署完成，发送通知 ====='
 			}
 		}
 	}
