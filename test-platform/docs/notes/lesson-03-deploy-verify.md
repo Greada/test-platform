@@ -259,7 +259,7 @@ pipeline {
   - 3b 意外通过是因为 3a 已部署过，JVM 早已就绪
   - 首次部署时 Deploy 和 Verify 之间无时间间隔 → sleep 是必要的
   - 生产 Jenkinsfile 用的也是 sleep 15
-  - 更健壮的方案是轮询重试（Phase B Lesson 5 会讲）
+  - 更健壮的方案是轮询重试（后续课程会讲）
   - ✅ 已验证（构建 #16，耗时 1 分 15 秒）：真冷启动（down 删容器后重跑）+ sleep 15 → 两 HTTP 200，3c 验证成立（非 3b 假通过）
 - **L3 总结**:
   - Deploy: `docker compose up -d` 按 depends_on 启动容器

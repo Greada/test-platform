@@ -12,6 +12,7 @@
 // Lesson 3b: Verify stage(天真版 — 预期失败:JVM 未就绪)
 // Lesson 3c: Verify stage(sleep 15 等待 JVM 就绪)
 // Lesson 4:  参数化 + 双环境
+// Lesson 5:  失败处理 + 产物(post + junit + deleteDir)
 // ============================================================================
 
 pipeline {
