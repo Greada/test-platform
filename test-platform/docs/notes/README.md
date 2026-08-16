@@ -12,7 +12,7 @@
 - [x] Lesson 3 — 部署 + 验证(Deploy + Verify 轮询重试)
 
 ### Phase B — 工程化
-- [ ] Lesson 4 — 参数化 + 双环境(parameters + when)
+- [x] Lesson 4 — 参数化 + 双环境(parameters + when)
 - [ ] Lesson 5 — 失败处理 + 产物(post + junit + CI 看板)
 - [ ] Lesson 6 — 规范化(options + 镜像锁版本)
 
