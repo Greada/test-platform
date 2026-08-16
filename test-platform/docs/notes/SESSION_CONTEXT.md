@@ -17,7 +17,7 @@
 9. **安全性能自检**：交付时附带安全与性能自检清单
 10. **及时更新文档**：每次变更后同步更新相关文档
 
-## 课程进度（截至 2026-08-15）
+## 课程进度（截至 2026-08-16）
 
 ### Phase A — 能跑起来(MVP)
 
@@ -25,10 +25,10 @@
 - [x] Lesson 1 — 跑单元测试（Test stage）
 - [x] Lesson 1.5 — Dockerfile + Compose 动手实验
 - [x] Lesson 2 — 构建镜像（Build stage）
-- [ ] Lesson 3 — 部署 + 验证（Deploy + Verify）
+- [x] Lesson 3 — 部署 + 验证（Deploy + Verify）
   - [x] 3a — Deploy stage（docker compose up -d）✅ 成功
   - [x] 3b — Verify stage（天真版，无 sleep）✅ 意外通过（3a 已部署，JVM 已就绪）
-  - [ ] 3c — 加 sleep 15（修正版）← **下次从这里继续**
+  - [x] 3c — 加 sleep 15（修正版）✅ 验证通过（#16，真冷启动，down 后重跑）
 
 ### Phase B — 工程化（未开始）
 - [ ] Lesson 4 — 参数化 + 双环境
@@ -40,18 +40,15 @@
 - [ ] Lesson 8 — 状态回写
 - [ ] Lesson 9 — 并行优化 + 回滚
 
-## 3c 待执行内容
+## 下次从这里继续
 
-1. `Jenkinsfile-learn` Verify stage 开头加 `sleep 15` + `echo "===== 等待服务启动 ====="`
-2. `lesson-03-deploy-verify.md` 回填 3c 复盘
-3. `docs/notes/README.md` 勾选 L3 完成
-4. 提交 + push
+- **Lesson 4** — 参数化 + 双环境（parameters + when）— Phase B 第一课
 
 ## 关键文件清单
 
 | 文件 | 说明 |
 |---|---|
-| `test-platform/Jenkinsfile-learn` | 学习版 pipeline（当前到 3b） |
+| `test-platform/Jenkinsfile-learn` | 学习版 pipeline（当前到 L3 完结） |
 | `test-platform/docker-compose.learn.yml` | 学习版 compose（含 mysql/backend/frontend） |
 | `test-platform/backend/Dockerfile-learn` | 多阶段 backend Dockerfile（L1.5 产出） |
 | `test-platform/frontend/Dockerfile-learn` | 多阶段 frontend Dockerfile（L1.5 产出） |
@@ -73,3 +70,4 @@
 | 日期 | 变更 |
 |------|------|
 | 2026-08-15 | L1 复盘回填 + L1.5 完整 + L2 完整 + L3 3a/3b 完成 |
+| 2026-08-16 | L3 3c 验证通过（#16，真冷启动）+ lesson-03 第五节日志回填 |

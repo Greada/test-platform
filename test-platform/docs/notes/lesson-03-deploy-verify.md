@@ -260,6 +260,7 @@ pipeline {
   - 首次部署时 Deploy 和 Verify 之间无时间间隔 → sleep 是必要的
   - 生产 Jenkinsfile 用的也是 sleep 15
   - 更健壮的方案是轮询重试（Phase B Lesson 5 会讲）
+  - ✅ 已验证（构建 #16，耗时 1 分 15 秒）：真冷启动（down 删容器后重跑）+ sleep 15 → 两 HTTP 200，3c 验证成立（非 3b 假通过）
 - **L3 总结**:
   - Deploy: `docker compose up -d` 按 depends_on 启动容器
   - Verify: curl 验证 API + 前端页面
@@ -268,4 +269,50 @@ pipeline {
 
 ## 五、Console Output 关键片段
 
-<!-- 贴关键日志 -->
+### 3c 成功日志（真冷启动验证，构建 #16，耗时 1 分 15 秒）
+
+**前置操作：** `docker compose -f docker-compose.learn.yml down`（删容器，保留 mysql 数据卷）→ Jenkins Build Now 触发冷启动。
+
+**Deploy stage — 容器新建（非重启，证明 down 生效）：**
+
+```
++ docker compose -f docker-compose.learn.yml up -d
+ Network test-platform_default Creating
+ Network test-platform_default Created
+ Container tp-learn-mysql Creating
+ Container tp-learn-mysql Created
+ Container tp-learn-backend Creating
+ Container tp-learn-backend Created
+ Container tp-learn-frontend Creating
+ Container tp-learn-frontend Created
+ Container tp-learn-mysql Starting
+ Container tp-learn-mysql Started
+ Container tp-learn-mysql Waiting
+ Container tp-learn-mysql Healthy
+ Container tp-learn-backend Starting
+ Container tp-learn-backend Started
+ Container tp-learn-frontend Starting
+ Container tp-learn-frontend Started
+```
+
+**Verify stage — sleep 15 保护 JVM 冷启动：**
+
+```
++ echo ===== 等待服务启动 =====
+===== 等待服务启动 =====
++ sleep 15
++ echo ===== 验证后端 API =====
+===== 验证后端 API =====
++ HTTP_CODE=200
++ echo Backend HTTP code: 200
+Backend HTTP code: 200
++ [ 200 = 200 ]
++ echo ===== 验证前端页面 =====
+===== 验证前端页面 =====
++ HTTP_CODE=200
++ echo Frontend HTTP code: 200
+Frontend HTTP code: 200
++ [ 200 = 200 ]
+```
+
+**结论：** 真冷启动（容器 Creating 链）+ sleep 15 保护 JVM 冷启 → 两个 HTTP 200 → ✅ SUCCESS。构建 #16，耗时 1 分 15 秒。非 3b 的"JVM 早就绪"假通过。
