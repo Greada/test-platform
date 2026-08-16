@@ -14,17 +14,28 @@
 // ============================================================================
 
 pipeline {
-    agent any
+	agent any
 
-    stages {
-        stage('hello') {
-            steps {
-                echo 'hello'
-            }
-        }
-        stage('Test') {
-            steps {
-                sh '''
+	parameters {
+		choice(name: 'DEPLOY_ENV', choices: ['auto', 'test', 'prod'], description: '部署环境:auto/test/prod')
+	}
+
+	stages {
+		stage('hello') {
+			steps {
+				echo 'hello'
+			}
+		}
+
+		stage('Print Params') {
+			steps {
+				echo "===== DEPLOY_ENV = ${params.DEPLOY_ENV} ====="
+			}
+		}
+
+		stage('Test') {
+			steps {
+				sh '''
                     rm -rf test-platform/backend/target
                     docker run --rm \
                         --volumes-from "${HOSTNAME}" \
@@ -35,31 +46,34 @@ pipeline {
                         maven:3.9-eclipse-temurin-17 \
                         mvn test -f backend/pom.xml -B -s backend/settings.xml
                 '''
-            }
-        }
-        stage('Build') {
-            steps {
-                dir("test-platform") {
-                    sh '''
+			}
+		}
+
+		stage('Build') {
+			steps {
+				dir("test-platform") {
+					sh '''
                         echo "===== 构建后端镜像 ====="
                         docker compose -f docker-compose.learn.yml build backend
                         echo "===== 构建前端镜像 ====="
                         docker compose -f docker-compose.learn.yml build frontend
                     '''
-                }
-            }
-        }
-        stage('Deploy') {
-            steps {
-                dir("test-platform") {
-                    sh 'docker compose -f docker-compose.learn.yml up -d'
-                }
-            }
-        }
-        stage('Verify') {
-            steps {
-                dir("test-platform") {
-                    sh '''
+				}
+			}
+		}
+
+		stage('Deploy') {
+			steps {
+				dir("test-platform") {
+					sh 'docker compose -f docker-compose.learn.yml up -d'
+				}
+			}
+		}
+
+		stage('Verify') {
+			steps {
+				dir("test-platform") {
+					sh '''
                         echo "===== 等待服务启动 ====="
                         sleep 15
 
@@ -79,8 +93,8 @@ pipeline {
                         echo "Frontend HTTP code: $HTTP_CODE"
                         [ "$HTTP_CODE" = "200" ] || exit 1
                     '''
-                }
-            }
-        }
-    }
+				}
+			}
+		}
+	}
 }
