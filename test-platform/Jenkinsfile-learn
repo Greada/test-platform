@@ -132,4 +132,17 @@ pipeline {
 			}
 		}
 	}
+
+	post {
+		success {
+			echo '===== 流水线成功完成 ====='
+		}
+		failure {
+			echo '===== 流水线构建失败 ====='
+		}
+		cleanup {
+			echo '===== 流水线开始清理 ====='
+			deleteDir()
+		}
+	}
 }
