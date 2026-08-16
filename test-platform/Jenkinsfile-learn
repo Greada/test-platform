@@ -104,8 +104,6 @@ pipeline {
 			steps {
 				dir("test-platform") {
 					sh '''
-						exit 1 // 临时测试
-
 						echo "===== 等待服务启动 ====="
 						sleep 15
 
