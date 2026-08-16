@@ -104,25 +104,27 @@ pipeline {
 			steps {
 				dir("test-platform") {
 					sh '''
-                        echo "===== 等待服务启动 ====="
-                        sleep 15
+						exit 1 // 临时测试
 
-                        echo "===== 验证后端 API ====="
-                        HTTP_CODE=$(docker run --rm --network host curlimages/curl:latest \
-                            -s -o /dev/null -w "%{http_code}" \
-                            -X POST http://localhost:8090/api/auth/login \
-                            -H 'Content-Type: application/json' \
-                            -d '{"username":"admin","password":"admin123"}')
-                        echo "Backend HTTP code: $HTTP_CODE"
-                        [ "$HTTP_CODE" = "200" ] || exit 1
+						echo "===== 等待服务启动 ====="
+						sleep 15
 
-                        echo "===== 验证前端页面 ====="
-                        HTTP_CODE=$(docker run --rm --network host curlimages/curl:latest \
-                            -s -o /dev/null -w "%{http_code}" \
-                            http://localhost:82)
-                        echo "Frontend HTTP code: $HTTP_CODE"
-                        [ "$HTTP_CODE" = "200" ] || exit 1
-                    '''
+						echo "===== 验证后端 API ====="
+						HTTP_CODE=$(docker run --rm --network host curlimages/curl:latest \
+							-s -o /dev/null -w "%{http_code}" \
+							-X POST http://localhost:8090/api/auth/login \
+							-H 'Content-Type: application/json' \
+							-d '{"username":"admin","password":"admin123"}')
+						echo "Backend HTTP code: $HTTP_CODE"
+						[ "$HTTP_CODE" = "200" ] || exit 1
+
+						echo "===== 验证前端页面 ====="
+						HTTP_CODE=$(docker run --rm --network host curlimages/curl:latest \
+							-s -o /dev/null -w "%{http_code}" \
+							http://localhost:82)
+						echo "Frontend HTTP code: $HTTP_CODE"
+						[ "$HTTP_CODE" = "200" ] || exit 1
+					'''
 				}
 			}
 		}
