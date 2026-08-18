@@ -18,6 +18,18 @@
 pipeline {
 	agent any
 
+	// Lesson 6a: options{} — Pipeline 级全局选项
+	// timestamps: 每行日志加时间戳，定位 stage 耗时
+	// disableConcurrentBuilds: 禁并发，避免两个构建同时 Deploy 端口/容器名冲突
+	// buildDiscarder: 只留最近 20 次构建，避免磁盘塞满
+	// timeout: 整条流水线 30 分钟超时，防 maven 下载卡死
+	options {
+		timestamps()
+		disableConcurrentBuilds()
+		buildDiscarder(logRotator(numToKeepStr: '20'))
+		timeout(time: 30, unit: 'MINUTES')
+	}
+
 	parameters {
 		choice(name: 'DEPLOY_ENV', choices: ['auto', 'test', 'prod'], description: '部署环境:auto/test/prod')
 	}
