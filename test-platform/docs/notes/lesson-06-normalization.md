@@ -35,7 +35,7 @@ pipeline {
 | `timestamps()` | 给每行 Console 加时间戳 | 看 Test stage 花了 5 分钟还是 16 秒,定位耗时 |
 | `buildDiscarder(logRotator(numToKeepStr: '20'))` | 只留最近 20 次构建 | 避免磁盘被历史构建塞满(Jenkins 默认全留) |
 | `timeout(time: 30, unit: 'MINUTES')` | 整条流水线 30 分钟超时 | 防止 maven 下载卡死导致 Job 永远挂着 |
-| `retry(1)` | 失败自动重试 1 次 | 偶发网络问题(daocloud 单源拉镜像断流) |
+| `retry(2)` | 失败后从头重跑,共 2 次尝试 | 偶发网络问题(daocloud 单源拉镜像断流);⚠️ N=总尝试次数,retry(1) 只跑 1 次不重试(#7 实证) |
 | `ansiColor('xterm')` | 彩色日志 | 可读性,可选 |
 
 > ⚠️ `disableConcurrentBuilds()` 对 learn 环境尤其重要:上次 Build 的 tp-learn-* 容器还在跑,新构建同时 Deploy 会因容器名冲突失败。
@@ -127,22 +127,22 @@ pipeline {
 ### 2.2 小步 6b — 验证 timeout/retry
 
 **概念:**
-- 加 `retry(1)` 到 options{}
-- 故意在 Verify stage 加 `sleep 600`(10 分钟)触发 30 分钟 timeout
+- 加 `retry(2)` 到 options{}(N=总尝试次数,retry(2)=失败重试 1 次;⚠️ retry(1) 只执行 1 次不重试,Build #7 实证)
+- 临时把 timeout 改为 2 分钟,Verify 加 `sleep 600`(10 分钟)触发超时
 - 观察 pipeline 是否中断 + retry 是否重试
-- 验证完删掉 sleep 600 恢复正常
+- 验证完把 sleep 600 改回 sleep 15、timeout 改回 30(retry 保留)
 
 **代码骨架(待写):**
 ```groovy
 options {
-    ... // 6a 的 4 个
-    retry(1)  // ← 6b 新增
+    ... // 6a 的 4 个(6b 期间 timeout 临时 2 分钟)
+    retry(2)  // ← 6b 新增(N=总尝试次数,retry(1) 不重试)
 }
 
 stage('Verify') {
     steps {
         sh '''
-            sleep 600  // ← 临时造超时,验证完删
+            sleep 600 # ← 临时造超时,验证完改回 sleep 15(sh 内注释必须用 #,不能用 //)
             ...
         '''
     }
@@ -198,6 +198,20 @@ stage('Verify') {
   - `/var/jenkins_home/jobs/test-platform-learn/builds/N/log` → 原始 Console(含 UTC 时间戳行)
   - 换算秒差即得排队衔接证据,比看页面截图更硬
 
+### 6b 复盘(进行中)
+
+- **状态**: 演练中 — Build #7 为无效实验轮(两处问题,数据仍记录如下)
+- **已踩的坑:**
+  - **sh 块内 Groovy 注释污染**(用户发现):`sleep 600 // 说明` 中 `//` 及后续文字被 shell 当成 sleep 参数 → `sleep: invalid time interval` 秒败,超时根本不触发
+    - 证据(#7 log):`+ sleep 600 // 6b 临时...` 后连续 4 行 invalid time interval,duration 仅 42s
+    - 规则:**sh '''...''' 内注释必须用 `#`;`//` 只在 Groovy 层有效**
+  - **retry(1) 语义陷阱**:retry(N) 的 N=**总尝试次数**,retry(1) 只执行 1 次、失败不重试;要重试 1 次须 retry(2)
+    - 证据(#7):「部署目标」echo 仅 1 次,`[Pipeline] retry` 开→闭之间单轮执行
+    - 错误源头:本笔记 6.2 表格与 6b 骨架原写 retry(1),连同 Jenkinsfile-learn 注释已全部修正
+- **待验证(retry(2) 重跑后回填):**
+  - timeout×retry 嵌套方向:总时长 ≈2min(timeout 包住 retry)还是 ≈4min(每次尝试独立预算)
+  - 超时中断信号字样 / junit 收集用例数(1 轮还是 2 轮)/ post.failure echo 出现次数
+
 ## 五、Console Output 关键片段
 
 **Build #5 — timestamps + timeout 生效(log 开头数行):**
@@ -221,3 +235,4 @@ stage('Verify') {
 |------|------|
 | 2026-08-18 | 初版创建:概念(options + 镜像锁版本)+ 6a 代码已 push + Gitee hook 坑复盘;6b/6c 待回填 |
 | 2026-08-21 | 6a 验证通过:Build #5/#6 双绿,timestamps/timeout/disableConcurrentBuilds 均有实证(排队 25ms 衔接);笔记回填 |
+| 2026-08-21 | 6b 演练中:#7 无效轮实证两坑(sh 内 //注释污染 / retry(1) 不重试)→ 注释与笔记源头修正,待 retry(2) 重跑 |
