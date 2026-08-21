@@ -30,10 +30,13 @@
   - [x] 3b — Verify stage（天真版，无 sleep）✅ 意外通过（3a 已部署，JVM 已就绪）
   - [x] 3c — 加 sleep 15（修正版）✅ 验证通过（#16，真冷启动，down 后重跑）
 
-### Phase B — 工程化（未开始）
+### Phase B — 工程化
 - [x] Lesson 4 — 参数化 + 双环境
 - [x] Lesson 5 — 失败处理 + 产物
 - [ ] Lesson 6 — 规范化
+  - [x] 6a — options{} 四件套 ✅ Build #5/#6 验证通过(2026-08-21:timestamps/timeout 实证 + 排队 25ms 衔接)
+  - [ ] 6b — timeout/retry 演练(retry(1) + sleep 600 造超时)
+  - [ ] 6c — 镜像锁版本(4 个浮动 tag)
 
 ### Phase C — 高级（未开始）
 - [ ] Lesson 7 — PR 模式
@@ -42,7 +45,7 @@
 
 ## 下次从这里继续
 
-- **Lesson 6** — 规范化（options + 镜像锁版本）— Phase B 第三课
+- **Lesson 6b** — 验证 timeout/retry(options 加 `retry(1)` + Verify stage 临时 `sleep 600` 造超时,验证完删除恢复)
 
 ## 关键文件清单
 
@@ -73,3 +76,5 @@
 | 2026-08-16 | L3 3c 验证通过（#16，真冷启动）+ lesson-03 第五节日志回填 |
 | 2026-08-16 | L4 参数化+双环境完成（4a/4b/4c 验证通过）+ lesson-04 笔记回填 |
 | 2026-08-16 | L5 失败处理+产物完成（5a/5b/5c 验证通过）+ lesson-05 笔记回填 |
+| 2026-08-21 | L6a 验证通过（Build #5/#6 双绿，排队 25ms 衔接实证）+ lesson-06 笔记回填；新证据通道：`docker exec jenkins` 直读 builds/build.xml + log（绕过 API 403） |
+| 2026-08-21 | **学习节奏调整**（自 6b 起）：你讲(AI)→我写(用户)→你查(AI 只读检查)→跑/审→复盘，5 步 |
