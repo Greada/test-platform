@@ -266,3 +266,4 @@ Finished: ABORTED     ← 不是 FAILURE;post.failure/success 均未执行,仅 c
 | 2026-08-21 | 6a 验证通过:Build #5/#6 双绿,timestamps/timeout/disableConcurrentBuilds 均有实证(排队 25ms 衔接);笔记回填 |
 | 2026-08-21 | 6b 演练中:#7 无效轮实证两坑(sh 内 //注释污染 / retry(1) 不重试)→ 注释与笔记源头修正,待 retry(2) 重跑 |
 | 2026-08-21 | 6b #8 验证完成:timeout 包 retry(单轮 137.2s ABORTED)+ ABORTED≠FAILURE 的 post 陷阱;同日查明 git-ai 守护进程为 push 三连拒根因并卸载(Windows 侧) |
+| 2026-08-21 | 6b 彻底闭环:#9 恢复后绿灯(89.3s,双 HTTP 200,91 用例,检出 7c55751)→ 6b 完结,进 6c |
