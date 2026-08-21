@@ -15,6 +15,7 @@
 // Lesson 5:  失败处理 + 产物(post + junit + deleteDir)
 // Lesson 6a: options{} 四件套(timestamps + disableConcurrentBuilds + buildDiscarder + timeout)
 // Lesson 6b: timeout/retry 演练完成(#8 实证:timeout 包 retry,超时=ABORTED≠FAILURE)→ 已恢复 timeout=30min,retry(2) 保留
+// Lesson 6c: 镜像锁版本(curl:8.21.0 — 4 个浮动 tag 全部锁具体版本,可重复构建)
 // ============================================================================
 
 pipeline {
@@ -127,7 +128,7 @@ pipeline {
 					sleep 15 # 等 JVM 就绪(L3c)
 
 						echo "===== 验证后端 API ====="
-						HTTP_CODE=$(docker run --rm --network host curlimages/curl:latest \
+						HTTP_CODE=$(docker run --rm --network host curlimages/curl:8.21.0 \
 							-s -o /dev/null -w "%{http_code}" \
 							-X POST http://localhost:8090/api/auth/login \
 							-H 'Content-Type: application/json' \
@@ -136,7 +137,7 @@ pipeline {
 						[ "$HTTP_CODE" = "200" ] || exit 1
 
 						echo "===== 验证前端页面 ====="
-						HTTP_CODE=$(docker run --rm --network host curlimages/curl:latest \
+						HTTP_CODE=$(docker run --rm --network host curlimages/curl:8.21.0 \
 							-s -o /dev/null -w "%{http_code}" \
 							http://localhost:82)
 						echo "Frontend HTTP code: $HTTP_CODE"
