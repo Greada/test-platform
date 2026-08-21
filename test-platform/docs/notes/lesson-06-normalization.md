@@ -149,7 +149,7 @@ stage('Verify') {
 }
 ```
 
-<!-- 待 6b 完成后回填:造超时实际表现 + retry 重试日志 -->
+<!-- 6b 已于 2026-08-21 完成,验证结果见"四、复盘 → 6b 复盘 → #8 验证结果" -->
 
 ---
 
@@ -216,9 +216,19 @@ stage('Verify') {
     - 遗留:本会话内存中的插件实例仍会在每次工具调用时重建空日志目录 `~/.git-ai/logs`(仅日志,无 exe 无 daemon)——**关闭本次 opencode 会话后手动删一次即绝根**
     - WSL 侧 git-ai 按用户要求保留(检查时无进程运行,未动)
     - 通则仍有效:push 被拒不慌,先 `git fetch` + `git diff origin/main HEAD` ——**树 diff 为空才可安全丢弃本地 hash;绝不 force push**
-- **待验证(retry(2) 重跑后回填):**
-  - timeout×retry 嵌套方向:总时长 ≈2min(timeout 包住 retry)还是 ≈4min(每次尝试独立预算)
-  - 超时中断信号字样 / junit 收集用例数(1 轮还是 2 轮)/ post.failure echo 出现次数
+- **待验证(retry(2) 重跑后回填):** → 已验证,见下方 #8 结论(2026-08-21)
+
+**#8 验证结果(2026-08-21,retry(2) + timeout 2min + sleep 600):**
+- ✅ 嵌套方向定论:**声明顺序 timeout→retry = timeout 包住 retry**(第一个声明的是最外层)
+  - 证据:总时长 137.2s(≈2min17s,含 checkout),result=ABORTED,单轮执行,`[Pipeline] retry` 标记一次未出现
+  - 推论:重试要拿到**独立时间预算**,必须把 `retry` 声明在 `timeout` **之前**(retry 包 timeout,每轮各 30 分钟)
+- ✅ 超时中断链(三段式,log 原文):`Cancelling nested steps due to timeout` → `Sending interrupt signal to process` → `Timeout has been exceeded` ×1
+- ✅ junit 收集 91 用例(7 suite)= 单轮;Test 早已完成,超时只杀 Verify 的 sleep
+- 🎯 **超预期发现:超时终止 result = ABORTED ≠ FAILURE**
+  - post 行为:#8 只执行了 `cleanup{}`(流水线开始清理),**`failure{}` 与 `success{}` 都没跑**
+  - 生产含义:失败通知只写在 `post.failure{}` 的 pipeline,**超时场景会静默无通知**——须加 `post.aborted{}` 或把通知放 `always/cleanup`
+- 📌 retry(2) 的"失败重试一次"仍未被直接验证(timeout 抢先把整条掐死)——留给后续真实失败场景,或 retry 挪到 timeout 外层再演练
+- 时间线:#8 12:13:47 启动 → 12:14:27 sleep 600 开始 → 12:15:50 超时中断(83s 处)→ 12:16:04 ABORTED 收尾
 
 ## 五、Console Output 关键片段
 
@@ -237,6 +247,17 @@ stage('Verify') {
 #6 end:   2026-08-21 11:29:00 +08:00   (duration 69.7s, SUCCESS)
 ```
 
+**Build #8 — 超时中断链(三段式)+ ABORTED 收尾:**
+```
+[2026-08-21T04:13:50.587Z] Timeout set to expire in 2 min 0 sec
+[2026-08-21T04:14:27.460Z] + sleep 600
+[2026-08-21T04:15:50.588Z] Cancelling nested steps due to timeout
+[2026-08-21T04:15:50.646Z] Sending interrupt signal to process
+Timeout has been exceeded
+Finished: ABORTED     ← 不是 FAILURE;post.failure/success 均未执行,仅 cleanup 兜底
+```
+- build.xml:duration 137214ms,result ABORTED;junitResult.xml:91 case / 7 suite(单轮)
+
 ## 变更日志
 
 | 日期 | 变更 |
@@ -244,3 +265,4 @@ stage('Verify') {
 | 2026-08-18 | 初版创建:概念(options + 镜像锁版本)+ 6a 代码已 push + Gitee hook 坑复盘;6b/6c 待回填 |
 | 2026-08-21 | 6a 验证通过:Build #5/#6 双绿,timestamps/timeout/disableConcurrentBuilds 均有实证(排队 25ms 衔接);笔记回填 |
 | 2026-08-21 | 6b 演练中:#7 无效轮实证两坑(sh 内 //注释污染 / retry(1) 不重试)→ 注释与笔记源头修正,待 retry(2) 重跑 |
+| 2026-08-21 | 6b #8 验证完成:timeout 包 retry(单轮 137.2s ABORTED)+ ABORTED≠FAILURE 的 post 陷阱;同日查明 git-ai 守护进程为 push 三连拒根因并卸载(Windows 侧) |

@@ -35,7 +35,7 @@
 - [x] Lesson 5 — 失败处理 + 产物
 - [ ] Lesson 6 — 规范化
   - [x] 6a — options{} 四件套 ✅ Build #5/#6 验证通过(2026-08-21:timestamps/timeout 实证 + 排队 25ms 衔接)
-  - [ ] 6b — timeout/retry 演练(retry(2) + 临时 timeout=2min + sleep 600 造超时;#7 揭示两坑:sh 内 //注释污染、retry(1) 不重试)
+  - [x] 6b — timeout/retry 演练 ✅ #8 验证完成(2026-08-21:timeout 包 retry 单轮 137.2s ABORTED;超时=ABORTED≠FAILURE,post.failure 不触发) — **恢复代码待做**(sleep 600→15、timeout→30)
   - [ ] 6c — 镜像锁版本(4 个浮动 tag)
 
 ### Phase C — 高级（未开始）
@@ -45,7 +45,8 @@
 
 ## 下次从这里继续
 
-- **Lesson 6b** — 验证 timeout/retry(options 加 `retry(2)` + 临时 timeout=2min + Verify `sleep 600` 造超时;验证完 sleep 600 改回 15、timeout 改回 30)
+- **Lesson 6b 收尾** — 恢复实验代码:Verify 的 `sleep 600` 改回 `sleep 15`、`timeout` 改回 30 分钟(retry(2) 保留)→ Build 验证绿灯 → 6b 彻底完结
+- **Lesson 6c** — 镜像锁版本(4 个浮动 tag:curl:latest ×2 / eclipse-temurin:17-jre-alpine / node:20-alpine / nginx:alpine)
 
 ## 关键文件清单
 
@@ -80,3 +81,4 @@
 | 2026-08-21 | **学习节奏调整**（自 6b 起）：你讲(AI)→我写(用户)→你查(AI 只读检查)→跑/审→复盘，5 步 |
 | 2026-08-21 | 6b #7 无效轮：sh 内 //注释污染 + retry(1) 不重试（两处已修正，retry 值应为 2）；Jenkinsfile 注释与笔记源头同步修正 |
 | 2026-08-21 | **查明并卸载 Windows 侧 git-ai**（幽灵改写提交的根因）：杀 daemon + 删 opencode 插件 + 清 PATH/.bash_profile + 清仓库 refs/notes/ai 与 .git/ai；WSL 侧按用户要求保留（无进程运行）。注意：本次 opencode 会话关闭后需手动删一次 `~/.git-ai` 残留空日志目录 |
+| 2026-08-21 | L6b 验证完成（#8：timeout 包 retry，单轮 137.2s ABORTED；超时=ABORTED≠FAILURE，post.failure 不触发）+ lesson-06 笔记回填；恢复代码（sleep 600→15、timeout→30）待用户下次执行 |
