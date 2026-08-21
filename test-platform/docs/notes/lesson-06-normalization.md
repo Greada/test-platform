@@ -208,10 +208,14 @@ stage('Verify') {
   - **retry(1) 语义陷阱**:retry(N) 的 N=**总尝试次数**,retry(1) 只执行 1 次、失败不重试;要重试 1 次须 retry(2)
     - 证据(#7):「部署目标」echo 仅 1 次,`[Pipeline] retry` 开→闭之间单轮执行
     - 错误源头:本笔记 6.2 表格与 6b 骨架原写 retry(1),连同 Jenkinsfile-learn 注释已全部修正
-  - **git push 被拒两连坑(本课实录,均为 non-fast-forward):**
-    - 同一改动在两个克隆里各 commit 一次 → 平行 hash(be6665f vs 0c5f6d2);处置:fetch 后树 diff 为空 → rebase 丢弃重复提交
-    - amend 了已推送的提交 → 同内容不同 hash(b600a01 被 amend 成 700a331);处置:树 diff 为空 → reset 对齐远端再正常提交
-    - 通则:push 被拒不慌,先 `git fetch` + `git diff origin/main HEAD` ——**树 diff 为空才可安全丢弃本地 hash;绝不清 force push**
+  - **git push 被拒三连坑 → 根因已查明:git-ai 守护进程改写提交(2026-08-21 卸载)**
+    - 现象:每次 commit 后 2-8 秒,HEAD 被**无标签 reflog 操作**顶替成同树/同消息/新 hash 的孪生提交 → push 必 non-fast-forward
+    - 侦查链:reflog 空标签(=程序化 update-ref,非人工命令)→ 进程扫描发现 `git-ai.exe bg run` daemon → `.git-ai\bin\git.exe` 与 `git-ai.exe` SHA256 完全相同(PATH shim 劫持)→ opencode 插件 `~/.config/opencode/plugins/git-ai.ts` 是拉起源(每次 edit/bash 工具调用 spawn checkpoint)
+    - ~~早先两个错误假设~~:「两个克隆各 commit 一次产生平行 hash」「误 amend 已推送提交」——都是 daemon 改写的表象,不是真相
+    - 处置(Windows 侧全量卸载):杀 daemon + 删 opencode 插件 + 删 `.bash_profile`(安装器注入 2 行) + 清用户 PATH 注册表(保 ExpandString 与 `%DevEco Studio%`) + 删 `~/.git-ai` + 清仓库 `refs/notes/ai` 与 `.git/ai`(均未推远端,ls-remote 已验证)
+    - 遗留:本会话内存中的插件实例仍会在每次工具调用时重建空日志目录 `~/.git-ai/logs`(仅日志,无 exe 无 daemon)——**关闭本次 opencode 会话后手动删一次即绝根**
+    - WSL 侧 git-ai 按用户要求保留(检查时无进程运行,未动)
+    - 通则仍有效:push 被拒不慌,先 `git fetch` + `git diff origin/main HEAD` ——**树 diff 为空才可安全丢弃本地 hash;绝不 force push**
 - **待验证(retry(2) 重跑后回填):**
   - timeout×retry 嵌套方向:总时长 ≈2min(timeout 包住 retry)还是 ≈4min(每次尝试独立预算)
   - 超时中断信号字样 / junit 收集用例数(1 轮还是 2 轮)/ post.failure echo 出现次数

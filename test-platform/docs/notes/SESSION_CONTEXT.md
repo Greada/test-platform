@@ -79,3 +79,4 @@
 | 2026-08-21 | L6a 验证通过（Build #5/#6 双绿，排队 25ms 衔接实证）+ lesson-06 笔记回填；新证据通道：`docker exec jenkins` 直读 builds/build.xml + log（绕过 API 403） |
 | 2026-08-21 | **学习节奏调整**（自 6b 起）：你讲(AI)→我写(用户)→你查(AI 只读检查)→跑/审→复盘，5 步 |
 | 2026-08-21 | 6b #7 无效轮：sh 内 //注释污染 + retry(1) 不重试（两处已修正，retry 值应为 2）；Jenkinsfile 注释与笔记源头同步修正 |
+| 2026-08-21 | **查明并卸载 Windows 侧 git-ai**（幽灵改写提交的根因）：杀 daemon + 删 opencode 插件 + 清 PATH/.bash_profile + 清仓库 refs/notes/ai 与 .git/ai；WSL 侧按用户要求保留（无进程运行）。注意：本次 opencode 会话关闭后需手动删一次 `~/.git-ai` 残留空日志目录 |
