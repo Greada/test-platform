@@ -160,19 +160,44 @@ stage('Verify') {
 - 把 `:latest`/`:alpine` 锁成具体版本 tag
 - 重新 Build 确认仍绿灯(HTTP 200)
 
-**待锁清单:**
+**待锁清单(已锁定,2026-08-21,Build #10 验证通过):**
 | 文件 | 当前 | 锁定为 | 状态 |
 |------|------|--------|------|
-| Jenkinsfile-learn:112,121 | `curlimages/curl:latest` | ? | 待查 digest |
-| backend/Dockerfile-learn:15 | `eclipse-temurin:17-jre-alpine` | ? | 待查 digest |
-| frontend/Dockerfile-learn:2 | `node:20-alpine` | ? | 待查 digest |
-| frontend/Dockerfile-learn:11 | `nginx:alpine` | ? | 待查 digest |
+| Jenkinsfile-learn Verify(×2) | `curlimages/curl:latest` | `curlimages/curl:8.21.0` | ✅ 本地 latest 实测 8.21.0(mirror tag 存在) |
+| backend/Dockerfile-learn:15 | `eclipse-temurin:17-jre-alpine` | `eclipse-temurin:17.0.19_10-jre-alpine` | ✅ 产物镜像运行时打印 Java 17.0.19 |
+| frontend/Dockerfile-learn:2 | `node:20-alpine` | `node:20.19.4-alpine` | ✅ mirror tag 存在,#10 绿灯闭环 |
+| frontend/Dockerfile-learn:11 | `nginx:alpine` | `nginx:1.31.4-alpine` | ✅ 产物镜像 nginx -v 实测 1.31.4 |
 
-<!-- 待 6c 完成后回填:每个镜像锁定的具体版本 + Build 验证结果 -->
+> 版本侦查链(本课新技能):**浮动 tag 的真实版本不在本地 tag 名里**——
+> ① 有实体镜像:`docker run --rm <img> --version` 直接问二进制
+> ② 只在构建缓存里:`docker history <产物镜像> --no-trunc` 挖基础镜像层 / `docker builder du --verbose` 挖 `pulled from ...@sha256:...` digest
+> ③ 确认候选 tag:通过镜像源 `docker manifest inspect -v` 比对 amd64 的 config digest
+> 附带战果:buildx 缓存里发现 `nginx:alpine` 历史上已漂移过 **2 个不同 digest**、maven 同样漂移过 2 个——浮动 tag 的风险不是理论,这台机器上真实发生过
+
+<!-- 6c 已于 2026-08-21 完成,#10 绿灯(78.9s,双 HTTP 200,91 用例,检出 06a0bb6) -->
 
 ## 三、最终 Jenkinsfile-learn 结构(L6 完成时)
 
-<!-- 待 6c 完成后回填完整结构 -->
+```groovy
+pipeline {
+    agent any
+
+    options {
+        timestamps()                                    // 6a: 日志时间戳
+        disableConcurrentBuilds()                       // 6a: 禁并发(learn 端口固定)
+        buildDiscarder(logRotator(numToKeepStr: '20'))  // 6a: 只留 20 次构建
+        timeout(time: 30, unit: 'MINUTES')              // 6a: 全局超时(6b 实证:包住 retry,超时=ABORTED)
+        retry(2)                                        // 6b: 失败重跑 1 次(N=总尝试次数)
+    }
+
+    parameters { choice(name: 'DEPLOY_ENV', ...) }      // L4
+    stages { ... }                                      // hello/Resolve Env/Print Params/Test/Build/Deploy/Verify/Notify
+    post { success/failure/cleanup { deleteDir() } }    // L5(+6b 认知:ABORTED 不触发 failure)
+}
+// 6c: Verify 用 curlimages/curl:8.21.0(锁定)
+// 6c: backend/Dockerfile-learn → eclipse-temurin:17.0.19_10-jre-alpine
+// 6c: frontend/Dockerfile-learn → node:20.19.4-alpine + nginx:1.31.4-alpine
+```
 
 ## 四、复盘
 
@@ -258,6 +283,15 @@ Finished: ABORTED     ← 不是 FAILURE;post.failure/success 均未执行,仅 c
 ```
 - build.xml:duration 137214ms,result ABORTED;junitResult.xml:91 case / 7 suite(单轮)
 
+### 6c 复盘
+
+- **状态**: ✅ 完成 — 4 个浮动 tag 全部锁定(commit `06a0bb6`),Build #10 绿灯(78.9s,双 HTTP 200,91 用例)验证闭环(2026-08-21)
+- **关键认知:**
+  - 浮动 tag 的风险在本机真实发生过:buildx 缓存显示 `nginx:alpine` 历史已漂移 2 个 digest、maven 同样漂移 2 个——不是理论风险
+  - 版本侦查三板斧:实体镜像直接 `--version` 问二进制;构建缓存用 `docker history`/`docker builder du --verbose` 挖 digest;候选 tag 用镜像源 `docker manifest inspect -v` 比对 amd64 config digest
+  - digest 比对要选对层级:tag→manifest list→**平台 manifest**(amd64)→config,和本地 IMAGE ID 对上的是 config digest
+- **L6 整课收官**:6a(options 四件套)→ 6b(timeout/retry 演练+ABORTED 陷阱)→ 6c(镜像锁版本),#5~#10 六次构建完成全部验证
+
 ## 变更日志
 
 | 日期 | 变更 |
@@ -267,3 +301,4 @@ Finished: ABORTED     ← 不是 FAILURE;post.failure/success 均未执行,仅 c
 | 2026-08-21 | 6b 演练中:#7 无效轮实证两坑(sh 内 //注释污染 / retry(1) 不重试)→ 注释与笔记源头修正,待 retry(2) 重跑 |
 | 2026-08-21 | 6b #8 验证完成:timeout 包 retry(单轮 137.2s ABORTED)+ ABORTED≠FAILURE 的 post 陷阱;同日查明 git-ai 守护进程为 push 三连拒根因并卸载(Windows 侧) |
 | 2026-08-21 | 6b 彻底闭环:#9 恢复后绿灯(89.3s,双 HTTP 200,91 用例,检出 7c55751)→ 6b 完结,进 6c |
+| 2026-08-21 | 6c 完成:4 个浮动 tag 锁定 + 版本侦查链复盘;#10 绿灯(78.9s)→ **L6 整课收官** |

@@ -30,22 +30,22 @@
   - [x] 3b — Verify stage（天真版，无 sleep）✅ 意外通过（3a 已部署，JVM 已就绪）
   - [x] 3c — 加 sleep 15（修正版）✅ 验证通过（#16，真冷启动，down 后重跑）
 
-### Phase B — 工程化
+### Phase B — 工程化 ✅ 全部完成
 - [x] Lesson 4 — 参数化 + 双环境
 - [x] Lesson 5 — 失败处理 + 产物
-- [ ] Lesson 6 — 规范化
-  - [x] 6a — options{} 四件套 ✅ Build #5/#6 验证通过(2026-08-21:timestamps/timeout 实证 + 排队 25ms 衔接)
-  - [x] 6b — timeout/retry 演练 ✅ 完整闭环(#7 两坑实证 → #8 超时定论 → #9 恢复后绿灯 89.3s,双 HTTP 200)
-  - [ ] 6c — 镜像锁版本(4 个浮动 tag)
+- [x] Lesson 6 — 规范化 ✅ 整课收官(2026-08-21)
+  - [x] 6a — options{} 四件套 ✅ Build #5/#6 验证通过
+  - [x] 6b — timeout/retry 演练 ✅ #7 两坑 → #8 超时定论 → #9 恢复绿灯
+  - [x] 6c — 镜像锁版本 ✅ 4 tag 锁定(curl 8.21.0/temurin 17.0.19_10/node 20.19.4/nginx 1.31.4),#10 绿灯
 
 ### Phase C — 高级（未开始）
-- [ ] Lesson 7 — PR 模式
-- [ ] Lesson 8 — 状态回写
-- [ ] Lesson 9 — 并行优化 + 回滚
+- [ ] Lesson 7 — PR 模式(IS_PR + refs/pull/N/head)
+- [ ] Lesson 8 — 状态回写(Report PR Status + post.failure)
+- [ ] Lesson 9 — 并行优化 + 回滚(parallel + 镜像 tag + 回滚 Job)
 
 ## 下次从这里继续
 
-- **Lesson 6c** — 镜像锁版本(4 个浮动 tag:curl:latest ×2 / eclipse-temurin:17-jre-alpine / node:20-alpine / nginx:alpine → 全部锁具体版本 tag)
+- **Lesson 7** — PR 模式(IS_PR + refs/pull/N/head)— Phase C 第一课
 
 ## 关键文件清单
 
@@ -81,4 +81,5 @@
 | 2026-08-21 | 6b #7 无效轮：sh 内 //注释污染 + retry(1) 不重试（两处已修正，retry 值应为 2）；Jenkinsfile 注释与笔记源头同步修正 |
 | 2026-08-21 | **查明并卸载 Windows 侧 git-ai**（幽灵改写提交的根因）：杀 daemon + 删 opencode 插件 + 清 PATH/.bash_profile + 清仓库 refs/notes/ai 与 .git/ai；WSL 侧按用户要求保留（无进程运行）。注意：本次 opencode 会话关闭后需手动删一次 `~/.git-ai` 残留空日志目录 |
 | 2026-08-21 | L6b 验证完成（#8：timeout 包 retry，单轮 137.2s ABORTED；超时=ABORTED≠FAILURE，post.failure 不触发）+ lesson-06 笔记回填；恢复代码（sleep 600→15、timeout→30）待用户下次执行 |
+| 2026-08-21 | L6c 完成（4 tag 锁定：curl 8.21.0 / temurin 17.0.19_10 / node 20.19.4 / nginx 1.31.4，#10 绿灯 78.9s）→ **L6 整课收官，Phase B 全部完成** → 下次进 L7（Phase C） |
 | 2026-08-21 | L6b 彻底闭环（#9 绿灯 89.3s，双 HTTP 200，91 用例，检出 7c55751）→ 进 L6c 镜像锁版本 |
