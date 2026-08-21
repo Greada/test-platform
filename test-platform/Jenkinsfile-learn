@@ -13,6 +13,8 @@
 // Lesson 3c: Verify stage(sleep 15 等待 JVM 就绪)
 // Lesson 4:  参数化 + 双环境
 // Lesson 5:  失败处理 + 产物(post + junit + deleteDir)
+// Lesson 6a: options{} 四件套(timestamps + disableConcurrentBuilds + buildDiscarder + timeout)
+// Lesson 6b: timeout/retry 演练(临时 timeout=2min + retry(1) + Verify sleep 600 造超时,验证后恢复)
 // ============================================================================
 
 pipeline {
@@ -20,9 +22,11 @@ pipeline {
 
 	// Lesson 6a: options{} — Pipeline 级全局选项
 	// timestamps: 每行日志加时间戳，定位 stage 耗时
-	// disableConcurrentBuilds: 禁并发，避免两个构建同时 Deploy 端口/容器名冲突
-	// buildDiscarder: 只留最近 20 次构建，避免磁盘塞满
-	// timeout: 整条流水线 30 分钟超时，防 maven 下载卡死
+	// disableConcurrentBuilds: 禁并发,避免两个构建同时 Deploy 端口/容器名冲突
+	// buildDiscarder: 只留最近 20 次构建,避免磁盘塞满
+	// timeout: 整条流水线超时,防 maven 下载卡死 — 6b 临时 2 分钟(正式 30,验证后恢复)
+	// retry(1): 整条流水线失败后从头重跑 1 次(6b 新增,保留为正式配置)
+	//          观察点:声明顺序 timeout→retry,验证谁包谁(总时长 ≈2min 还是 ≈4min)
 	options {
 		timestamps()
 		disableConcurrentBuilds()
@@ -118,8 +122,8 @@ pipeline {
 			steps {
 				dir("test-platform") {
 					sh '''
-						echo "===== 等待服务启动 ====="
-						sleep 600
+					echo "===== 等待服务启动 ====="
+					sleep 600 // 6b 临时:造超时,验证后改回 sleep 15
 
 						echo "===== 验证后端 API ====="
 						HTTP_CODE=$(docker run --rm --network host curlimages/curl:latest \
