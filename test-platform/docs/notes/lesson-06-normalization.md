@@ -208,6 +208,10 @@ stage('Verify') {
   - **retry(1) 语义陷阱**:retry(N) 的 N=**总尝试次数**,retry(1) 只执行 1 次、失败不重试;要重试 1 次须 retry(2)
     - 证据(#7):「部署目标」echo 仅 1 次,`[Pipeline] retry` 开→闭之间单轮执行
     - 错误源头:本笔记 6.2 表格与 6b 骨架原写 retry(1),连同 Jenkinsfile-learn 注释已全部修正
+  - **git push 被拒两连坑(本课实录,均为 non-fast-forward):**
+    - 同一改动在两个克隆里各 commit 一次 → 平行 hash(be6665f vs 0c5f6d2);处置:fetch 后树 diff 为空 → rebase 丢弃重复提交
+    - amend 了已推送的提交 → 同内容不同 hash(b600a01 被 amend 成 700a331);处置:树 diff 为空 → reset 对齐远端再正常提交
+    - 通则:push 被拒不慌,先 `git fetch` + `git diff origin/main HEAD` ——**树 diff 为空才可安全丢弃本地 hash;绝不清 force push**
 - **待验证(retry(2) 重跑后回填):**
   - timeout×retry 嵌套方向:总时长 ≈2min(timeout 包住 retry)还是 ≈4min(每次尝试独立预算)
   - 超时中断信号字样 / junit 收集用例数(1 轮还是 2 轮)/ post.failure echo 出现次数
