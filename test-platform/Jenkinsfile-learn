@@ -14,7 +14,7 @@
 // Lesson 4:  参数化 + 双环境
 // Lesson 5:  失败处理 + 产物(post + junit + deleteDir)
 // Lesson 6a: options{} 四件套(timestamps + disableConcurrentBuilds + buildDiscarder + timeout)
-// Lesson 6b: timeout/retry 演练(临时 timeout=2min + retry + Verify sleep 600 造超时,验证后恢复)
+// Lesson 6b: timeout/retry 演练完成(#8 实证:timeout 包 retry,超时=ABORTED≠FAILURE)→ 已恢复 timeout=30min,retry(2) 保留
 // ============================================================================
 
 pipeline {
@@ -32,7 +32,7 @@ pipeline {
 		timestamps()
 		disableConcurrentBuilds()
 		buildDiscarder(logRotator(numToKeepStr: '20'))
-		timeout(time: 2, unit: 'MINUTES') // 临时改为2
+		timeout(time: 30, unit: 'MINUTES')
 		retry(2)
 	}
 
@@ -124,7 +124,7 @@ pipeline {
 				dir("test-platform") {
 					sh '''
 					echo "===== 等待服务启动 ====="
-					sleep 600 # 6b 临时:造超时,验证后改回 sleep 15
+					sleep 15 # 等 JVM 就绪(L3c)
 
 						echo "===== 验证后端 API ====="
 						HTTP_CODE=$(docker run --rm --network host curlimages/curl:latest \
