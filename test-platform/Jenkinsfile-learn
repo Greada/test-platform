@@ -16,6 +16,7 @@
 // Lesson 6a: options{} 四件套(timestamps + disableConcurrentBuilds + buildDiscarder + timeout)
 // Lesson 6b: timeout/retry 演练完成(#8 实证:timeout 包 retry,超时=ABORTED≠FAILURE)→ 已恢复 timeout=30min,retry(2) 保留
 // Lesson 6c: 镜像锁版本(curl:8.21.0 — 4 个浮动 tag 全部锁具体版本,可重复构建)
+// Lesson 7a: PR 模式开关(PR_NUMBER 参数非空=PR 模式,固化 env.IS_PR;⚠️坑⑤:新参数下次构建才注册)
 // ============================================================================
 
 pipeline {
@@ -37,7 +38,10 @@ pipeline {
 		retry(2)
 	}
 
+	// Lesson 7a: PR_NUMBER — 一个参数同时携带"模式+数据":留空=普通构建,填编号(如 1)=PR 模式
+	// (来源:现在手动填,将来 pr-poller.sh 自动填,pipeline 不关心来源,只看是否非空)
 	parameters {
+		string(name: 'PR_NUMBER', defaultValue: '', description: 'PR 编号(非空=PR 模式;普通构建留空)')
 		choice(name: 'DEPLOY_ENV', choices: ['auto', 'test', 'prod'], description: '部署环境:auto/test/prod')
 	}
 
@@ -51,6 +55,13 @@ pipeline {
 		stage('Resolve Env') {
 			steps {
 				script {
+					// Lesson 7a: 判定构建模式 — 非空判断用 Groovy truthiness:
+					// null(#11 参数还没注册)和 ''(面板留空)都是 falsy → 一个写法覆盖两种"空"
+					// ?: 三元 = if/else 压成一行;坑①:env 无布尔,只能存字符串 'true'/'false'
+					env.IS_PR = params.PR_NUMBER ? 'true' : 'false'
+					echo "===== 构建模式 IS_PR = ${env.IS_PR} ====="
+
+					// 原有 DEPLOY_TARGET 逻辑不动 — 两种模式都算(PR 模式多算无害,跳过留给 7c 的 when)
 					if (params.DEPLOY_ENV == 'auto') {
 						env.DEPLOY_TARGET = 'test' // learn 无分支，auto 默认 test
 					} else {
@@ -58,6 +69,7 @@ pipeline {
 						env.DEPLOY_TARGET = params.DEPLOY_ENV
 					}
 					echo "===== 部署目标: ${env.DEPLOY_TARGET} ====="
+					
 				}
 			}
 		}
