@@ -167,9 +167,67 @@ stage('Resolve Env') {
 - #11（改完后第一次跑）：确认坑⑤——面板无 PR_NUMBER；日志出现 `IS_PR` 值为 false 的证据；全流程与 #10 无行为差异
 - #12（第二次跑，面板填 PR_NUMBER=1）：日志出现 `IS_PR='true'` 证据；**其余 stage 照旧全跑**（7a 还没有守卫，Deploy/Verify 也会跑——这是预期的，别意外）
 
-### 2.2 小步 7b — 手写 sh checkout（待 7a 完成后展开）
+### 2.2 小步 7b — 手写 sh checkout（概念已讲，待实装）
 
-先手写 `sh` 版：`git fetch origin refs/pull/N/head && git checkout FETCH_HEAD`，体验"底层命令"和 detached HEAD（坑⑦）。细节骨架轮到这步时再讲。
+**问题起点：workspace 里的代码是谁检出的？** learn pipeline 没有 Checkout stage，但代码明明在 workspace——#29 日志第一行给出了答案：
+
+```
+Obtained test-platform/Jenkinsfile-learn from git https://gitee.com/greada/test-platform.git
+```
+
+这是 Job 的 SCM 配置（repo + Script Path）在 pipeline 启动前干的：clone/fetch → 检出默认分支 main → 取出 Jenkinsfile-learn。代码检出是「顺手」完成的——**隐式 checkout**。
+
+**PR 模式的诉求**：隐式 checkout 给的是 main，PR 构建要跑 `refs/pull/N/head` 指向的 commit。Test 跑的是 workspace 里的代码——不切过去，PR 构建测的还是 main，等于白测 → 必须在 Test 之前新增 Checkout stage。
+
+**两条命令拆解（7b 核心）：**
+
+```bash
+git fetch origin refs/pull/1/head && git checkout FETCH_HEAD
+```
+
+| 命令 | 干什么 | 关键认知 |
+|---|---|---|
+| `git fetch origin <ref>` | 只拉这一个 ref（最小拉取） | **不创建本地分支**；拉到的 commit SHA 记录在 `.git/FETCH_HEAD` |
+| `git checkout FETCH_HEAD` | 切到刚拉到的 commit | `FETCH_HEAD` = 上一次 fetch 的速记指针——运行时只知 PR_NUMBER 不知 SHA，让 git 替我们记住 |
+
+- `&&`：fetch 失败就不 checkout（fail fast，6b 血泪同款思想）
+- 侦查实证：`refs/pull/1/head` = `802f67d`，匿名可访问，容器内 fetch 无需凭据
+
+**坑⑦：detached HEAD 是预期行为，不是事故。** `checkout FETCH_HEAD` 后 HEAD 直接指向 commit（非分支名）→ git 会打警告 `HEAD is now at 802f67d`。CI 里这正是我们要的（只读跑测试，不开发提交）；且这行日志本身就是**验收证据**——SHA 与侦查对上号即铁证检出正确。
+
+**params 注入机制——三层访问路径（7a 病灶再强化）：**
+
+| 层 | 写法 | 用途 |
+|---|---|---|
+| Groovy | `params.PR_NUMBER` | 本次构建只读快照，分流判断用这层 |
+| sh | `$PR_NUMBER` | **string 参数自动注入为 shell 环境变量**，拼 ref 名用这层 |
+| sh | `$IS_PR` | 我们自固化的 `env.IS_PR`（7b 不用，7c 守卫用） |
+
+**⚠️ 新坑（引号选择）：sh 步骤用单引号。** `sh 'git fetch origin refs/pull/$PR_NUMBER/head && ...'`——单引号把 `$PR_NUMBER` **留给 shell 解析**（参数已注入环境变量，这正是上一行的机制）；若用双引号，Groovy 会抢先把 `$PR_NUMBER` 当 Groovy 变量解析（脚本上下文没有这个裸名字，报错或解析成空串）。
+
+**任务卡**：在 Resolve Env 之后、Test 之前新增 stage，分流在 **Groovy 层**（script if/else），只有 PR 分支进 sh（sh 默认工作目录 = workspace 根 = 仓库根，无需 dir()）：
+
+```groovy
+stage('Checkout') {
+    steps {
+        script {
+            // if PR 模式?(坑②:字符串比较带引号) → sh 'git fetch origin refs/pull/$PR_NUMBER/head && git checkout FETCH_HEAD'
+            // else → echo '普通构建,沿用隐式 checkout(main)'
+        }
+    }
+}
+```
+
+**约束**：坑⑥（sh 内注释只能用 `#`）；else 分支不写 `checkout scm`（learn 版隐式已检出，echo 说明即可）；不越界碰 Build/Deploy/Verify（7c 的事）。
+
+**验证点**（编号以实际为准，7a 教训：中间可能有穿插构建）：
+
+| build | 面板 | 预期 |
+|---|---|---|
+| #31 | PR_NUMBER 留空 | Checkout 走 else 分支；全流程与 #29 无差异，双 200 绿 |
+| #32 | PR_NUMBER=1 | ① fetch 日志 ② `HEAD is now at 802f67d` ③ detached HEAD 警告（坑⑦，预期）；Test 照跑（PR #1 只改 AGENTS.md，91 用例应绿）；Build/Deploy/Verify 照跑（7c 才跳过） |
+
+补充侦查（2026-08-22）：已本地 fetch PR #1 实证——head=`802f67d`，diff vs main 仅 `AGENTS.md`（+30/-15），后端零改动 → PR 构建 Test 预期与 main 同绿。
 
 ### 2.3 小步 7b' — GitSCM 对照版（待 7b 完成后展开）
 
@@ -210,3 +268,4 @@ stage('Resolve Env') {
 | 2026-08-22 | 初版创建：概念（refs/pull 命名空间 + IS_PR 开关 + when 矩阵 + 7 坑）+ 7a 任务卡与伪代码骨架；7b/7b'/7c 占位 |
 | 2026-08-22 | 7a 实装（**节奏破例：用户两轮尝试未过审后明确请求 AI 代写**，AI 逐行讲解）：PR_NUMBER 参数 + `env.IS_PR = params.PR_NUMBER ? 'true' : 'false'`（三元+truthiness，null/'' 双覆盖）+ DEPLOY_TARGET 保持线性；两轮审查病灶（params/env 两层混淆 ×2、`== ''` 漏 null、if/else 越界 7c）待复盘回填；待 #11/#12 构建验证 |
 | 2026-08-22 | **7a 验证通过收官**：#29（PR_NUMBER 留空，IS_PR=false，与 #10 无行为差异）+ #30（PR_NUMBER=1，IS_PR=true，其余 stage 照旧全跑双 200）——坑⑤被 #11~#28 中间构建自然吸收；复盘回填（3.1 验证证据 + 3.2 审查病灶存档）→ 进 7b 手写 sh checkout |
+| 2026-08-22 | 7b 概念讲解落盘 2.2 节：隐式 checkout（Obtained 日志真相）/ fetch+checkout FETCH_HEAD 拆解 / 坑⑦ detached HEAD=验收证据 / params 三层注入 + **新坑：sh 单引号留 `$` 给 shell** / 任务卡 + #31/#32 验证点；补充侦查 PR #1 仅改 AGENTS.md（后端零改动）。待用户实装 |

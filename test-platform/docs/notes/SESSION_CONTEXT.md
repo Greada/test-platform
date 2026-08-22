@@ -45,9 +45,11 @@
 
 ## 下次从这里继续
 
-- **Lesson 7 — 7b 手写 sh checkout** — 7a 已收官(#29 IS_PR=false 无行为差异 / #30 PR_NUMBER=1 IS_PR=true,双绿,复盘已回填)
-- 学习节奏(用户裁定选 A,5 步):你讲(AI)→我写(用户)→你查(AI 只读审查)→跑/审→复盘——7b 起严格执行
-- 7b 任务:新增 Checkout stage,PR 模式手写 `git fetch origin refs/pull/N/head && git checkout FETCH_HEAD`(体验底层命令 + 坑⑦ detached HEAD);普通模式保持现状(隐式 checkout main)。7b' 再换 GitSCM 对比
+- **Lesson 7 — 7b 手写 sh checkout** — 7a 已收官(#29/#30 双绿);7b 概念已讲并落盘 lesson-07 2.2 节(2026-08-22,含新坑:sh 用单引号把 $ 留给 shell)
+- 学习节奏(5 步):你讲(AI,✅已落盘)→**我写(用户,当前环节)**→你查(AI 只读审查)→跑/审→复盘
+- 7b 任务:新增 Checkout stage(Resolve Env 后、Test 前);PR 模式 `sh 'git fetch origin refs/pull/$PR_NUMBER/head && git checkout FETCH_HEAD'`(单引号!),普通模式 echo 沿用隐式 checkout;坑②⑥⑦
+- 侦查补充(2026-08-22):本地 fetch PR #1 实证 head=802f67d 仅改 AGENTS.md(+30/-15,后端零改动)→ PR 构建 Test 预期同绿
+- 7b 文档已落盘**未提交**,待代码过审后随 7b 代码一起提交
 - 重启后快速续接:对 AI 说「读 SESSION_CONTEXT 继续 L7」即可
 
 ### L7 定案计划(2026-08-22,零猜测侦查完成)
@@ -105,4 +107,5 @@
 | 2026-08-22 | L7 7a 两轮只读审查（用户写）:R1 发现 params/env 两层混淆+env.IS_PR 未赋值+if/else 越界 7c;R2 赋值块修对但 params.IS_PR 幽灵引用复发 + `== ''` 漏 null(坑⑤联动);答疑 PR_NUMBER 数据流(poller→buildWithParameters→params)。用户请求代写 → AI 实装 7a(三元+truthiness 版)并逐行讲解,待 push + #11/#12 验证 |
 | 2026-08-22 | 节奏裁定:用户选 A(维持 5 步节奏,7a 代写属特例);AI 代提交 7a 代码 + lesson-07 笔记 + SESSION_CONTEXT 并推送;待跑 #11/#12 验证 |
 | 2026-08-22 | **7a 验证收官**:实际验证 build 为 #29(PR_NUMBER 留空,IS_PR=false,与 #10 无行为差异)/#30(填 PR_NUMBER=1,IS_PR=true,其余 stage 照旧全跑双 200),双绿;坑⑤被 #11~#28 中间构建自然吸收;复盘回填(验证证据 + 两轮审查病灶存档)→ 7b 手写 sh checkout 待开讲 |
+| 2026-08-22 | 7b「你讲」环节完成并落盘 lesson-07 2.2 节(隐式 checkout 真相/fetch+FETCH_HEAD 拆解/坑⑦=验收证据/params 三层注入/新坑:sh 单引号留 $ 给 shell/任务卡+验证点);侦查补充:本地 fetch PR #1(802f67d)实证仅改 AGENTS.md 后端零改动;下一步:用户写 Checkout stage → AI 只读审查 |
 | 2026-08-21 | L6b 彻底闭环（#9 绿灯 89.3s，双 HTTP 200，91 用例，检出 7c55751）→ 进 L6c 镜像锁版本 |

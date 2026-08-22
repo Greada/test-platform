@@ -80,6 +80,18 @@ pipeline {
 			}
 		}
 
+		stage('Checkout') {
+			steps {
+				script {
+					if (env.IS_PR == 'true') {
+						sh '''git fetch origin refs/pull/$PR_NUMBER/head && git checkout FETCH_HEAD'''
+					} else {
+						echo "===== 普通构建: ${env.IS_PR} 沿用隐式checkout(main) ====="
+					}
+				}
+			}
+		}
+
 		stage('Test') {
 			steps {
 				sh '''
