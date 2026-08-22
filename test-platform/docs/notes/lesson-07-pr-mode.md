@@ -232,7 +232,7 @@ stage('Checkout') {
 
 补充侦查（2026-08-22，**❌ 同日纠偏——初版结论作废**）：初版写"PR #1 仅改 `AGENTS.md`、后端零改动 → Test 预期同绿"，错在把 **PR 自身补丁**（merge-base 三点 diff）当成了 **PR 树与 main 的距离**。实证纠偏：PR #1 head 树停在 merge-base（2026-07-05），main 已领先 63 提交（72 文件 +8345/-446）；`docker-compose.learn.yml` 等 learn 文件在该树**全部缺失** → #32 若填 1：Checkout 能过（ref 可拉），Build 必挂（compose file not found）。**处置**：从当前 main 新建 smoke PR（仅 +1 占位文档）作本课测试 PR，保持 open 不合并（7c/L8 常驻复用）。
 
-### 2.3 小步 7b' — GitSCM 对照版（已实装 R4 过审；#34 绿 / #35 爆坑⑩，返工中）
+### 2.3 小步 7b' — GitSCM 对照版（✅ 已完成，#34/#35/#36 实证，含坑⑩返工，复盘见 3.4）
 
 **问题起点：7b 两条 git 命令干成的事，为什么生产版要写一大坨 Groovy？** 7b 是**命令式**——告诉 git 每步做什么（fetch 这个 ref、checkout 这个指针）；GitSCM 是**声明式**——只声明"要什么"（哪个远端、哪个 ref、要不要干净、要不要分支），git 插件替你安排每一步。7b' = 把 7b 的 PR 分支换成声明式，两版对照，"谁管什么"一清二楚。
 
@@ -352,7 +352,7 @@ userRemoteConfigs: [[
 
 按 7.5 矩阵给各 stage 加 `when` / if 分流，含 Notify 组合条件（坑④）和 Build 写死 compose 文件（坑③）。
 
-## 三、复盘（7a/7b 已回填）
+## 三、复盘（7a/7b/7b' 已回填）
 
 ### 3.1 7a — 验证通过（2026-08-22，#29/#30 双绿）
 
@@ -391,7 +391,31 @@ userRemoteConfigs: [[
 3. **单分支 Job 固有行为**：#33 跑的 pipeline 定义仍是 **main 的** Jenkinsfile-learn（Job SCM 启动前从 main 检出脚本），但 Test/Build 跑的是 PR head 的代码——这就是"改 pipeline 必须先合 main 才生效"的根因。
 4. **测试载体变更**：AI 备的 smoke 分支（lesson7-smoke-pr + pr-smoke.md）未被用上——用户用自己的分支（docs/update-agents-md-v3.3，merge main + 仅文档改动）建了 PR #2（head=20df4fb），等效满足"main+仅文档"载体要求；smoke 分支已删（本地+远端），PR #2 保持 open 作 7c/L8 常驻测试 PR。
 
-<!-- 7b'/7c 完成后继续回填 -->
+### 3.4 7b' — 验证通过，含坑⑩返工（2026-08-22，#34/#35/#36）
+
+| build | 面板 | 结果 | 关键证据（build.xml + log 实证） |
+|---|---|---|---|
+| #34 | 留空 | SUCCESS ✅ 回归通过 | else 分支 echo（L69）+ 全流程与 #31 无差异，双 200 |
+| #35 | `2` | **FAILURE — 坑⑩爆雷** | Checkout 挂：`Couldn't find any revision to build`（L81）；rev-parse 三连扑空（详见 2.3 坑⑩取证）；Test/Build `skipped due to earlier failure(s)`；retry(2) 双轮目击（第二次） |
+| #36 | `2`（返工后） | SUCCESS ✅ 坑⑩修复验收 | 四大验收点全中：①fetch 行 `+refs/pull/2/head:refs/pull/2/head` 且 Checkout stage 内**无** `+refs/heads/*`（自定义 refspec 整体替换默认——机制实证）②rev-parse 裸名候选命中（L79，#35 挂掉那行复活）③`git checkout -b pr-2 20df4fb2...`（LocalBranch 生效 + 分支名插值正确 + SHA 与 ls-remote 逐字对号）④91 用例 0 失败 + 双 HTTP 200 |
+
+**坑⑨兑现记录**：#36 无 `HEAD is now at`（detached 痕迹），取而代之 `checkout -b pr-2 <SHA>`——坑⑨预告的"分支切换痕迹"实际形态；一行同时坐验三件事（LocalBranch / 插值 / SHA 对号）。
+
+**双 fetch 彩蛋（#36 意外教学收获）**：一次构建日志里**两条 fetch 同框**——L19（`Declarative: Checkout SCM`，`+refs/heads/*`，拉 main 上的 Jenkinsfile）+ L77（Checkout stage，`+refs/pull/2/head`，拉 PR 代码）。7b 讲的"pipeline 定义来自 main、被测代码来自 PR"从认知变成了字节级日志实证。
+
+**R1-R6 审查史（病灶演进）**：
+
+| 轮次 | 病灶 | 规律 |
+|---|---|---|
+| R1 | extensions 整块缺失 | 任务卡读完只做了核心四件套 |
+| R2 | 坑⑧复发（localBranch 单引号）+ `$class` 类名小写 | 病灶集中在"照抄生产版全对、自己拼参数就错" |
+| R4 | 全清（`&& params.PR_NUMBER` 冗余自删） | 三引号法则（常量单/插值双/shell 单三）建立 |
+| R5 | refspec 大括号错位（编译级）+ `refs` 掉 s | 拼长 GString 丢结构感——五段拆解法（前缀/插值/冒号/前缀/插值/后缀）应对 |
+| R6 | 全清过审 | 坑⑧四练四过一错，五段法起效 |
+
+**坑⑩的教学价值**：它不是手滑，是**机制盲区**——branches 只管"查"、refspec 才管"拉"，两个职责被名字掩盖（branches 听起来像"我要拉哪些分支"）。#35 用一次真实失败把这条机制刻进了经验，比讲义预告十个观察点都值。
+
+<!-- 7c 完成后继续回填 -->
 
 ## 变更日志
 
@@ -405,3 +429,4 @@ userRemoteConfigs: [[
 | 2026-08-22 | **7b 验证通过收官**：#31（留空，else 分支 echo + 双 200）/#32（填 1=老 PR，负样本实证"Checkout 过、Build 挂" + retry(2) 双轮目击）/#33（填 2=真 PR，`HEAD is now at 20df4fb` 对号铁证 + 91 用例 + 双 200，71s）；坑⑦实证修正（隐式 checkout 本就 detached，`Previous HEAD position` 才是证据行）；复盘回填 3.3；smoke 分支未用已删，PR #2 任常驻测试 PR → 进 7b'（GitSCM 对照版） |
 | 2026-08-22 | 7b'「你讲」环节落盘 2.3 节：命令式 vs 声明式 / 生产版 GitSCM 逐块解剖（$class/branches/userRemoteConfigs/LocalBranch+CleanCheckout）/ **坑⑧ = $ 归属**（7b 单引号 shell vs 7b' 双引号 Groovy，引号规则对称） / **坑⑨ = GitSCM 证据行变化** / 两版能力对照表（谁管 clean/localBranch/changelog/refspec）+ 任务卡 + #34/#35 验证点。下一步：用户实装 → AI 只读审查 |
 | 2026-08-22 | 7b' 实装与审查：用户手写 GitSCM 版（R1 extensions 缺失 → R2 坑⑧复发 localBranch 单引号 + $class 类名小写 → R4 全清过审）+ AI 补头注释随代码提交（c40d839）；跑/审：#34 绿（回归✅）/**#35 FAILURE 爆坑⑩**（branches 只管查不管拉，默认 refspec 不含 refs/pull）→ 返工任务卡（窄版 refspec，坑⑧再练）落盘 2.3；贴墙坑表扩至⑩；**生产版裁定：停用参照，终局 learn 替换生产版并删旧文件**。待返工 → 审查 → #36 |
+| 2026-08-22 | **7b' 返工收官**：R5 审出 refspec 大括号错位（编译级）+ refs 掉 s → 用户重打五段结构 → R6 过审（d24dbcb）；#36 SUCCESS 四大验收点全中（自定义 refspec 替换默认实证 / rev-parse 裸名复活 / `checkout -b pr-2` 对号 / 91+双200）；复盘 3.4 回填（R1-R6 审查史 + 坑⑨兑现 + 双 fetch 彩蛋）→ 进 7c（when 守卫矩阵） |

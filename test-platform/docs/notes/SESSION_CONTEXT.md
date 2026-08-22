@@ -39,18 +39,18 @@
   - [x] 6c — 镜像锁版本 ✅ 4 tag 锁定(curl 8.21.0/temurin 17.0.19_10/node 20.19.4/nginx 1.31.4),#10 绿灯
 
 ### Phase C — 高级（进行中）
-- [ ] Lesson 7 — PR 模式(IS_PR + refs/pull/N/head)— 7a ✅(#29/#30),7b ✅(#31/#32/#33 三连:正样本+负样本+真 PR),7b' 进行中
+- [ ] Lesson 7 — PR 模式(IS_PR + refs/pull/N/head)— 7a ✅(#29/#30),7b ✅(#31/#32/#33),7b' ✅(#34/#35/#36 含坑⑩返工),7c 待开
 - [ ] Lesson 8 — 状态回写(Report PR Status + post.failure)
 - [ ] Lesson 9 — 并行优化 + 回滚(parallel + 镜像 tag + 回滚 Job)
 
 ## 下次从这里继续
 
-- **Lesson 7 — 7b' 返工「我写」环节** — #34 绿(回归✅)/#35 FAILURE 爆坑⑩(诊断+任务卡已落盘 lesson-07 2.3)
-- 学习节奏(5 步):你讲✅→我写✅→你查✅→跑/审(#34✅#35❌)→**返工我写(当前环节)**→你查→#36→复盘
-- 7b' 返工任务:Checkout PR 分支的 userRemoteConfigs 加 refspec(坑⑩:branches 只管"查"不管"拉",默认 refspec 只拉 refs/heads/* 不含 refs/pull):`refspec: "+refs/pull/${params.PR_NUMBER}/head:refs/pull/${params.PR_NUMBER}/head"`(坑⑧再练:双引号+${params.X});**branches/extensions 一律不动**;自定义 refspec 会整体替换默认 refspec(无影响,#36 fetch 行可实证)
-- #36 验证点(填 2;留空回归可省,else 字节未动):①fetch 行出现自定义 refspec 且无 +refs/heads/* ②rev-parse 裸名候选命中(#35 挂掉那行) ③LocalBranch 痕迹(pr-2,坑⑨) ④91 用例+双 200
-- **🔴 生产版裁定(2026-08-22,用户指令)**:即日起**停止参考 `test-platform/Jenkinsfile`**(其 PR 检出同缺 refspec,坑⑩大概率同在,且从未被真实 PR 构建验证);终局:L9 完成后 learn 版优化升级为生产版并**删除旧生产版文件**(docs 副本同步更新)
-- 常驻测试 PR:**PR #2**(head=20df4fb),保持 open 不合并,7c/L8 复用
+- **Lesson 7 — 7c 你讲环节** — 7a/7b/7b' 已收官(#36 绿,坑⑩修复验收);当前环节:**你讲**(AI 讲 when 守卫矩阵,落盘 lesson-07 2.4 节)
+- 学习节奏(5 步):**你讲(当前环节)**→我写→你查→跑/审→复盘
+- 7c 内容(按 7.5 矩阵):Resolve Env/Deploy/Verify 加 `when { IS_PR != 'true' }` 跳过;Build if/else 分流(PR 只建 backend,坑③:compose 写死 learn 版不依赖 $DEPLOY_TARGET);Notify 组合 when(坑④:多条件默认 AND);参考矩阵详见 lesson-07 7.5
+- 已有先修认知:#35 的 `skipped due to earlier failure(s)` 是"挂了才跳",7c 的 when 是"主动声明跳"——两种跳的日志形态对照(when 跳显示 stage 名+skipped,原因注明 when 条件)
+- 常驻测试 PR:**PR #2**(head=20df4fb),保持 open 不合并
+- 🔴 生产版裁定(存档):停用参考 `test-platform/Jenkinsfile`;终局 L9 后 learn 替换生产版并删旧文件
 - 重启后快速续接:对 AI 说「读 SESSION_CONTEXT 继续 L7」即可
 
 ### L7 定案计划(2026-08-22,零猜测侦查完成)
@@ -116,3 +116,4 @@
 | 2026-08-22 | 7b'「你讲」环节完成并落盘 lesson-07 2.3 节：命令式 vs 声明式 / 生产版 GitSCM 逐块解剖 / 坑⑧=$ 归属（7b 单引号 shell vs 7b' 双引号 Groovy）/ 坑⑨=GitSCM+LocalBranch 后验收证据行变化 / 两版能力对照表 + 任务卡 + #34/#35 验证点；贴墙坑表扩至 ⑨。下一步：用户实装 Checkout PR 分支 GitSCM 化 → AI 只读审查 |
 | 2026-08-22 | 7b'「我写→你查」完成：用户实装 GitSCM 版 Checkout（R1：extensions 整块缺失；R2：坑⑧复发 localBranch 单引号 + $class 类名小写——病灶集中在"照抄生产版全对、自己拼参数就错"，坑⑧肌肉记忆未建立；R3 保存事故后 R4 全清过审，`&& params.PR_NUMBER` 冗余条件已删）；按裁定 A：AI 补头注释登记 + SESSION_CONTEXT 指针拨到跑/审，随用户代码一笔提交 → 待跑 #34/#35 |
 | 2026-08-22 | **7b' 跑/审：#34 绿（回归✅）/ #35 FAILURE 爆坑⑩**——GitSCM branches 只管"查"不管"拉"，默认 refspec（+refs/heads/*）不含 refs/pull，rev-parse 三连扑空（Test/Build `skipped due to earlier failure(s)`=7c 短路活教材；retry(2) 双轮目击第二次）；诊断+返工任务卡（窄版 refspec，坑⑧再练）落盘 lesson-07 2.3，贴墙坑表扩至⑩。**生产版裁定（用户指令）**：停止参考生产版，终局 learn 替换生产版并删旧文件。待用户返工 → 审查 → #36 |
+| 2026-08-22 | **7b' 返工收官 + 复盘回填**：R5 审出 refspec 大括号错位（编译级）+ refs 掉 s → 用户重打五段结构 → R6 过审提交（d24dbcb）；#36 SUCCESS 四大验收点全中（自定义 refspec 替换默认 / rev-parse 裸名复活 / `checkout -b pr-2 20df4fb` 对号 / 91 用例+双 200）；坑⑨兑现（`checkout -b` 即分支切换痕迹）+ 双 fetch 彩蛋（pipeline 来自 main、代码来自 PR 的字节级实证）；复盘 3.4 回填（R1-R6 审查史）；按裁定 A：AI 代复盘提交推送 → 下次 7c（when 守卫矩阵）你讲环节 |
