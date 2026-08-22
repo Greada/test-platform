@@ -89,14 +89,16 @@ pipeline {
 						checkout([
 							$class: 'GitSCM',
 							branches: [[name: "refs/pull/${params.PR_NUMBER}/head"]],
-							userRemoteConfigs: [[url: 'https://gitee.com/greada/test-platform.git']],
+							userRemoteConfigs: [[
+								url: 'https://gitee.com/greada/test-platform.git', refspec: "+refs/pull/${params.PR_NUMBER}/head:refs/pull/${params.PR_NUMBER}/head"
+							]],
 							extensions: [
 								[$class: 'LocalBranch', localBranch: "pr-${params.PR_NUMBER}"],
 								[$class: 'CleanCheckout']
 							]
 						])
 					} else {
-						echo "===== 普通构建: ${env.IS_PR} 沿用隐式checkout(main) ====="
+						echo "===== 普通构建:沿用隐式checkout(main) ====="
 					}
 				}
 			}
