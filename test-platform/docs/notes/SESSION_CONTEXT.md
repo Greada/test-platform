@@ -45,11 +45,11 @@
 
 ## 下次从这里继续
 
-- **Lesson 7 — 7b 手写 sh checkout** — 7a 已收官(#29/#30 双绿);7b 概念已讲并落盘 lesson-07 2.2 节(2026-08-22,含新坑:sh 用单引号把 $ 留给 shell)
-- 学习节奏(5 步):你讲(AI,✅已落盘)→**我写(用户,当前环节)**→你查(AI 只读审查)→跑/审→复盘
-- 7b 任务:新增 Checkout stage(Resolve Env 后、Test 前);PR 模式 `sh 'git fetch origin refs/pull/$PR_NUMBER/head && git checkout FETCH_HEAD'`(单引号!),普通模式 echo 沿用隐式 checkout;坑②⑥⑦
-- 侦查补充(2026-08-22):本地 fetch PR #1 实证 head=802f67d 仅改 AGENTS.md(+30/-15,后端零改动)→ PR 构建 Test 预期同绿
-- 7b 文档已落盘**未提交**,待代码过审后随 7b 代码一起提交
+- **Lesson 7 — 7b 跑/审环节** — 7a 收官(#29/#30 双绿);7b 代码已实装+提交+推送(cf7218d),AI 只读审查过(坑②✅ 单引号✅ 无越界✅)
+- 学习节奏(5 步):你讲✅→我写✅→你查✅→**跑/审(当前环节)**→复盘
+- 7b 验证点:#31(留空)→ Checkout 走 else 分支 echo,全流程与 #29 无差异,双 200;#32(PR_NUMBER=1)→ ①fetch 日志 ②`HEAD is now at 802f67d`(与侦查对号=检出铁证) ③detached HEAD 警告(坑⑦预期) ④Test 91 用例绿 ⑤Build/Deploy/Verify 照跑(7c 才跳过)
+- 侦查补充:PR #1 head=802f67d 仅改 AGENTS.md(+30/-15,后端零改动)→ PR 构建 Test 预期同绿
+- 验证双绿后:复盘回填 lesson-07(三、复盘 + 2.2「待实装」状态) + SESSION_CONTEXT → 进 7b'(GitSCM 对照版)
 - 重启后快速续接:对 AI 说「读 SESSION_CONTEXT 继续 L7」即可
 
 ### L7 定案计划(2026-08-22,零猜测侦查完成)
@@ -109,3 +109,4 @@
 | 2026-08-22 | **7a 验证收官**:实际验证 build 为 #29(PR_NUMBER 留空,IS_PR=false,与 #10 无行为差异)/#30(填 PR_NUMBER=1,IS_PR=true,其余 stage 照旧全跑双 200),双绿;坑⑤被 #11~#28 中间构建自然吸收;复盘回填(验证证据 + 两轮审查病灶存档)→ 7b 手写 sh checkout 待开讲 |
 | 2026-08-22 | 7b「你讲」环节完成并落盘 lesson-07 2.2 节(隐式 checkout 真相/fetch+FETCH_HEAD 拆解/坑⑦=验收证据/params 三层注入/新坑:sh 单引号留 $ 给 shell/任务卡+验证点);侦查补充:本地 fetch PR #1(802f67d)实证仅改 AGENTS.md 后端零改动;下一步:用户写 Checkout stage → AI 只读审查 |
 | 2026-08-21 | L6b 彻底闭环（#9 绿灯 89.3s，双 HTTP 200，91 用例，检出 7c55751）→ 进 L6c 镜像锁版本 |
+| 2026-08-22 | 7b「我写→你查」完成：用户实装 Checkout stage（含 else 分支 echo）并提交推送（cf7218d，随附 lesson-07 2.2 文档）；AI 只读审查过——代码本体过审，1 个一致性问题（头注释缺 7b 登记行）+ SESSION_CONTEXT 尾巴过时；按裁定 B：先补头注释登记 + SESSION_CONTEXT 状态同步成一个自洽提交，再跑 #31/#32 验证 |

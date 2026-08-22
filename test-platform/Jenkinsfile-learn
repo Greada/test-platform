@@ -17,6 +17,7 @@
 // Lesson 6b: timeout/retry 演练完成(#8 实证:timeout 包 retry,超时=ABORTED≠FAILURE)→ 已恢复 timeout=30min,retry(2) 保留
 // Lesson 6c: 镜像锁版本(curl:8.21.0 — 4 个浮动 tag 全部锁具体版本,可重复构建)
 // Lesson 7a: PR 模式开关(PR_NUMBER 参数非空=PR 模式,固化 env.IS_PR;⚠️坑⑤:新参数下次构建才注册)
+// Lesson 7b: Checkout stage(PR 模式:fetch refs/pull/N/head + checkout FETCH_HEAD;⚠️sh 单引号把 $ 留给 shell;坑⑦:detached HEAD 为预期)
 // ============================================================================
 
 pipeline {
