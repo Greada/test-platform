@@ -39,17 +39,18 @@
   - [x] 6c — 镜像锁版本 ✅ 4 tag 锁定(curl 8.21.0/temurin 17.0.19_10/node 20.19.4/nginx 1.31.4),#10 绿灯
 
 ### Phase C — 高级（进行中）
-- [ ] Lesson 7 — PR 模式(IS_PR + refs/pull/N/head)— 7a ✅(#29/#30 双绿),7b 进行中
+- [ ] Lesson 7 — PR 模式(IS_PR + refs/pull/N/head)— 7a ✅(#29/#30),7b ✅(#31/#32/#33 三连:正样本+负样本+真 PR),7b' 进行中
 - [ ] Lesson 8 — 状态回写(Report PR Status + post.failure)
 - [ ] Lesson 9 — 并行优化 + 回滚(parallel + 镜像 tag + 回滚 Job)
 
 ## 下次从这里继续
 
-- **Lesson 7 — 7b 跑/审环节** — 7a 收官(#29/#30 双绿);7b 代码已提交推送(cf7218d+c3ea125),AI 只读审查过(坑②✅ 单引号✅ 无越界✅)
-- 学习节奏(5 步):你讲✅→我写✅→你查✅→**跑/审(当前环节)**→复盘
-- ⚠️ 侦查纠偏(2026-08-22):PR #1 树停在 2026-07(learn 文件全缺,Build 必挂),原"#32 填 1"方案作废 → 已备 smoke PR(分支 lesson7-smoke-pr,仅 +1 占位文档);**待用户在 Gitee 建 PR(base: main ← compare: lesson7-smoke-pr)**,建成后 ls-remote 取编号+SHA 回填验证点
-- 7b 验证点:#31(留空)→ Checkout 走 else 分支 echo,全流程与 #29 无差异,双 200(**#31 不依赖 PR,随时可跑**);#32(PR_NUMBER=smoke PR 编号)→ ①fetch 日志 ②`HEAD is now at <SHA>`(与 ls-remote 对号=检出铁证) ③detached HEAD 警告(坑⑦预期) ④Test 91 用例绿 ⑤Build/Deploy/Verify 照跑(7c 才跳过)
-- 验证双绿后:复盘回填 lesson-07(三、复盘 + 2.2「待实装」状态) + SESSION_CONTEXT → 进 7b'(GitSCM 对照版)
+- **Lesson 7 — 7b' GitSCM 对照版** — 7a/7b 已收官(#33 双绿);当前环节:**你讲**(AI 讲 GitSCM checkout 概念,落盘 lesson-07 2.3 节)
+- 学习节奏(5 步):**你讲(当前环节)**→我写→你查→跑/审→复盘
+- 7b' 内容:Checkout stage 换 `checkout([$class: 'GitSCM', branches: [[name: 'refs/pull/N/head']], ...])` 声明式写法,与 7b 手写 sh 两版对比(谁管 clean/谁管 localBranch/日志差异);生产版参考 `test-platform/Jenkinsfile` L47-59
+- 常驻测试 PR:**PR #2**(head=20df4fb,用户分支 docs/update-agents-md-v3.3,merge main+仅文档改动),保持 open 不合并,7c/L8 复用
+- 坑⑦实证修正存档:Jenkins 隐式 checkout 本就 detached(检出 SHA 非分支名)→ PR 切换无警告;证据行=`Previous HEAD position was <SHA>` + `HEAD is now at <SHA>`
+- 7b 验证故事(详见 lesson-07 3.3):#31(留空,else echo+双 200)/#32(填 1=老 PR 负样本,Build 挂 compose 缺失——纠偏预言实证;retry(2) 从头重跑双轮目击)/#33(填 2=真 PR,HEAD 对号铁证+91 用例+双 200,71s)
 - 重启后快速续接:对 AI 说「读 SESSION_CONTEXT 继续 L7」即可
 
 ### L7 定案计划(2026-08-22,零猜测侦查完成)
@@ -111,3 +112,4 @@
 | 2026-08-21 | L6b 彻底闭环（#9 绿灯 89.3s，双 HTTP 200，91 用例，检出 7c55751）→ 进 L6c 镜像锁版本 |
 | 2026-08-22 | 7b「我写→你查」完成：用户实装 Checkout stage（含 else 分支 echo）并提交推送（cf7218d，随附 lesson-07 2.2 文档）；AI 只读审查过——代码本体过审，1 个一致性问题（头注释缺 7b 登记行）+ SESSION_CONTEXT 尾巴过时；按裁定 B：先补头注释登记 + SESSION_CONTEXT 状态同步成一个自洽提交，再跑 #31/#32 验证 |
 | 2026-08-22 | **侦查纠偏**（用户指出 PR #1 太老会报错，实证属实）：PR #1 树停在 2026-07-05（merge-base），main 领先 63 提交，learn 文件全缺 → "#32 填 1"方案作废（Build 必挂）；lesson-07 三处 + SESSION_CONTEXT 错误侦查记载同步修正；按裁定 A：AI 备好 smoke PR 分支（lesson7-smoke-pr + 占位文档 pr-smoke.md，已推送），待用户 Gitee 建 PR |
+| 2026-08-22 | **7b 验证收官 + 复盘回填**：用户实操三连——#31（留空，else echo + 双 200）/#32（填 1=老 PR，负样本：Build 挂 compose 缺失，纠偏预言实证；retry(2) 从头重跑双轮目击）/#33（填 2=用户自建真 PR，`HEAD is now at 20df4fb` 对号铁证 + 91 用例 + 双 200，71s）；坑⑦实证修正（隐式 checkout 本就 detached，无警告，`Previous HEAD position` 是证据行）；lesson-07 3.3 回填；smoke 分支未用已删（本地+远端）；PR #2 任常驻测试 PR；按裁定 A：AI 代复盘提交推送 → 下次 7b'（GitSCM 对照版）你讲环节 |

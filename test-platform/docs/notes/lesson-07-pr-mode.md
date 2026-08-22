@@ -132,7 +132,7 @@ Notify 要的是"非 PR **且** prod"，恰好就是 AND——默认行为即所
 | ④ | when 多条件 | 默认 AND；Notify 恰好需要 AND |
 | ⑤ | 参数下次生效 | 改完 parameters 至少跑两次才见新参数 |
 | ⑥ | sh 内注释 | 必须用 `#`，`//` 会被 shell 当参数（6b 血泪） |
-| ⑦ | detached HEAD | 7b 检出 FETCH_HEAD 后 git 会警告"detached HEAD"——**这是预期行为**，Jenkins 不在乎，别慌 |
+| ⑦ | detached HEAD | Jenkins 隐式 checkout 本就检出 SHA（detached）→ PR 切换是 detached→detached，**无警告**；证据行 = `Previous HEAD position was <SHA>` + `HEAD is now at <SHA>`（#33 实证修正） |
 
 ## 二、渐进式小步
 
@@ -167,7 +167,7 @@ stage('Resolve Env') {
 - #11（改完后第一次跑）：确认坑⑤——面板无 PR_NUMBER；日志出现 `IS_PR` 值为 false 的证据；全流程与 #10 无行为差异
 - #12（第二次跑，面板填 PR_NUMBER=1）：日志出现 `IS_PR='true'` 证据；**其余 stage 照旧全跑**（7a 还没有守卫，Deploy/Verify 也会跑——这是预期的，别意外）
 
-### 2.2 小步 7b — 手写 sh checkout（概念已讲，待实装）
+### 2.2 小步 7b — 手写 sh checkout（✅ 已完成，#31/#32/#33 实证，复盘见 3.3）
 
 **问题起点：workspace 里的代码是谁检出的？** learn pipeline 没有 Checkout stage，但代码明明在 workspace——#29 日志第一行给出了答案：
 
@@ -193,7 +193,7 @@ git fetch origin refs/pull/1/head && git checkout FETCH_HEAD
 - `&&`：fetch 失败就不 checkout（fail fast，6b 血泪同款思想）
 - 侦查实证：`refs/pull/1/head` = `802f67d`，匿名可访问，容器内 fetch 无需凭据
 
-**坑⑦：detached HEAD 是预期行为，不是事故。** `checkout FETCH_HEAD` 后 HEAD 直接指向 commit（非分支名）→ git 会打警告 `HEAD is now at 802f67d`。CI 里这正是我们要的（只读跑测试，不开发提交）；且这行日志本身就是**验收证据**——SHA 与侦查对上号即铁证检出正确。
+**坑⑦（#33 实证修正版）：Jenkins 里你"永远已经在 detached 上"。** 预告说 checkout FETCH_HEAD 后 git 会警告 detached HEAD——实际**没出现**，日志自己解释了原因：`Previous HEAD position was 6eaef56`。Jenkins 隐式 checkout 本来就检出 main 的 **SHA**（非分支名），HEAD 从一开始就是 detached；detached→detached 切换，git 不重复打警告。CI 里这正是我们要的（只读跑测试，不开发提交）；且 `Previous HEAD position <隐式检出SHA>` + `HEAD is now at <PR head SHA>` 两行同框，比预告的证据还硬——后者与 ls-remote 对上号即铁证检出正确。
 
 **params 注入机制——三层访问路径（7a 病灶再强化）：**
 
@@ -237,7 +237,7 @@ stage('Checkout') {
 
 按 7.5 矩阵给各 stage 加 `when` / if 分流，含 Notify 组合条件（坑④）和 Build 写死 compose 文件（坑③）。
 
-## 三、复盘（7a 已回填）
+## 三、复盘（7a/7b 已回填）
 
 ### 3.1 7a — 验证通过（2026-08-22，#29/#30 双绿）
 
@@ -259,7 +259,24 @@ stage('Checkout') {
 
 **教训**：判「非空」首选 truthiness——`params.PR_NUMBER ? 'true' : 'false'` 一个写法同时覆盖 null（参数未注册的首次构建）和 `''`（面板留空）两种"空"，无需手写 `!= null && != ''`。
 
-<!-- 7b/7b'/7c 完成后继续回填 -->
+### 3.3 7b — 验证通过（2026-08-22，#31/#32/#33：正样本 + 负样本 + 真 PR 三连）
+
+> 计划验证 #31/#32；用户实操跑出三连，其中 #32（填老 PR #1）恰成负样本，把侦查纠偏的预言变成了实证。
+
+| build | 面板 | 关键证据（build.xml + log 实证） | 结果 |
+|---|---|---|---|
+| #31 | 留空 | `IS_PR = false` → Checkout 走 else 分支：`普通构建: false 沿用隐式checkout(main)`（log L69），无 checkout 动作 → 双 200 | SUCCESS ✅ 普通模式验收 |
+| #32 | `1`（老 PR） | checkout 成功：`HEAD is now at 802f67d` → Test 过 → **Build 挂**：`docker-compose.learn.yml: no such file or directory`（L1226）——侦查纠偏"Checkout 能过、Build 必挂"逐字命中 | FAILURE ✅ 预期内负样本 |
+| #33 | `2`（真 PR） | fetch `refs/pull/2/head` → `HEAD is now at 20df4fb`（与 ls-remote 逐字对号 = 检出铁证）→ junit 91 用例 0 失败 → 双 200，71s | SUCCESS ✅ PR 模式验收 |
+
+**计划外教学收获：**
+
+1. **坑⑦实证修正**（2.2 已同步改写）：detached HEAD 警告从未出现——隐式 checkout 本就检出 SHA（detached），`Previous HEAD position was 6eaef56` 一行同时坐实隐式检出位置 + PR 检出位置。
+2. **retry(2) 现场目击**：#32 日志两次出现 `构建模式 IS_PR = true`（L51/L1273）——pipeline 级 retry 把整条流水线**从头重跑**（不是从失败 stage 续跑），两轮挂同一处。6b 的"retry 包整条 pipeline"结论在真实失败场景再现。
+3. **单分支 Job 固有行为**：#33 跑的 pipeline 定义仍是 **main 的** Jenkinsfile-learn（Job SCM 启动前从 main 检出脚本），但 Test/Build 跑的是 PR head 的代码——这就是"改 pipeline 必须先合 main 才生效"的根因。
+4. **测试载体变更**：AI 备的 smoke 分支（lesson7-smoke-pr + pr-smoke.md）未被用上——用户用自己的分支（docs/update-agents-md-v3.3，merge main + 仅文档改动）建了 PR #2（head=20df4fb），等效满足"main+仅文档"载体要求；smoke 分支已删（本地+远端），PR #2 保持 open 作 7c/L8 常驻测试 PR。
+
+<!-- 7b'/7c 完成后继续回填 -->
 
 ## 变更日志
 
@@ -270,3 +287,4 @@ stage('Checkout') {
 | 2026-08-22 | **7a 验证通过收官**：#29（PR_NUMBER 留空，IS_PR=false，与 #10 无行为差异）+ #30（PR_NUMBER=1，IS_PR=true，其余 stage 照旧全跑双 200）——坑⑤被 #11~#28 中间构建自然吸收；复盘回填（3.1 验证证据 + 3.2 审查病灶存档）→ 进 7b 手写 sh checkout |
 | 2026-08-22 | 7b 概念讲解落盘 2.2 节：隐式 checkout（Obtained 日志真相）/ fetch+checkout FETCH_HEAD 拆解 / 坑⑦ detached HEAD=验收证据 / params 三层注入 + **新坑：sh 单引号留 `$` 给 shell** / 任务卡 + #31/#32 验证点；补充侦查 PR #1 仅改 AGENTS.md（后端零改动）。待用户实装 |
 | 2026-08-22 | **侦查纠偏**：PR #1 树停在 2026-07-05（merge-base），main 领先 63 提交，learn 文件全缺 → "#32 填 1"方案作废（Build 必挂）；7.2 实证块/2.2 验证点/补充侦查三处同步修正；从 main 新建 smoke PR（分支 lesson7-smoke-pr，仅 +1 占位文档 pr-smoke.md）作测试载体，待用户 Gitee 建 PR |
+| 2026-08-22 | **7b 验证通过收官**：#31（留空，else 分支 echo + 双 200）/#32（填 1=老 PR，负样本实证"Checkout 过、Build 挂" + retry(2) 双轮目击）/#33（填 2=真 PR，`HEAD is now at 20df4fb` 对号铁证 + 91 用例 + 双 200，71s）；坑⑦实证修正（隐式 checkout 本就 detached，`Previous HEAD position` 才是证据行）；复盘回填 3.3；smoke 分支未用已删，PR #2 任常驻测试 PR → 进 7b'（GitSCM 对照版） |
