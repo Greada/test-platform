@@ -55,7 +55,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   Document,
@@ -65,13 +65,30 @@ import {
   Monitor,
   UserFilled,
 } from '@element-plus/icons-vue'
+import { authApi } from './api/auth'
 
 const router = useRouter()
 let savedUser = null
 try {
   savedUser = JSON.parse(localStorage.getItem('user'))
-} catch {}
+} catch (e) {
+  console.warn('Failed to parse user from localStorage', e)
+}
 const user = ref(savedUser)
+
+onMounted(async () => {
+  if (localStorage.getItem('token')) {
+    try {
+      const res = await authApi.me()
+      if (res.data.code === 200 && res.data.data) {
+        user.value = res.data.data
+        localStorage.setItem('user', JSON.stringify(res.data.data))
+      }
+    } catch (e) {
+      console.warn('Failed to verify user', e)
+    }
+  }
+})
 
 function handleLogout() {
   localStorage.removeItem('token')

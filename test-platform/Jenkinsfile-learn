@@ -1,0 +1,199 @@
+// ============================================================================
+// Jenkinsfile-learn — 从 0 重建(学习用)
+// Lesson 0:  最小骨架
+// Lesson 1a: Test stage(天真版 — 预期失败:mvn not found)
+// Lesson 1b: Test stage(docker run 共享 workspace)
+// Lesson 1c: Test stage(Maven 依赖缓存)
+// Lesson 1d: Test stage(健壮性参数 + 阿里云源)
+// Lesson 2a: Build stage(天真版 — 预期失败:compose 文件找不到)
+// Lesson 2b: Build stage(dir() 切目录)
+// Lesson 2c: Build stage(分开构建 backend/frontend)
+// Lesson 3a: Deploy stage(docker compose up -d)
+// Lesson 3b: Verify stage(天真版 — 预期失败:JVM 未就绪)
+// Lesson 3c: Verify stage(sleep 15 等待 JVM 就绪)
+// Lesson 4:  参数化 + 双环境
+// Lesson 5:  失败处理 + 产物(post + junit + deleteDir)
+// Lesson 6a: options{} 四件套(timestamps + disableConcurrentBuilds + buildDiscarder + timeout)
+// Lesson 6b: timeout/retry 演练完成(#8 实证:timeout 包 retry,超时=ABORTED≠FAILURE)→ 已恢复 timeout=30min,retry(2) 保留
+// Lesson 6c: 镜像锁版本(curl:8.21.0 — 4 个浮动 tag 全部锁具体版本,可重复构建)
+// Lesson 7a: PR 模式开关(PR_NUMBER 参数非空=PR 模式,固化 env.IS_PR;⚠️坑⑤:新参数下次构建才注册)
+// Lesson 7b: Checkout stage(PR 模式:fetch refs/pull/N/head + checkout FETCH_HEAD;⚠️sh 单引号把 $ 留给 shell;坑⑦:detached HEAD 为预期)
+// ============================================================================
+
+pipeline {
+	agent any
+
+	// Lesson 6a: options{} — Pipeline 级全局选项
+	// timestamps: 每行日志加时间戳，定位 stage 耗时
+	// disableConcurrentBuilds: 禁并发,避免两个构建同时 Deploy 端口/容器名冲突
+	// buildDiscarder: 只留最近 20 次构建,避免磁盘塞满
+	// timeout: 整条流水线超时,防 maven 下载卡死 — 6b 临时 2 分钟(正式 30,验证后恢复)
+	// retry: 整条流水线失败后从头重跑,N=总尝试次数 — retry(2)=失败后重试 1 次
+	//       ⚠️ retry(1) 只执行 1 次、失败不重试(Build #7 实证:单轮 42s FAILURE)
+	//       6b 值应设为 retry(2);观察点:声明顺序 timeout→retry,验证谁包谁(总时长 ≈2min 还是 ≈4min)
+	options {
+		timestamps()
+		disableConcurrentBuilds()
+		buildDiscarder(logRotator(numToKeepStr: '20'))
+		timeout(time: 30, unit: 'MINUTES')
+		retry(2)
+	}
+
+	// Lesson 7a: PR_NUMBER — 一个参数同时携带"模式+数据":留空=普通构建,填编号(如 1)=PR 模式
+	// (来源:现在手动填,将来 pr-poller.sh 自动填,pipeline 不关心来源,只看是否非空)
+	parameters {
+		string(name: 'PR_NUMBER', defaultValue: '', description: 'PR 编号(非空=PR 模式;普通构建留空)')
+		choice(name: 'DEPLOY_ENV', choices: ['auto', 'test', 'prod'], description: '部署环境:auto/test/prod')
+	}
+
+	stages {
+		stage('hello') {
+			steps {
+				echo 'hello'
+			}
+		}
+
+		stage('Resolve Env') {
+			steps {
+				script {
+					// Lesson 7a: 判定构建模式 — 非空判断用 Groovy truthiness:
+					// null(#11 参数还没注册)和 ''(面板留空)都是 falsy → 一个写法覆盖两种"空"
+					// ?: 三元 = if/else 压成一行;坑①:env 无布尔,只能存字符串 'true'/'false'
+					env.IS_PR = params.PR_NUMBER ? 'true' : 'false'
+					echo "===== 构建模式 IS_PR = ${env.IS_PR} ====="
+
+					// 原有 DEPLOY_TARGET 逻辑不动 — 两种模式都算(PR 模式多算无害,跳过留给 7c 的 when)
+					if (params.DEPLOY_ENV == 'auto') {
+						env.DEPLOY_TARGET = 'test' // learn 无分支，auto 默认 test
+					} else {
+						// "${params.DEPLOY_ENV}" 等价于 params.DEPLOY_ENV
+						env.DEPLOY_TARGET = params.DEPLOY_ENV
+					}
+					echo "===== 部署目标: ${env.DEPLOY_TARGET} ====="
+					
+				}
+			}
+		}
+
+		stage('Print Params') {
+			steps {
+				echo "===== DEPLOY_ENV = ${params.DEPLOY_ENV} ====="
+			}
+		}
+
+		stage('Checkout') {
+			steps {
+				script {
+					if (env.IS_PR == 'true') {
+						sh '''git fetch origin refs/pull/$PR_NUMBER/head && git checkout FETCH_HEAD'''
+					} else {
+						echo "===== 普通构建: ${env.IS_PR} 沿用隐式checkout(main) ====="
+					}
+				}
+			}
+		}
+
+		stage('Test') {
+			steps {
+				sh '''
+                    rm -rf test-platform/backend/target
+                    docker run --rm \
+                        --volumes-from "${HOSTNAME}" \
+                        -w "$WORKSPACE/test-platform" \
+                        -v "maven-repo:/tmp/.m2" \
+                        -e HOME=/tmp \
+                        --network host \
+                        maven:3.9-eclipse-temurin-17 \
+                        mvn test -f backend/pom.xml -B -s backend/settings.xml
+                '''
+			}
+			post {
+				always {
+					echo "===== Test 收集执行日志 ====="
+					junit 'test-platform/backend/target/surefire-reports/*.xml'
+				}
+			}
+		}
+
+		stage('Build') {
+			steps {
+				dir("test-platform") {
+					sh '''
+						COMPOSE_FILE="docker-compose.learn.yml"
+						[ "$DEPLOY_TARGET" = "test" ] && COMPOSE_FILE="docker-compose.learn.yml"
+						echo "===== 使用 $COMPOSE_FILE 构建 ====="
+						echo "===== 构建后端镜像 ====="
+						docker compose -f "$COMPOSE_FILE" build backend
+						echo "===== 构建前端镜像 ====="
+						docker compose -f "$COMPOSE_FILE" build frontend
+					'''
+				}
+			}
+		}
+
+		stage('Deploy') {
+			steps {
+				dir("test-platform") {
+					//sh 'docker compose -f docker-compose.learn.yml up -d'
+					sh '''
+						COMPOSE_FILE="docker-compose.learn.yml"
+						[ "$DEPLOY_TARGET" = "test" ] && COMPOSE_FILE="docker-compose.learn.yml"
+						echo "===== 使用 $COMPOSE_FILE 部署 ====="
+						docker compose -f "$COMPOSE_FILE" up -d
+					'''
+				}
+			}
+		}
+
+		stage('Verify') {
+			steps {
+				dir("test-platform") {
+					sh '''
+					echo "===== 等待服务启动 ====="
+					sleep 15 # 等 JVM 就绪(L3c)
+
+						echo "===== 验证后端 API ====="
+						HTTP_CODE=$(docker run --rm --network host curlimages/curl:8.21.0 \
+							-s -o /dev/null -w "%{http_code}" \
+							-X POST http://localhost:8090/api/auth/login \
+							-H 'Content-Type: application/json' \
+							-d '{"username":"admin","password":"admin123"}')
+						echo "Backend HTTP code: $HTTP_CODE"
+						[ "$HTTP_CODE" = "200" ] || exit 1
+
+						echo "===== 验证前端页面 ====="
+						HTTP_CODE=$(docker run --rm --network host curlimages/curl:8.21.0 \
+							-s -o /dev/null -w "%{http_code}" \
+							http://localhost:82)
+						echo "Frontend HTTP code: $HTTP_CODE"
+						[ "$HTTP_CODE" = "200" ] || exit 1
+					'''
+				}
+			}
+		}
+
+		stage('Notify') {
+			when {
+				expression {
+					env.DEPLOY_TARGET == 'prod'
+				}
+			}
+			steps {
+				echo '===== prod 部署完成，发送通知 ====='
+			}
+		}
+	}
+
+	post {
+		success {
+			echo '===== 流水线成功完成 ====='
+		}
+		failure {
+			echo '===== 流水线构建失败 ====='
+		}
+		cleanup {
+			echo '===== 流水线开始清理 ====='
+			deleteDir()
+		}
+	}
+}

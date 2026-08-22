@@ -42,9 +42,10 @@
 <script setup>
 import {onMounted, ref} from 'vue'
 import {suiteApi} from '../api'
-import {ElMessage, ElMessageBox} from 'element-plus'
+import {ElMessage} from 'element-plus'
 import {useRouter} from 'vue-router'
 import { formatDate } from '../utils/format'
+import { useConfirmDelete } from '../composables/useConfirmDelete'
 
 const router = useRouter()
 const list = ref([])
@@ -106,19 +107,7 @@ async function save() {
   await fetchList()
 }
 
-async function remove(id) {
-  try {
-    await ElMessageBox.confirm('确定要删除这个套件吗？', '确认删除', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-    await suiteApi.delete(id)
-    ElMessage.success('已删除')
-  } catch {
-  }
-  await fetchList()
-}
+const remove = useConfirmDelete(suiteApi.delete, fetchList)
 </script>
 
 <style scoped>

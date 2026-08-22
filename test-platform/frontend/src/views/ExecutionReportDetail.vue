@@ -99,11 +99,13 @@ const loading = ref(true)
 onMounted(async () => {
   loading.value = true
   try {
-    const res = await reportApi.get(route.params.id)
+    const [res, res2, res3] = await Promise.all([
+      reportApi.get(route.params.id),
+      reportApi.getDetails(route.params.id),
+      reportApi.errorPatterns(route.params.id)
+    ])
     report.value = res.data.data || {}
-    const res2 = await reportApi.getDetails(route.params.id)
     details.value = res2.data.data || []
-    const res3 = await reportApi.errorPatterns(route.params.id)
     errorPatterns.value = res3.data.data || null
   } catch (e) {
     ElMessage.error('加载报告详情失败')

@@ -1,13 +1,13 @@
 <template>
   <div class="diff-viewer">
     <div v-if="!result" style="text-align:center;padding:30px;color:#999">
-      <el-icon class="is-loading" :size="24"><i class="el-icon-loading"></i></el-icon>
+      <el-icon class="is-loading" :size="24"><Loading /></el-icon>
       <p style="margin-top:10px">正在分析差异...</p>
     </div>
 
     <template v-else>
       <div v-if="result.match && result.differences.length === 0" style="text-align:center;padding:30px">
-        <el-icon :size="40" color="#67c23a"><i class="el-icon-success"></i></el-icon>
+        <el-icon :size="40" color="#67c23a"><CircleCheckFilled /></el-icon>
         <p style="color:#67c23a;margin-top:10px;font-size:16px">完全匹配</p>
       </div>
 
@@ -44,7 +44,7 @@
       <div v-if="result.suggestedExpected" style="margin-top:16px;padding:12px;background:#f0f9eb;border-radius:6px">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <div>
-            <el-icon color="#67c23a"><i class="el-icon-lightbulb"></i></el-icon>
+            <el-icon color="#67c23a"><Sunny /></el-icon>
             <span style="margin-left:6px;font-weight:bold;color:#67c23a">修复建议</span>
             <el-button size="small" type="success" style="margin-left:12px" @click="applyFix">一键应用</el-button>
           </div>
@@ -59,6 +59,7 @@
 </template>
 
 <script setup>
+import { Loading, CircleCheckFilled, Sunny } from '@element-plus/icons-vue'
 import { formatJson } from '../utils/format'
 
 const props = defineProps({
@@ -68,30 +69,6 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['applyFix'])
-
-function deepUnescape(obj) {
-  if (typeof obj === 'string') {
-    try {
-      const inner = JSON.parse(obj)
-      if (typeof inner === 'object' && inner !== null) {
-        return deepUnescape(inner)
-      }
-    } catch {
-    }
-    return obj
-  }
-  if (Array.isArray(obj)) {
-    return obj.map(deepUnescape)
-  }
-  if (obj && typeof obj === 'object') {
-    const result = {}
-    for (const key of Object.keys(obj)) {
-      result[key] = deepUnescape(obj[key])
-    }
-    return result
-  }
-  return obj
-}
 
 function applyFix() {
   emit('applyFix', props.result?.suggestedExpected)

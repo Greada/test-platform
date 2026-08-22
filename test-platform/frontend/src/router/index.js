@@ -1,13 +1,14 @@
 import {createRouter, createWebHistory} from 'vue-router'
-import TestCaseList from '../views/TestCaseList.vue'
-import ExecutionList from '../views/ExecutionList.vue'
-import DocView from '../views/DocView.vue'
-import TestSuiteList from '../views/TestSuiteList.vue'
-import TestSuiteDetail from '../views/TestSuiteDetail.vue'
-import ExecutionReportList from '../views/ExecutionReportList.vue'
-import ExecutionReportDetail from '../views/ExecutionReportDetail.vue'
-import CiStatus from '../views/CiStatus.vue'
-import Login from '../views/Login.vue'
+
+const TestCaseList = () => import('../views/TestCaseList.vue')
+const ExecutionList = () => import('../views/ExecutionList.vue')
+const DocView = () => import('../views/DocView.vue')
+const TestSuiteList = () => import('../views/TestSuiteList.vue')
+const TestSuiteDetail = () => import('../views/TestSuiteDetail.vue')
+const ExecutionReportList = () => import('../views/ExecutionReportList.vue')
+const ExecutionReportDetail = () => import('../views/ExecutionReportDetail.vue')
+const CiStatus = () => import('../views/CiStatus.vue')
+const Login = () => import('../views/Login.vue')
 
 const routes = [
     {path: '/login', name: 'Login', component: Login},

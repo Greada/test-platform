@@ -36,6 +36,7 @@ build/
 
 ### Environment ###
 .env
+.env.ci
 
 ### Mac OS ###
 .DS_Store

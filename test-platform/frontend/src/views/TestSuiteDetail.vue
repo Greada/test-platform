@@ -67,7 +67,8 @@
 import {onMounted, ref} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import api, {suiteApi} from '../api'
-import {ElMessage, ElMessageBox} from 'element-plus'
+import {ElMessage} from 'element-plus'
+import { useConfirmDelete } from '../composables/useConfirmDelete'
 
 const route = useRoute()
 const router = useRouter()
@@ -106,7 +107,6 @@ async function executeSuite() {
   showExecuting.value = true
   try {
     const res = await suiteApi.execute(route.params.id)
-    showExecuting.value = false
     if (res.data.code === 200 && res.data.data) {
       ElMessage.success('执行完成')
       await router.push('/reports/' + res.data.data.id)
@@ -114,27 +114,16 @@ async function executeSuite() {
       ElMessage.error(res.data.message || '执行失败')
     }
   } catch (e) {
-    showExecuting.value = false
     ElMessage.error('执行异常')
+  } finally {
+    showExecuting.value = false
   }
 }
 
-async function removeCase(caseId) {
-  try {
-    await ElMessageBox.confirm('确定要从套件中移除此用例吗？', '确认移除', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-    await suiteApi.removeCase(route.params.id, caseId)
-    ElMessage.success('已移除')
-    await fetchCases()
-  } catch (e) {
-    if (e !== 'cancel' && e?.message !== 'cancel') {
-      ElMessage.error('移除失败: ' + (e.response?.data?.message || e.message))
-    }
-  }
-}
+const removeCase = useConfirmDelete(
+  (caseId) => suiteApi.removeCase(route.params.id, caseId),
+  fetchCases
+)
 
 async function openAddDialog() {
   try {
