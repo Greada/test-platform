@@ -133,6 +133,8 @@ Notify 要的是"非 PR **且** prod"，恰好就是 AND——默认行为即所
 | ⑤ | 参数下次生效 | 改完 parameters 至少跑两次才见新参数 |
 | ⑥ | sh 内注释 | 必须用 `#`，`//` 会被 shell 当参数（6b 血泪） |
 | ⑦ | detached HEAD | Jenkins 隐式 checkout 本就检出 SHA（detached）→ PR 切换是 detached→detached，**无警告**；证据行 = `Previous HEAD position was <SHA>` + `HEAD is now at <SHA>`（#33 实证修正） |
+| ⑧ | $ 归属 | 有 shell 层 → 单引号把 `$` 留给 shell（7b）；无 shell 层 → 双引号 `${params.X}` Groovy 自己解析（7b'）；GString 里裸 `$X` = 查 Groovy 变量 → 报错 |
+| ⑨ | GitSCM 证据行 | LocalBranch 后 HEAD 落在分支上，**没有** `HEAD is now at`；验收找分支切换痕迹（`Switched to a new branch 'pr-N'` 类） |
 
 ## 二、渐进式小步
 
@@ -229,9 +231,82 @@ stage('Checkout') {
 
 补充侦查（2026-08-22，**❌ 同日纠偏——初版结论作废**）：初版写"PR #1 仅改 `AGENTS.md`、后端零改动 → Test 预期同绿"，错在把 **PR 自身补丁**（merge-base 三点 diff）当成了 **PR 树与 main 的距离**。实证纠偏：PR #1 head 树停在 merge-base（2026-07-05），main 已领先 63 提交（72 文件 +8345/-446）；`docker-compose.learn.yml` 等 learn 文件在该树**全部缺失** → #32 若填 1：Checkout 能过（ref 可拉），Build 必挂（compose file not found）。**处置**：从当前 main 新建 smoke PR（仅 +1 占位文档）作本课测试 PR，保持 open 不合并（7c/L8 常驻复用）。
 
-### 2.3 小步 7b' — GitSCM 对照版（待 7b 完成后展开）
+### 2.3 小步 7b' — GitSCM 对照版（概念已讲，待实装）
 
-换成 `checkout([$class: 'GitSCM', branches: [[name: 'refs/pull/N/head']], ...])` 声明式写法，两版对比：谁管 clean、谁管 localBranch、日志差异。生产版用 GitSCM（L47-59 可提前围观）。
+**问题起点：7b 两条 git 命令干成的事，为什么生产版要写一大坨 Groovy？** 7b 是**命令式**——告诉 git 每步做什么（fetch 这个 ref、checkout 这个指针）；GitSCM 是**声明式**——只声明"要什么"（哪个远端、哪个 ref、要不要干净、要不要分支），git 插件替你安排每一步。7b' = 把 7b 的 PR 分支换成声明式，两版对照，"谁管什么"一清二楚。
+
+**生产版解剖（`test-platform/Jenkinsfile` L51-59，7b' 参照物）：**
+
+```groovy
+checkout([
+    $class: 'GitSCM',
+    branches: [[name: "refs/pull/${params.PR_NUMBER}/head"]],
+    userRemoteConfigs: [[url: 'https://gitee.com/greada/test-platform.git']],
+    extensions: [
+        [$class: 'LocalBranch', localBranch: "pr-${params.PR_NUMBER}"],
+        [$class: 'CleanCheckout']
+    ]
+])
+```
+
+| 块 | 干什么 | 关键认知 |
+|---|---|---|
+| `$class: 'GitSCM'` | 选定 git 插件的 SCM 实现类 | Groovy map 调 Java 插件——`$class` = "用哪个类"，Jenkins 插件生态的通用互操作语法 |
+| `branches: [[name: ...]]` | 声明要检出的 ref | **列表套 map**（两层中括号，可声明多个 refspec；漏一层是经典语法错）；GString 拼 `refs/pull/N/head` |
+| `userRemoteConfigs` | 声明远端 | 需要凭据时在这里加 `credentialsId`（7b 已实证匿名可访问，省略） |
+| `LocalBranch` | 检出后建**本地分支** `pr-N` | GitSCM 默认检出是 detached（7b 同款）；LocalBranch 让 HEAD 落在分支上——插件对坑⑦是"消除"而非"忍受" |
+| `CleanCheckout` | 干净检出（git clean 一族清理未跟踪文件） | workspace 状态 = ref 的纯函数（可重复构建）；learn 版已有 post cleanup deleteDir，属双保险；clean 时机细节 #35 日志现场看 |
+
+**⚠️ 坑⑧（本课核心认知升级）：引号规则的真相是"$ 归谁解析"。** 7b 与 7b' 引号选择**正好相反，但都对**：
+
+| | 写法 | 引号 | `$` 谁解析 | 为什么 |
+|---|---|---|---|---|
+| 7b | `sh '''...$PR_NUMBER...'''` | 单引号 | **shell** | 参数已注入环境变量；单引号让 `$` 穿过 Groovy 交给 shell |
+| 7b' | `branches: [[name: "...${params.PR_NUMBER}..."]]` | 双引号 | **Groovy** | 没有 shell 参与，只能 Groovy 自己拼字符串 |
+
+细节差异：shell 写裸 `$PR_NUMBER`；GString 必须 `${params.PR_NUMBER}`（对象前缀 + 大括号）——裸 `$PR_NUMBER` 在 GString 里是查 Groovy 变量，上下文没有这个名字，直接报错。**"单引号 vs 双引号"是表象，"有没有 shell 层"才是本质。**
+
+**两版能力对照（"谁管什么"总表）：**
+
+| 能力 | 7b 手写 sh | 7b' GitSCM |
+|---|---|---|
+| 检出指定 ref | ✅ fetch + checkout | ✅ branches 声明 |
+| workspace 清洁 | ❌ 自己管（靠 deleteDir 收尾） | ✅ CleanCheckout 显式管 |
+| 本地分支 | ❌ detached（坑⑦，无害） | ✅ LocalBranch 建 `pr-N` |
+| changelog（Changes 页） | ❌ sh fetch 不产生变更记录（#33 的 changelog 来自**隐式** checkout，build.xml checkouts 段实证） | ✅ 插件自己写 changelog |
+| 日志风格 | `+ git fetch ...` 命令回显，grep 友好 | `Fetching upstream changes...` 插件话术，行数多 |
+| refspec | ✅ 只 fetch 一个 ref（最小拉取） | 插件构造——**#35 看日志实证它实际 fetch 了什么，别猜** |
+| 心智负担 | 低（就是 git） | 中（插件语义 + map 语法） |
+
+**⚠️ 坑⑨：换 GitSCM 后，验收证据行会变。** 7b 的铁证是 `HEAD is now at <SHA>`；加 LocalBranch 后 HEAD 落在**分支**上，不再切 detached → 这行**不会出现**。#35 验收别再找它，要找分支创建/切换的痕迹（形如 `Switched to a new branch 'pr-N'`，具体行长什么样现场看）——找不到 ≠ 失败，找错了才算。
+
+**任务卡**：把 Checkout stage 的 **PR 分支**从手写 sh 换成 GitSCM（对照生产版 L51-59 自己写，url 同仓库），else 分支不动，不越界 7c：
+
+```groovy
+stage('Checkout') {
+    steps {
+        script {
+            if (env.IS_PR == 'true') {
+                // checkout([ $class: 'GitSCM',
+                //            branches: [[name: <GString 拼 ref,坑⑧>]],
+                //            userRemoteConfigs: [[url: <同仓库 URL>]],
+                //            extensions: [ <LocalBranch pr-N>, <CleanCheckout> ] ])
+            } else {
+                echo "===== 普通构建: ${env.IS_PR} 沿用隐式checkout(main) ====="  // 不动
+            }
+        }
+    }
+}
+```
+
+**约束**：坑⑧（双引号 + `${params.PR_NUMBER}`，别写裸 `$`）；branches 列表套 map 两层中括号；7b 旧版 sh 从 Jenkinsfile 删掉但笔记 2.2 留着（对照就是对照两版）；不碰 Build/Deploy/Verify（7c 的事）。
+
+**验证点**（编号以实际为准）：
+
+| build | 面板 | 预期 |
+|---|---|---|
+| #34 | 留空 | else 分支原样，与 #31 无差异，双 200 绿（回归确认） |
+| #35 | `2` | ① 插件式日志（`Fetching upstream changes...` / `> git ...`）② 分支切换痕迹（坑⑨：**没有** `HEAD is now at` 是预期）③ Test 91 绿、全流程绿（7c 未动）④ 三观察点：refspec 实际 fetch 了什么 / Changes 页显示什么（diff 基准是上次构建记录的 revision，跨模式可能有趣）/ 与 #33 的 Checkout 日志逐行对照 |
 
 ### 2.4 小步 7c — when 守卫矩阵（待 7b' 完成后展开）
 
@@ -288,3 +363,4 @@ stage('Checkout') {
 | 2026-08-22 | 7b 概念讲解落盘 2.2 节：隐式 checkout（Obtained 日志真相）/ fetch+checkout FETCH_HEAD 拆解 / 坑⑦ detached HEAD=验收证据 / params 三层注入 + **新坑：sh 单引号留 `$` 给 shell** / 任务卡 + #31/#32 验证点；补充侦查 PR #1 仅改 AGENTS.md（后端零改动）。待用户实装 |
 | 2026-08-22 | **侦查纠偏**：PR #1 树停在 2026-07-05（merge-base），main 领先 63 提交，learn 文件全缺 → "#32 填 1"方案作废（Build 必挂）；7.2 实证块/2.2 验证点/补充侦查三处同步修正；从 main 新建 smoke PR（分支 lesson7-smoke-pr，仅 +1 占位文档 pr-smoke.md）作测试载体，待用户 Gitee 建 PR |
 | 2026-08-22 | **7b 验证通过收官**：#31（留空，else 分支 echo + 双 200）/#32（填 1=老 PR，负样本实证"Checkout 过、Build 挂" + retry(2) 双轮目击）/#33（填 2=真 PR，`HEAD is now at 20df4fb` 对号铁证 + 91 用例 + 双 200，71s）；坑⑦实证修正（隐式 checkout 本就 detached，`Previous HEAD position` 才是证据行）；复盘回填 3.3；smoke 分支未用已删，PR #2 任常驻测试 PR → 进 7b'（GitSCM 对照版） |
+| 2026-08-22 | 7b'「你讲」环节落盘 2.3 节：命令式 vs 声明式 / 生产版 GitSCM 逐块解剖（$class/branches/userRemoteConfigs/LocalBranch+CleanCheckout）/ **坑⑧ = $ 归属**（7b 单引号 shell vs 7b' 双引号 Groovy，引号规则对称） / **坑⑨ = GitSCM 证据行变化** / 两版能力对照表（谁管 clean/localBranch/changelog/refspec）+ 任务卡 + #34/#35 验证点。下一步：用户实装 → AI 只读审查 |
