@@ -45,10 +45,10 @@
 
 ## 下次从这里继续
 
-- **Lesson 7 — 7b 跑/审环节** — 7a 收官(#29/#30 双绿);7b 代码已实装+提交+推送(cf7218d),AI 只读审查过(坑②✅ 单引号✅ 无越界✅)
+- **Lesson 7 — 7b 跑/审环节** — 7a 收官(#29/#30 双绿);7b 代码已提交推送(cf7218d+c3ea125),AI 只读审查过(坑②✅ 单引号✅ 无越界✅)
 - 学习节奏(5 步):你讲✅→我写✅→你查✅→**跑/审(当前环节)**→复盘
-- 7b 验证点:#31(留空)→ Checkout 走 else 分支 echo,全流程与 #29 无差异,双 200;#32(PR_NUMBER=1)→ ①fetch 日志 ②`HEAD is now at 802f67d`(与侦查对号=检出铁证) ③detached HEAD 警告(坑⑦预期) ④Test 91 用例绿 ⑤Build/Deploy/Verify 照跑(7c 才跳过)
-- 侦查补充:PR #1 head=802f67d 仅改 AGENTS.md(+30/-15,后端零改动)→ PR 构建 Test 预期同绿
+- ⚠️ 侦查纠偏(2026-08-22):PR #1 树停在 2026-07(learn 文件全缺,Build 必挂),原"#32 填 1"方案作废 → 已备 smoke PR(分支 lesson7-smoke-pr,仅 +1 占位文档);**待用户在 Gitee 建 PR(base: main ← compare: lesson7-smoke-pr)**,建成后 ls-remote 取编号+SHA 回填验证点
+- 7b 验证点:#31(留空)→ Checkout 走 else 分支 echo,全流程与 #29 无差异,双 200(**#31 不依赖 PR,随时可跑**);#32(PR_NUMBER=smoke PR 编号)→ ①fetch 日志 ②`HEAD is now at <SHA>`(与 ls-remote 对号=检出铁证) ③detached HEAD 警告(坑⑦预期) ④Test 91 用例绿 ⑤Build/Deploy/Verify 照跑(7c 才跳过)
 - 验证双绿后:复盘回填 lesson-07(三、复盘 + 2.2「待实装」状态) + SESSION_CONTEXT → 进 7b'(GitSCM 对照版)
 - 重启后快速续接:对 AI 说「读 SESSION_CONTEXT 继续 L7」即可
 
@@ -110,3 +110,4 @@
 | 2026-08-22 | 7b「你讲」环节完成并落盘 lesson-07 2.2 节(隐式 checkout 真相/fetch+FETCH_HEAD 拆解/坑⑦=验收证据/params 三层注入/新坑:sh 单引号留 $ 给 shell/任务卡+验证点);侦查补充:本地 fetch PR #1(802f67d)实证仅改 AGENTS.md 后端零改动;下一步:用户写 Checkout stage → AI 只读审查 |
 | 2026-08-21 | L6b 彻底闭环（#9 绿灯 89.3s，双 HTTP 200，91 用例，检出 7c55751）→ 进 L6c 镜像锁版本 |
 | 2026-08-22 | 7b「我写→你查」完成：用户实装 Checkout stage（含 else 分支 echo）并提交推送（cf7218d，随附 lesson-07 2.2 文档）；AI 只读审查过——代码本体过审，1 个一致性问题（头注释缺 7b 登记行）+ SESSION_CONTEXT 尾巴过时；按裁定 B：先补头注释登记 + SESSION_CONTEXT 状态同步成一个自洽提交，再跑 #31/#32 验证 |
+| 2026-08-22 | **侦查纠偏**（用户指出 PR #1 太老会报错，实证属实）：PR #1 树停在 2026-07-05（merge-base），main 领先 63 提交，learn 文件全缺 → "#32 填 1"方案作废（Build 必挂）；lesson-07 三处 + SESSION_CONTEXT 错误侦查记载同步修正；按裁定 A：AI 备好 smoke PR 分支（lesson7-smoke-pr + 占位文档 pr-smoke.md，已推送），待用户 Gitee 建 PR |

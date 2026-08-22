@@ -32,10 +32,10 @@
 **关键认知：**
 - `refs/pull/*` 是**平台维护的只读 ref**——PR 存在它就存在，你本地 clone 下来默认**看不到**（不 fetch 它），但 `git fetch origin refs/pull/1/head` 可以直接拉
 - `head` vs `MERGE` 怎么选：验证"PR 作者写了什么"用 `head`；验证"合并进 main 会不会坏"用 `MERGE`。CI 常规做法是 `head`（合并冲突留给平台检测）
-- **本仓库实证**（2026-08-22 侦查）：`git ls-remote origin 'refs/pull/*'` →
-  - `refs/pull/1/head` = `802f67d`（可用作本课测试 PR）
+- **本仓库实证**（2026-08-22 侦查；❌ 同日纠偏见 2.2 补充侦查）：`git ls-remote origin 'refs/pull/*'` →
+  - `refs/pull/1/head` = `802f67d`（❌ 不可用作测试 PR——树停在 2026-07，learn 文件全缺，Build 必挂；已另建 smoke PR）
   - `refs/pull/1/MERGE` 同时存在
-  - **匿名可访问**（无需 token）——Jenkins 容器里 fetch 不需要配凭据
+  - **匿名可访问**（无需 token）——Jenkins 容器里 fetch 不需要配凭据（此结论仍有效）
 
 ### 7.3 模式开关：PR_NUMBER 非空 = PR 模式
 
@@ -225,9 +225,9 @@ stage('Checkout') {
 | build | 面板 | 预期 |
 |---|---|---|
 | #31 | PR_NUMBER 留空 | Checkout 走 else 分支；全流程与 #29 无差异，双 200 绿 |
-| #32 | PR_NUMBER=1 | ① fetch 日志 ② `HEAD is now at 802f67d` ③ detached HEAD 警告（坑⑦，预期）；Test 照跑（PR #1 只改 AGENTS.md，91 用例应绿）；Build/Deploy/Verify 照跑（7c 才跳过） |
+| #32 | PR_NUMBER=<smoke PR 编号> | ① fetch 日志 ② `HEAD is now at <ls-remote 实证 SHA>` ③ detached HEAD 警告（坑⑦，预期）；Test 照跑（smoke PR 仅 +1 文档文件，91 用例应绿）；Build/Deploy/Verify 照跑（7c 才跳过） |
 
-补充侦查（2026-08-22）：已本地 fetch PR #1 实证——head=`802f67d`，diff vs main 仅 `AGENTS.md`（+30/-15），后端零改动 → PR 构建 Test 预期与 main 同绿。
+补充侦查（2026-08-22，**❌ 同日纠偏——初版结论作废**）：初版写"PR #1 仅改 `AGENTS.md`、后端零改动 → Test 预期同绿"，错在把 **PR 自身补丁**（merge-base 三点 diff）当成了 **PR 树与 main 的距离**。实证纠偏：PR #1 head 树停在 merge-base（2026-07-05），main 已领先 63 提交（72 文件 +8345/-446）；`docker-compose.learn.yml` 等 learn 文件在该树**全部缺失** → #32 若填 1：Checkout 能过（ref 可拉），Build 必挂（compose file not found）。**处置**：从当前 main 新建 smoke PR（仅 +1 占位文档）作本课测试 PR，保持 open 不合并（7c/L8 常驻复用）。
 
 ### 2.3 小步 7b' — GitSCM 对照版（待 7b 完成后展开）
 
@@ -269,3 +269,4 @@ stage('Checkout') {
 | 2026-08-22 | 7a 实装（**节奏破例：用户两轮尝试未过审后明确请求 AI 代写**，AI 逐行讲解）：PR_NUMBER 参数 + `env.IS_PR = params.PR_NUMBER ? 'true' : 'false'`（三元+truthiness，null/'' 双覆盖）+ DEPLOY_TARGET 保持线性；两轮审查病灶（params/env 两层混淆 ×2、`== ''` 漏 null、if/else 越界 7c）待复盘回填；待 #11/#12 构建验证 |
 | 2026-08-22 | **7a 验证通过收官**：#29（PR_NUMBER 留空，IS_PR=false，与 #10 无行为差异）+ #30（PR_NUMBER=1，IS_PR=true，其余 stage 照旧全跑双 200）——坑⑤被 #11~#28 中间构建自然吸收；复盘回填（3.1 验证证据 + 3.2 审查病灶存档）→ 进 7b 手写 sh checkout |
 | 2026-08-22 | 7b 概念讲解落盘 2.2 节：隐式 checkout（Obtained 日志真相）/ fetch+checkout FETCH_HEAD 拆解 / 坑⑦ detached HEAD=验收证据 / params 三层注入 + **新坑：sh 单引号留 `$` 给 shell** / 任务卡 + #31/#32 验证点；补充侦查 PR #1 仅改 AGENTS.md（后端零改动）。待用户实装 |
+| 2026-08-22 | **侦查纠偏**：PR #1 树停在 2026-07-05（merge-base），main 领先 63 提交，learn 文件全缺 → "#32 填 1"方案作废（Build 必挂）；7.2 实证块/2.2 验证点/补充侦查三处同步修正；从 main 新建 smoke PR（分支 lesson7-smoke-pr，仅 +1 占位文档 pr-smoke.md）作测试载体，待用户 Gitee 建 PR |
