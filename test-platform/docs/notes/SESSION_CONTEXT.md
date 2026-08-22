@@ -45,13 +45,20 @@
 
 ## 下次从这里继续
 
-- **Lesson 7 — 7c 你讲环节** — 7a/7b/7b' 已收官(#36 绿,坑⑩修复验收);当前环节:**你讲**(AI 讲 when 守卫矩阵,落盘 lesson-07 2.4 节)
+- **Lesson 7 — 7c 你讲环节(2026-08-23 继续开讲)** — 7a/7b/7b' 已收官(#36 绿,坑⑩修复验收);当前环节:**你讲**(AI 讲 when 守卫矩阵,落盘 lesson-07 2.4 节)
 - 学习节奏(5 步):**你讲(当前环节)**→我写→你查→跑/审→复盘
 - 7c 内容(按 7.5 矩阵):Resolve Env/Deploy/Verify 加 `when { IS_PR != 'true' }` 跳过;Build if/else 分流(PR 只建 backend,坑③:compose 写死 learn 版不依赖 $DEPLOY_TARGET);Notify 组合 when(坑④:多条件默认 AND);参考矩阵详见 lesson-07 7.5
 - 已有先修认知:#35 的 `skipped due to earlier failure(s)` 是"挂了才跳",7c 的 when 是"主动声明跳"——两种跳的日志形态对照(when 跳显示 stage 名+skipped,原因注明 when 条件)
 - 常驻测试 PR:**PR #2**(head=20df4fb),保持 open 不合并
-- 🔴 生产版裁定(存档):停用参考 `test-platform/Jenkinsfile`;终局 L9 后 learn 替换生产版并删旧文件
-- 重启后快速续接:对 AI 说「读 SESSION_CONTEXT 继续 L7」即可
+- 🔴 生产版裁定(存档):停用参考 `test-platform/Jenkinsfile`;终局 L9 后 learn 替换生产版并删旧文件(docs 副本同步更新)
+
+## 2026-08-22 今日战绩(L7 全天:7a 收官验证 + 7b/7b' 两个小步全流程)
+
+- **7 个小环节**:7a 验证收官(#29/#30)→ 7b 讲义→实装(R1-R2 审查)→验证(#31/#32/#33)→复盘 → 7b' 讲义→实装(R1-R4)→跑审(#34/#35 爆坑⑩)→返工(R5-R6)→验证(#36)→复盘
+- **12 次构建**:#29-#36(+中间穿插),含 3 次高价值失败(#32 老 PR 负样本/#35 坑⑩/#35 内 retry 双轮)
+- **坑表扩至 ⑩**,最重:⑧($ 归属:有 shell 层→单引号放行;无 shell 层→双引号 GString `${params.X}`)⑩(GitSCM branches 只管"查"不管"拉",refs/pull 需显式 refspec)⑦实证修正(隐式 checkout 本就 detached)
+- **方法论收获**:①侦查-实证循环(PR #1 纠偏:PR 补丁≠树距离)②负样本价值(两次失败>多次成功)③五段拆解法拼 GString(前缀/插值/冒号/前缀/插值/后缀)④R1-R6 审查病灶规律:抄生产版全对,自己拼参数就错
+- **工程决策**:生产版停用裁定(参照物自身未经验证)→ learn 终局升级替换
 
 ### L7 定案计划(2026-08-22,零猜测侦查完成)
 
@@ -117,3 +124,4 @@
 | 2026-08-22 | 7b'「我写→你查」完成：用户实装 GitSCM 版 Checkout（R1：extensions 整块缺失；R2：坑⑧复发 localBranch 单引号 + $class 类名小写——病灶集中在"照抄生产版全对、自己拼参数就错"，坑⑧肌肉记忆未建立；R3 保存事故后 R4 全清过审，`&& params.PR_NUMBER` 冗余条件已删）；按裁定 A：AI 补头注释登记 + SESSION_CONTEXT 指针拨到跑/审，随用户代码一笔提交 → 待跑 #34/#35 |
 | 2026-08-22 | **7b' 跑/审：#34 绿（回归✅）/ #35 FAILURE 爆坑⑩**——GitSCM branches 只管"查"不管"拉"，默认 refspec（+refs/heads/*）不含 refs/pull，rev-parse 三连扑空（Test/Build `skipped due to earlier failure(s)`=7c 短路活教材；retry(2) 双轮目击第二次）；诊断+返工任务卡（窄版 refspec，坑⑧再练）落盘 lesson-07 2.3，贴墙坑表扩至⑩。**生产版裁定（用户指令）**：停止参考生产版，终局 learn 替换生产版并删旧文件。待用户返工 → 审查 → #36 |
 | 2026-08-22 | **7b' 返工收官 + 复盘回填**：R5 审出 refspec 大括号错位（编译级）+ refs 掉 s → 用户重打五段结构 → R6 过审提交（d24dbcb）；#36 SUCCESS 四大验收点全中（自定义 refspec 替换默认 / rev-parse 裸名复活 / `checkout -b pr-2 20df4fb` 对号 / 91 用例+双 200）；坑⑨兑现（`checkout -b` 即分支切换痕迹）+ 双 fetch 彩蛋（pipeline 来自 main、代码来自 PR 的字节级实证）；复盘 3.4 回填（R1-R6 审查史）；按裁定 A：AI 代复盘提交推送 → 下次 7c（when 守卫矩阵）你讲环节 |
+| 2026-08-22 | 全文档日终同步：README.md（Phase C 进度 + 生产版文件约定改停用标注）+ SESSION_CONTEXT（今日战绩存档 + 明日 7c 指针）；**2026-08-23 继续 7c 你讲环节** |
