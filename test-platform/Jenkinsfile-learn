@@ -18,6 +18,7 @@
 // Lesson 6c: 镜像锁版本(curl:8.21.0 — 4 个浮动 tag 全部锁具体版本,可重复构建)
 // Lesson 7a: PR 模式开关(PR_NUMBER 参数非空=PR 模式,固化 env.IS_PR;⚠️坑⑤:新参数下次构建才注册)
 // Lesson 7b: Checkout stage(PR 模式:fetch refs/pull/N/head + checkout FETCH_HEAD;⚠️sh 单引号把 $ 留给 shell;坑⑦:detached HEAD 为预期)
+// Lesson 7b': Checkout PR 分支换 GitSCM 声明式(坑⑧:无 shell 层→双引号 ${params.X} 由 Groovy 插值;坑⑨:LocalBranch 后无"HEAD is now at",找分支切换痕迹)
 // ============================================================================
 
 pipeline {
@@ -85,7 +86,15 @@ pipeline {
 			steps {
 				script {
 					if (env.IS_PR == 'true') {
-						sh '''git fetch origin refs/pull/$PR_NUMBER/head && git checkout FETCH_HEAD'''
+						checkout([
+							$class: 'GitSCM',
+							branches: [[name: "refs/pull/${params.PR_NUMBER}/head"]],
+							userRemoteConfigs: [[url: 'https://gitee.com/greada/test-platform.git']],
+							extensions: [
+								[$class: 'LocalBranch', localBranch: "pr-${params.PR_NUMBER}"],
+								[$class: 'CleanCheckout']
+							]
+						])
 					} else {
 						echo "===== 普通构建: ${env.IS_PR} 沿用隐式checkout(main) ====="
 					}

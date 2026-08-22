@@ -45,11 +45,10 @@
 
 ## 下次从这里继续
 
-- **Lesson 7 — 7b' 我写环节** — 7a/7b 已收官(#33);7b' 概念已讲并落盘 lesson-07 2.3 节(2026-08-22)
-- 学习节奏(5 步):你讲✅→**我写(当前环节)**→你查(AI 只读审查)→跑/审→复盘
-- 7b' 任务:Checkout stage 的 **PR 分支**换成 GitSCM 声明式(else 不动,不越界 7c):`checkout([$class:'GitSCM', branches:[[name:"refs/pull/${params.PR_NUMBER}/head"]], userRemoteConfigs:[[url:同仓库]], extensions:[LocalBranch pr-N, CleanCheckout]])`;生产参照 `test-platform/Jenkinsfile` L51-59
-- 关键坑:⑧ $ 归属(无 shell 层→双引号 `${params.PR_NUMBER}`,GString 裸 `$` 报错) ⑨ 证据行变化(LocalBranch 后**无** `HEAD is now at`,找 `Switched to a new branch 'pr-N'` 类痕迹) + branches 列表套 map 两层中括号
-- 验证点:#34(留空,回归=#31,双 200) / #35(填 2:插件式日志+分支切换痕迹+91 用例全绿+三观察点——refspec 实际 fetch 了什么/Changes 页/#33 日志逐行对照)
+- **Lesson 7 — 7b' 跑/审环节** — 7a/7b 已收官(#33);7b' 代码已过审(R1-R4 三轮:extensions 缺失→坑⑧单引号+类名小写→全清)
+- 学习节奏(5 步):你讲✅→我写✅→你查✅(R4 终审过)→**跑/审(当前环节)**→复盘
+- 7b' 验证点:#34(留空,回归=#31,else echo + 双 200)/#35(填 2):①插件式日志(Fetching upstream changes) ②分支切换痕迹(坑⑨:**无** `HEAD is now at` 是预期) ③91 用例全流程绿 ④三观察点:refspec 实际 fetch 了什么/Changes 页显示什么/与 #33 Checkout 日志逐行对照
+- 头注释已补 7b' 登记行(随代码一笔提交)
 - 常驻测试 PR:**PR #2**(head=20df4fb,用户分支 docs/update-agents-md-v3.3,merge main+仅文档改动),保持 open 不合并,7c/L8 复用
 - 重启后快速续接:对 AI 说「读 SESSION_CONTEXT 继续 L7」即可
 
@@ -114,3 +113,4 @@
 | 2026-08-22 | **侦查纠偏**（用户指出 PR #1 太老会报错，实证属实）：PR #1 树停在 2026-07-05（merge-base），main 领先 63 提交，learn 文件全缺 → "#32 填 1"方案作废（Build 必挂）；lesson-07 三处 + SESSION_CONTEXT 错误侦查记载同步修正；按裁定 A：AI 备好 smoke PR 分支（lesson7-smoke-pr + 占位文档 pr-smoke.md，已推送），待用户 Gitee 建 PR |
 | 2026-08-22 | **7b 验证收官 + 复盘回填**：用户实操三连——#31（留空，else echo + 双 200）/#32（填 1=老 PR，负样本：Build 挂 compose 缺失，纠偏预言实证；retry(2) 从头重跑双轮目击）/#33（填 2=用户自建真 PR，`HEAD is now at 20df4fb` 对号铁证 + 91 用例 + 双 200，71s）；坑⑦实证修正（隐式 checkout 本就 detached，无警告，`Previous HEAD position` 是证据行）；lesson-07 3.3 回填；smoke 分支未用已删（本地+远端）；PR #2 任常驻测试 PR；按裁定 A：AI 代复盘提交推送 → 下次 7b'（GitSCM 对照版）你讲环节 |
 | 2026-08-22 | 7b'「你讲」环节完成并落盘 lesson-07 2.3 节：命令式 vs 声明式 / 生产版 GitSCM 逐块解剖 / 坑⑧=$ 归属（7b 单引号 shell vs 7b' 双引号 Groovy）/ 坑⑨=GitSCM+LocalBranch 后验收证据行变化 / 两版能力对照表 + 任务卡 + #34/#35 验证点；贴墙坑表扩至 ⑨。下一步：用户实装 Checkout PR 分支 GitSCM 化 → AI 只读审查 |
+| 2026-08-22 | 7b'「我写→你查」完成：用户实装 GitSCM 版 Checkout（R1：extensions 整块缺失；R2：坑⑧复发 localBranch 单引号 + $class 类名小写——病灶集中在"照抄生产版全对、自己拼参数就错"，坑⑧肌肉记忆未建立；R3 保存事故后 R4 全清过审，`&& params.PR_NUMBER` 冗余条件已删）；按裁定 A：AI 补头注释登记 + SESSION_CONTEXT 指针拨到跑/审，随用户代码一笔提交 → 待跑 #34/#35 |
