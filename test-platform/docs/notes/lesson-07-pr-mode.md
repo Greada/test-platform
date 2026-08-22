@@ -3,7 +3,7 @@
 > 目标：让**同一条 pipeline** 支持"PR 构建"——验证 PR 代码（测试 + 编译），但**不部署**
 > 前置：L0-L6 已收官，Jenkinsfile-learn 当前为 L6 完成版（#10 绿灯）
 > 学习节奏：你讲（本文档）→ 我写（7a）→ 你查（AI 只读审查）→ 跑/审 → 复盘
-> 完整生产版参考：`test-platform/Jenkinsfile` L20-90（可对照，但 7a 自己写）
+> 完整生产版参考：~~`test-platform/Jenkinsfile` L20-90~~ **（2026-08-22 裁定停用**——其 PR 检出同缺 refspec，坑⑩大概率同在且从未被真实 PR 构建验证；终局：learn 版优化后替换生产版并删旧文件，详见 2.3 末「生产版裁定」）
 
 ## 一、概念
 
@@ -135,6 +135,7 @@ Notify 要的是"非 PR **且** prod"，恰好就是 AND——默认行为即所
 | ⑦ | detached HEAD | Jenkins 隐式 checkout 本就检出 SHA（detached）→ PR 切换是 detached→detached，**无警告**；证据行 = `Previous HEAD position was <SHA>` + `HEAD is now at <SHA>`（#33 实证修正） |
 | ⑧ | $ 归属 | 有 shell 层 → 单引号把 `$` 留给 shell（7b）；无 shell 层 → 双引号 `${params.X}` Groovy 自己解析（7b'）；GString 里裸 `$X` = 查 Groovy 变量 → 报错 |
 | ⑨ | GitSCM 证据行 | LocalBranch 后 HEAD 落在分支上，**没有** `HEAD is now at`；验收找分支切换痕迹（`Switched to a new branch 'pr-N'` 类） |
+| ⑩ | GitSCM refspec | branches 只管"查"不管"拉"——默认 refspec 只拉 refs/heads/*，**不含 refs/pull/*** → `Couldn't find any revision to build`；必须 userRemoteConfigs 显式配 refspec（#35 实证） |
 
 ## 二、渐进式小步
 
@@ -231,11 +232,11 @@ stage('Checkout') {
 
 补充侦查（2026-08-22，**❌ 同日纠偏——初版结论作废**）：初版写"PR #1 仅改 `AGENTS.md`、后端零改动 → Test 预期同绿"，错在把 **PR 自身补丁**（merge-base 三点 diff）当成了 **PR 树与 main 的距离**。实证纠偏：PR #1 head 树停在 merge-base（2026-07-05），main 已领先 63 提交（72 文件 +8345/-446）；`docker-compose.learn.yml` 等 learn 文件在该树**全部缺失** → #32 若填 1：Checkout 能过（ref 可拉），Build 必挂（compose file not found）。**处置**：从当前 main 新建 smoke PR（仅 +1 占位文档）作本课测试 PR，保持 open 不合并（7c/L8 常驻复用）。
 
-### 2.3 小步 7b' — GitSCM 对照版（概念已讲，待实装）
+### 2.3 小步 7b' — GitSCM 对照版（已实装 R4 过审；#34 绿 / #35 爆坑⑩，返工中）
 
 **问题起点：7b 两条 git 命令干成的事，为什么生产版要写一大坨 Groovy？** 7b 是**命令式**——告诉 git 每步做什么（fetch 这个 ref、checkout 这个指针）；GitSCM 是**声明式**——只声明"要什么"（哪个远端、哪个 ref、要不要干净、要不要分支），git 插件替你安排每一步。7b' = 把 7b 的 PR 分支换成声明式，两版对照，"谁管什么"一清二楚。
 
-**生产版解剖（`test-platform/Jenkinsfile` L51-59，7b' 参照物）：**
+**生产版解剖（`test-platform/Jenkinsfile` L51-59，7b' 参照物；⚠️ 2026-08-22 起停用作参照——见本节末「生产版裁定」）：**
 
 ```groovy
 checkout([
@@ -308,6 +309,45 @@ stage('Checkout') {
 | #34 | 留空 | else 分支原样，与 #31 无差异，双 200 绿（回归确认） |
 | #35 | `2` | ① 插件式日志（`Fetching upstream changes...` / `> git ...`）② 分支切换痕迹（坑⑨：**没有** `HEAD is now at` 是预期）③ Test 91 绿、全流程绿（7c 未动）④ 三观察点：refspec 实际 fetch 了什么 / Changes 页显示什么（diff 基准是上次构建记录的 revision，跨模式可能有趣）/ 与 #33 的 Checkout 日志逐行对照 |
 
+**跑/审结果（2026-08-22，#34/#35）：**
+
+| build | 面板 | 结果 | 关键证据（log 实证） |
+|---|---|---|---|
+| #34 | 留空 | SUCCESS ✅ 回归通过 | else 分支 echo（L69）+ 全流程与 #31 无差异，双 200 |
+| #35 | `2` | **FAILURE — 坑⑩爆雷** | Checkout stage 挂：`Couldn't find any revision to build`（L81）；Test/Build `skipped due to earlier failure(s)` |
+
+**⚠️ 坑⑩（#35 实证）：branches 只管"查"，不管"拉"。** GitSCM 的 fetch 拉什么由 **refspec** 决定，默认 `+refs/heads/*:refs/remotes/origin/*`（只拉分支命名空间，**不含 refs/pull/***）。#35 日志把整个决策链拍在案上：
+
+```
+> git fetch --tags --force --progress -- <url> +refs/heads/*:refs/remotes/origin/*   ← ① 只拉了分支
+> git rev-parse refs/remotes/origin/refs/pull/2/head^{commit}                        ← ② 候选1:origin 前缀拼出的地址 → 没有
+> git rev-parse refs/pull/2/head^{commit}                                            ← ③ 候选2:裸名 → 也没有(①根本没拉它)
+ERROR: Couldn't find any revision to build. Verify the repository and branch configuration for this job.
+```
+
+**修复设计（返工任务卡）**：让候选2 命中——refspec 把 PR ref 拉到本地**同名路径**，裸 rev-parse 自然找到。注意 refspec 是 Groovy 字符串且要插值 → **坑⑧再次出场**（双引号 + `${params.PR_NUMBER}`）：
+
+```groovy
+userRemoteConfigs: [[
+    url: 'https://gitee.com/greada/test-platform.git',
+    refspec: "+refs/pull/${params.PR_NUMBER}/head:refs/pull/${params.PR_NUMBER}/head"
+]]
+```
+
+- 备选：通配 `'+refs/pull/*/head:refs/pull/*/head'`（单引号字面量，拉全部 PR ref）也可——窄版最小拉取且再练一次坑⑧，选窄版
+- **branches / extensions 一律不动**（它们没错，错的是没告诉 fetch 去拉）
+- **⚠️ 自定义 refspec 会整体替换默认 refspec** → 本次 fetch 不再拉 refs/heads/*——无影响（PR 模式只要 PR ref；且 #36 fetch 行可直接实证这一点）
+
+**#36 验证点**（填 2；留空回归可省——else 分支字节未动）：
+① fetch 行出现**我们的** refspec（`+refs/pull/2/head:refs/pull/2/head`，且不再有 `+refs/heads/*`）② rev-parse 裸名候选命中（#35 挂掉的那行复活）③ LocalBranch 痕迹（`pr-2` 分支创建/切换，坑⑨现场）④ 91 用例 + 双 200 全流程绿
+
+**#35 附赠的三个计划外收获：**
+1. **上游挂→下游跳的活教材**：Checkout 挂后 Test/Build 全部 `skipped due to earlier failure(s)`——声明式 pipeline 的 stage 短路行为，7c 的 when 守卫还没写，先看到了"不守也自跳"的另一面
+2. **retry(2) 双轮目击（第二次）**：L81/L174 两次 `Maximum checkout retry attempts reached`——单轮内 rev-parse 3 次重试 + 整条 pipeline 从头重跑，两层重试各就各位
+3. **观察点自打脸修正**：讲义预告"refspec 看日志实证，别猜"→ 实证结果：默认 refspec 不含 refs/pull → 初版"生产版解剖"漏了 refspec 这个关键参数 → 本节已补全
+
+**⚠️ 生产版裁定（2026-08-22，用户指令）：即日起停止参考生产版 Jenkinsfile。** 其 PR 检出同样没配 refspec（坑⑩大概率同在），且从未被真实 PR 构建验证过——参照物本身未经验证。**终局计划**：L9 完成后，learn 版优化升级为新的生产版，删除旧 `test-platform/Jenkinsfile`（docs 中的副本同步更新）。
+
 ### 2.4 小步 7c — when 守卫矩阵（待 7b' 完成后展开）
 
 按 7.5 矩阵给各 stage 加 `when` / if 分流，含 Notify 组合条件（坑④）和 Build 写死 compose 文件（坑③）。
@@ -364,3 +404,4 @@ stage('Checkout') {
 | 2026-08-22 | **侦查纠偏**：PR #1 树停在 2026-07-05（merge-base），main 领先 63 提交，learn 文件全缺 → "#32 填 1"方案作废（Build 必挂）；7.2 实证块/2.2 验证点/补充侦查三处同步修正；从 main 新建 smoke PR（分支 lesson7-smoke-pr，仅 +1 占位文档 pr-smoke.md）作测试载体，待用户 Gitee 建 PR |
 | 2026-08-22 | **7b 验证通过收官**：#31（留空，else 分支 echo + 双 200）/#32（填 1=老 PR，负样本实证"Checkout 过、Build 挂" + retry(2) 双轮目击）/#33（填 2=真 PR，`HEAD is now at 20df4fb` 对号铁证 + 91 用例 + 双 200，71s）；坑⑦实证修正（隐式 checkout 本就 detached，`Previous HEAD position` 才是证据行）；复盘回填 3.3；smoke 分支未用已删，PR #2 任常驻测试 PR → 进 7b'（GitSCM 对照版） |
 | 2026-08-22 | 7b'「你讲」环节落盘 2.3 节：命令式 vs 声明式 / 生产版 GitSCM 逐块解剖（$class/branches/userRemoteConfigs/LocalBranch+CleanCheckout）/ **坑⑧ = $ 归属**（7b 单引号 shell vs 7b' 双引号 Groovy，引号规则对称） / **坑⑨ = GitSCM 证据行变化** / 两版能力对照表（谁管 clean/localBranch/changelog/refspec）+ 任务卡 + #34/#35 验证点。下一步：用户实装 → AI 只读审查 |
+| 2026-08-22 | 7b' 实装与审查：用户手写 GitSCM 版（R1 extensions 缺失 → R2 坑⑧复发 localBranch 单引号 + $class 类名小写 → R4 全清过审）+ AI 补头注释随代码提交（c40d839）；跑/审：#34 绿（回归✅）/**#35 FAILURE 爆坑⑩**（branches 只管查不管拉，默认 refspec 不含 refs/pull）→ 返工任务卡（窄版 refspec，坑⑧再练）落盘 2.3；贴墙坑表扩至⑩；**生产版裁定：停用参照，终局 learn 替换生产版并删旧文件**。待返工 → 审查 → #36 |
