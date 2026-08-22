@@ -39,15 +39,15 @@
   - [x] 6c — 镜像锁版本 ✅ 4 tag 锁定(curl 8.21.0/temurin 17.0.19_10/node 20.19.4/nginx 1.31.4),#10 绿灯
 
 ### Phase C — 高级（进行中）
-- [ ] Lesson 7 — PR 模式(IS_PR + refs/pull/N/head)— 计划已定案,写 7a 中
+- [ ] Lesson 7 — PR 模式(IS_PR + refs/pull/N/head)— 7a ✅(#29/#30 双绿),7b 进行中
 - [ ] Lesson 8 — 状态回写(Report PR Status + post.failure)
 - [ ] Lesson 9 — 并行优化 + 回滚(parallel + 镜像 tag + 回滚 Job)
 
 ## 下次从这里继续
 
-- **Lesson 7 — PR 模式(IS_PR + refs/pull/N/head)** — 7a 代码已落地(2026-08-22,用户两轮尝试未过审后明确请求 AI 代写,AI 已逐行讲解;节奏破例已记录)
-- **学习节奏裁定(2026-08-22,用户选 A):维持原 5 步节奏**——7a 的 AI 代写是一次性特例,7b 起回归「你讲→我写→你查→跑/审→复盘」
-- 下一步:**跑 #11(不填 PR_NUMBER,预期与 #10 无行为差异,坑⑤实证)→ 跑 #12(面板填 PR_NUMBER=1,预期日志 IS_PR=true,其余 stage 照旧全跑)** → 回填 lesson-07 复盘 → 进 7b
+- **Lesson 7 — 7b 手写 sh checkout** — 7a 已收官(#29 IS_PR=false 无行为差异 / #30 PR_NUMBER=1 IS_PR=true,双绿,复盘已回填)
+- 学习节奏(用户裁定选 A,5 步):你讲(AI)→我写(用户)→你查(AI 只读审查)→跑/审→复盘——7b 起严格执行
+- 7b 任务:新增 Checkout stage,PR 模式手写 `git fetch origin refs/pull/N/head && git checkout FETCH_HEAD`(体验底层命令 + 坑⑦ detached HEAD);普通模式保持现状(隐式 checkout main)。7b' 再换 GitSCM 对比
 - 重启后快速续接:对 AI 说「读 SESSION_CONTEXT 继续 L7」即可
 
 ### L7 定案计划(2026-08-22,零猜测侦查完成)
@@ -104,4 +104,5 @@
 | 2026-08-22 | L7「你讲」环节产出：创建 lesson-07-pr-mode.md（概念：refs/pull 命名空间 + IS_PR 开关设计 + when 守卫矩阵 + 7 坑浓缩清单；7a 任务卡+伪代码骨架，7b/7b'/7c 占位）。下一步：用户写 7a → AI 只读审查 |
 | 2026-08-22 | L7 7a 两轮只读审查（用户写）:R1 发现 params/env 两层混淆+env.IS_PR 未赋值+if/else 越界 7c;R2 赋值块修对但 params.IS_PR 幽灵引用复发 + `== ''` 漏 null(坑⑤联动);答疑 PR_NUMBER 数据流(poller→buildWithParameters→params)。用户请求代写 → AI 实装 7a(三元+truthiness 版)并逐行讲解,待 push + #11/#12 验证 |
 | 2026-08-22 | 节奏裁定:用户选 A(维持 5 步节奏,7a 代写属特例);AI 代提交 7a 代码 + lesson-07 笔记 + SESSION_CONTEXT 并推送;待跑 #11/#12 验证 |
+| 2026-08-22 | **7a 验证收官**:实际验证 build 为 #29(PR_NUMBER 留空,IS_PR=false,与 #10 无行为差异)/#30(填 PR_NUMBER=1,IS_PR=true,其余 stage 照旧全跑双 200),双绿;坑⑤被 #11~#28 中间构建自然吸收;复盘回填(验证证据 + 两轮审查病灶存档)→ 7b 手写 sh checkout 待开讲 |
 | 2026-08-21 | L6b 彻底闭环（#9 绿灯 89.3s，双 HTTP 200，91 用例，检出 7c55751）→ 进 L6c 镜像锁版本 |

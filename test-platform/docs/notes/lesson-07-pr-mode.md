@@ -179,9 +179,29 @@ stage('Resolve Env') {
 
 按 7.5 矩阵给各 stage 加 `when` / if 分流，含 Notify 组合条件（坑④）和 Build 写死 compose 文件（坑③）。
 
-## 三、复盘（待回填）
+## 三、复盘（7a 已回填）
 
-<!-- 7a/7b/7b'/7c 完成后回填:踩坑、验证结果、build 号 -->
+### 3.1 7a — 验证通过（2026-08-22，#29/#30 双绿）
+
+> 计划时预期验证 build 为 #11/#12，实际期间穿插了 #11~#28 的中间构建，坑⑤（参数下次构建才注册）被这批构建自然吸收——#29 触发时参数面板已出现 PR_NUMBER 输入框。
+
+| build | 面板 PR_NUMBER | Resolve Mode 日志 | 行为 | 结果 |
+|---|---|---|---|---|
+| #29 | 留空 | `IS_PR = false` | Build/Deploy/Verify 照旧全跑，双 HTTP 200 | SUCCESS |
+| #30 | `1`（build.xml 参数值实证） | `IS_PR = true` | **同样全跑**（7a 无守卫，Deploy/Verify 也执行——预期行为，7c 才跳过） | SUCCESS |
+
+两条验收标准全部达成：**普通构建与 #10 无行为差异** ✅（#29）；**PR 模式开关固化 env.IS_PR** ✅（#30）。
+
+### 3.2 7a 两轮审查病灶存档（用户手写阶段）
+
+| 轮次 | 病灶 | 根因 |
+|---|---|---|
+| R1 | ① params/env 两层混淆 ② env.IS_PR 未赋值就被引用 ③ if/else 提前写了 7c 的守卫 | 「params 只读快照 vs env 可写全局」两层心智模型未建立 |
+| R2 | ① `params.IS_PR` 幽灵引用复发（应为 `env.IS_PR`）② `== ''` 判空漏 null | 层模型仍不稳；对 Groovy truthiness 天然覆盖 null+'' 双空不熟 |
+
+**教训**：判「非空」首选 truthiness——`params.PR_NUMBER ? 'true' : 'false'` 一个写法同时覆盖 null（参数未注册的首次构建）和 `''`（面板留空）两种"空"，无需手写 `!= null && != ''`。
+
+<!-- 7b/7b'/7c 完成后继续回填 -->
 
 ## 变更日志
 
@@ -189,3 +209,4 @@ stage('Resolve Env') {
 |------|------|
 | 2026-08-22 | 初版创建：概念（refs/pull 命名空间 + IS_PR 开关 + when 矩阵 + 7 坑）+ 7a 任务卡与伪代码骨架；7b/7b'/7c 占位 |
 | 2026-08-22 | 7a 实装（**节奏破例：用户两轮尝试未过审后明确请求 AI 代写**，AI 逐行讲解）：PR_NUMBER 参数 + `env.IS_PR = params.PR_NUMBER ? 'true' : 'false'`（三元+truthiness，null/'' 双覆盖）+ DEPLOY_TARGET 保持线性；两轮审查病灶（params/env 两层混淆 ×2、`== ''` 漏 null、if/else 越界 7c）待复盘回填；待 #11/#12 构建验证 |
+| 2026-08-22 | **7a 验证通过收官**：#29（PR_NUMBER 留空，IS_PR=false，与 #10 无行为差异）+ #30（PR_NUMBER=1，IS_PR=true，其余 stage 照旧全跑双 200）——坑⑤被 #11~#28 中间构建自然吸收；复盘回填（3.1 验证证据 + 3.2 审查病灶存档）→ 进 7b 手写 sh checkout |
