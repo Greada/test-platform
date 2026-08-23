@@ -2,7 +2,7 @@
 
 > 目标：把「Jenkins 构建结果」回写到 Gitee PR 页面，形成完整可演示的 PR 闭环。  
 > 前置：Lesson 7 已完成 PR 模式、`refs/pull/N/head` 检出和 when 守卫矩阵。  
-> 状态：本地实现与真实成功链路已验收（含 `CHECK_RUN_ID` 贯穿传递）；待补 PR 失败回写演练。
+> 状态：本地实现与真实成功链路已验收（含 `CHECK_RUN_ID` 贯穿传递）；PR 审核项「测试」回写已实现，待真实构建验收；待补 PR 失败回写演练。
 
 ---
 
@@ -30,6 +30,22 @@ Gitee PR 页面显示 success / failure
 ```
 
 这就是 Gitee Check Run。
+
+### 0. Check Run 与 PR 审核项「测试」的区别
+
+这两个东西在 Gitee PR 页面上都存在，但含义不同：
+
+| 对象 | 绑定对象 | 谁写入 | 本课含义 |
+|---|---|---|---|
+| Check Run `ci/jenkins` | commit SHA | Jenkins | 这次代码提交的 CI 结果 |
+| PR 审核项「测试」 | PR + 指定测试人 | 被指派的测试人 | PR 流程里的测试确认 |
+
+所以 Jenkins 成功后要做两件事：
+
+1. `pr-report.sh`：把本次 commit 的 Check Run 更新为 `completed(success)`
+2. `pr-test-review.sh`：把 token 用户在 PR 审核项「测试」里的状态标记为通过
+
+当前 token 用户是 `greada`，而 PR #2 的测试人也是 `greada`，所以可以直接标记。不需要使用 `force`；`force` 是管理员强制通过用的参数，不该作为常规链路。
 
 ---
 
@@ -73,6 +89,16 @@ Gitee PR 页面显示 success / failure
 │ Gitee PR 页面            │
 │ ci/jenkins ✓ / ✗        │
 └──────────────────────────┘
+
+Jenkins 成功时还会额外调用 `pr-test-review.sh`：
+
+```text
+Jenkins post.success
+  ↓
+POST /repos/{owner}/{repo}/pulls/{number}/test
+  ↓
+Gitee PR 审核项「测试」变为已完成
+```
 ```
 
 ### 参与者职责
@@ -83,6 +109,7 @@ Gitee PR 页面显示 success / failure
 | Poller | 校验评论、写 in_progress、触发 Jenkins | 执行构建 |
 | Jenkins | 测试、构建、判定成功/失败 | 查询 Gitee PR 列表 |
 | `pr-report.sh` | 创建/更新一个 Check Run | 改变构建结果 |
+| `pr-test-review.sh` | 成功后把当前 token 用户的测试审核项标记为通过 | 判定构建成功或失败 |
 
 ---
 
@@ -403,6 +430,24 @@ post {
 - Jenkins 调用：默认非严格，回写失败不掩盖构建结果
 - Poller 调用：`PR_REPORT_STRICT=1`，in_progress 写失败就不触发
 
+### 3. 成功后的测试审核项回写
+
+`pr-test-review.sh` 使用：
+
+```text
+POST /api/v5/repos/{owner}/{repo}/pulls/{number}/test?access_token={token}
+```
+
+这个接口没有 `state` 参数。它的语义是：**当前 token 用户完成自己的 PR 测试项，并把结果标记为通过**。
+
+因此它的前提是：
+
+- token 用户必须是这个 PR 的测试人，或者有权限操作测试项
+- Jenkins 构建已经成功，才会进入 `post.success`
+- 不使用 `force=true`，避免把「管理员强制通过」混进常规 CI 链路
+
+如果这个 API 调用失败，脚本只打 warning，不改变 Jenkins 已经成功的事实。
+
 ---
 
 ## 七、失败语义
@@ -433,10 +478,12 @@ post {
 | 文件 | 状态 | 说明 |
 |---|---|---|
 | `scripts/pr-report.sh` | 已完成 | 支持显式 `CHECK_RUN_ID`、状态校验、配置注入、严格模式 |
+| `scripts/pr-test-review.sh` | 已完成 | 成功后把 token 用户在 PR 审核项「测试」标记为通过 |
 | `scripts/pr-poller-learn.sh` | 已完成 | 支持评论查询、权限校验、in_progress、ID 捕获、触发、评论去重 |
 | `scripts/tests/test-pr-report.sh` | 已通过 | 验证 Check Runs payload、显式 ID PATCH、PR 内部 ID 和 token 不泄露 |
+| `scripts/tests/test-pr-test-review.sh` | 已通过 | 验证 test API、不使用 force、失败只告警、token 不泄露 |
 | `scripts/tests/test-pr-poller-learn.sh` | 已通过 | 验证评论唯一触发、权限、精确匹配、ID 传递、去重和失败语义 |
-| `Jenkinsfile-learn` | 已接入 | `PR_SHA` + `CHECK_RUN_ID` + `post.success/failure` |
+| `Jenkinsfile-learn` | 已接入 | `PR_SHA` + `CHECK_RUN_ID` + `post.success/failure` + 成功后测试项回写 |
 
 ### 真实验收记录（2026-08-23）
 
@@ -445,6 +492,10 @@ post {
 - Poller 创建 pending Check Run 成功，返回 `CHECK_RUN_ID=26887886`
 - Jenkins 完成态直接 `PATCH /check-runs/26887886`，返回 `HTTP 200`
 - Gitee 查询结果：`id=26887886`、`status=completed`、`conclusion=success`、`name=ci/jenkins`
+- Jenkins `#45`：PR head `17e5bc7...` 构建 `SUCCESS`
+- 最新 Check Run：`id=26887892`、`status=completed`、`conclusion=success`、`name=ci/jenkins`
+
+本次新增的 PR 审核项「测试」回写还没有跑真实 Jenkins 构建，待新提交触发后验收。
 
 尚未完成：
 
@@ -456,6 +507,7 @@ post {
 
 - [x] 普通模式构建不出现 `[pr-report]`（Jenkins #43）
 - [x] PR #2 构建成功后，Gitee 显示 `ci/jenkins` success（Jenkins #44 / Check Run 26887886）
+- [ ] PR #2 构建成功后，Gitee PR 审核项「测试」显示已完成
 - [ ] PR #2 构建失败后，Gitee 显示 `ci/jenkins` failure
 - [ ] 同一条 `start build` 评论第二次轮询不会触发新构建
 - [ ] 新 commit 出现但没有新评论时，不会触发新构建
@@ -471,7 +523,8 @@ post {
 2. 再讲状态模型：in_progress → completed(success/failure)
 3. 然后讲触发：只有提交者的精确 `start build` 评论才触发
 4. 接着讲 Jenkins：PR 模式只验证不部署
-5. 最后讲失败语义：post.failure 保证失败也能回写
+5. 再区分两层状态：Check Run 表示 CI 结果，PR 审核项「测试」表示流程确认
+6. 最后讲失败语义：post.failure 保证失败也能回写；测试项只在成功后通过
 
 ---
 
