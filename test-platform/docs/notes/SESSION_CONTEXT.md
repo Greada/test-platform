@@ -45,9 +45,9 @@
 
 ## 下次从这里继续
 
-- **Lesson 7 — 7c 你讲环节(2026-08-23 继续开讲)** — 7a/7b/7b' 已收官(#36 绿,坑⑩修复验收);当前环节:**你讲**(AI 讲 when 守卫矩阵,落盘 lesson-07 2.4 节)
-- 学习节奏(5 步):**你讲(当前环节)**→我写→你查→跑/审→复盘
-- 7c 内容(按 7.5 矩阵):Resolve Env/Deploy/Verify 加 `when { IS_PR != 'true' }` 跳过;Build if/else 分流(PR 只建 backend,坑③:compose 写死 learn 版不依赖 $DEPLOY_TARGET);Notify 组合 when(坑④:多条件默认 AND);参考矩阵详见 lesson-07 7.5
+- **Lesson 7 — 7c 我写环节(2026-08-23 继续)** — 7a/7b/7b' 已收官(#36 绿,坑⑩修复验收);你讲环节已落盘 lesson-07 2.4 节
+- 学习节奏(5 步):你讲 ✅→**我写(当前环节)**→你查→跑/审→复盘
+- 7c 定案(方案 A):拆分 `Resolve Mode`(永远执行,固化 `IS_PR`)与 `Resolve Env`(仅普通模式,固化 `DEPLOY_TARGET`);Deploy/Verify 加非 PR when;Build if/else(PR 只建 backend,compose 写死 learn 版);Notify 用“非 PR 且 prod”组合 when
 - 已有先修认知:#35 的 `skipped due to earlier failure(s)` 是"挂了才跳",7c 的 when 是"主动声明跳"——两种跳的日志形态对照(when 跳显示 stage 名+skipped,原因注明 when 条件)
 - 常驻测试 PR:**PR #2**(head=20df4fb),保持 open 不合并
 - 🔴 生产版裁定(存档):停用参考 `test-platform/Jenkinsfile`;终局 L9 后 learn 替换生产版并删旧文件(docs 副本同步更新)
@@ -125,3 +125,4 @@
 | 2026-08-22 | **7b' 跑/审：#34 绿（回归✅）/ #35 FAILURE 爆坑⑩**——GitSCM branches 只管"查"不管"拉"，默认 refspec（+refs/heads/*）不含 refs/pull，rev-parse 三连扑空（Test/Build `skipped due to earlier failure(s)`=7c 短路活教材；retry(2) 双轮目击第二次）；诊断+返工任务卡（窄版 refspec，坑⑧再练）落盘 lesson-07 2.3，贴墙坑表扩至⑩。**生产版裁定（用户指令）**：停止参考生产版，终局 learn 替换生产版并删旧文件。待用户返工 → 审查 → #36 |
 | 2026-08-22 | **7b' 返工收官 + 复盘回填**：R5 审出 refspec 大括号错位（编译级）+ refs 掉 s → 用户重打五段结构 → R6 过审提交（d24dbcb）；#36 SUCCESS 四大验收点全中（自定义 refspec 替换默认 / rev-parse 裸名复活 / `checkout -b pr-2 20df4fb` 对号 / 91 用例+双 200）；坑⑨兑现（`checkout -b` 即分支切换痕迹）+ 双 fetch 彩蛋（pipeline 来自 main、代码来自 PR 的字节级实证）；复盘 3.4 回填（R1-R6 审查史）；按裁定 A：AI 代复盘提交推送 → 下次 7c（when 守卫矩阵）你讲环节 |
 | 2026-08-22 | 全文档日终同步：README.md（Phase C 进度 + 生产版文件约定改停用标注）+ SESSION_CONTEXT（今日战绩存档 + 明日 7c 指针）；**2026-08-23 继续 7c 你讲环节** |
+| 2026-08-23 | 7c「你讲」完成：发现并修正原矩阵职责冲突（跳过 Resolve Env 会导致 IS_PR 未赋值），定案方案 A 拆分 Resolve Mode/Resolve Env；lesson-07 2.4 节落盘 when/if 分工、行为矩阵、坑③④、任务卡与 #37/#38 验证点；下一步用户实装 → AI 只读审查 |

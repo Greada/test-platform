@@ -90,13 +90,14 @@ when { expression { env.IS_PR == true } }      // ❌ 永远不成立:'true'(字
 
 ### 7.5 when 守卫矩阵（本课最终形态预览）
 
-7c 完成后，pipeline 行为矩阵（定案 2026-08-22）：
+7c 完成后，pipeline 行为矩阵（2026-08-23 按方案 A修正：模式解析与环境解析拆分）：
 
 | stage | 普通模式 | PR 模式 | 守卫方式 |
 |---|---|---|---|
+| Resolve Mode | ✅ | ✅ | 无守卫 |
+| Resolve Env | ✅ | **跳过** | `when { expression { env.IS_PR != 'true' } }` |
 | Test | ✅ | ✅ | 无守卫(两种模式都跑) |
 | Checkout | 默认(scm) | **检出 refs/pull/N/head** | if/else 分支(7b) |
-| Resolve Env | ✅ | **跳过** | `when { IS_PR != 'true' }` |
 | Build | backend + frontend | **只 backend**（验证编译，与生产版同款） | if/else 分支 |
 | Deploy | ✅ | 跳过 | `when` |
 | Verify | ✅ | 跳过 | `when` |
@@ -350,7 +351,113 @@ userRemoteConfigs: [[
 
 ### 2.4 小步 7c — when 守卫矩阵（待 7b' 完成后展开）
 
-按 7.5 矩阵给各 stage 加 `when` / if 分流，含 Notify 组合条件（坑④）和 Build 写死 compose 文件（坑③）。
+**先纠偏（2026-08-23，方案 A 定案）**：原矩阵写“PR 模式跳过 Resolve Env”，但当前 `Resolve Env` 同时负责两件事：
+
+1. 根据 `PR_NUMBER` 计算 `env.IS_PR`
+2. 根据 `DEPLOY_ENV` 计算 `env.DEPLOY_TARGET`
+
+如果 PR 模式直接跳过这个 stage，`IS_PR` 就不会被赋值，后续所有 `when { env.IS_PR != 'true' }` 都会失去判断依据。因此职责必须拆开：
+
+| stage | 职责 | 执行策略 |
+|---|---|---|
+| `Resolve Mode` | 只计算 `env.IS_PR` | 两种模式都执行 |
+| `Resolve Env` | 只计算 `env.DEPLOY_TARGET` | 仅普通模式执行 |
+
+**when 与 if 的分工**：
+
+- `when` 是 **stage 级守卫**：条件不满足时，整个 stage 不进入 `steps`，日志会显示 stage 被 when 条件跳过
+- `if/else` 是 **steps 内部分流**：stage 仍执行，只是选择不同路径
+- 判断标准：这个 stage 在当前模式下“不该存在”→ 用 `when`；这个 stage 在当前模式下“要做不同的事”→ 用 `if/else`
+
+7c 的最终行为矩阵：
+
+| stage | 普通模式 | PR 模式 | 守卫方式 |
+|---|---|---|---|
+| Resolve Mode | ✅ 计算 `IS_PR=false` | ✅ 计算 `IS_PR=true` | 无守卫 |
+| Resolve Env | ✅ 计算 `DEPLOY_TARGET` | 跳过 | `when { expression { env.IS_PR != 'true' } }` |
+| Checkout | 默认 SCM 检出 main | 检出 `refs/pull/N/head` | 已有 `if/else` |
+| Test | ✅ | ✅ | 无守卫 |
+| Build | backend + frontend | 只 backend | `if/else` 分流 |
+| Deploy | ✅ | 跳过 | `when` |
+| Verify | ✅ | 跳过 | `when` |
+| Notify | 仅 prod | 跳过 | 组合 `when` |
+
+**Resolve Mode / Resolve Env 结构**：
+
+```groovy
+stage('Resolve Mode') {
+    steps {
+        script {
+            env.IS_PR = params.PR_NUMBER ? 'true' : 'false'
+            echo "===== 构建模式 IS_PR = ${env.IS_PR} ====="
+        }
+    }
+}
+
+stage('Resolve Env') {
+    when {
+        expression { env.IS_PR != 'true' }
+    }
+    steps {
+        script {
+            // 只保留 DEPLOY_TARGET 逻辑
+        }
+    }
+}
+```
+
+**⚠️ 坑③：PR 模式下 `DEPLOY_TARGET` 是未赋值状态。** Build 的 PR 分支不能依赖 `$DEPLOY_TARGET` 选择 compose 文件，必须写死 `docker-compose.learn.yml`，并且只构建 backend：
+
+```groovy
+stage('Build') {
+    steps {
+        dir('test-platform') {
+            script {
+                if (env.IS_PR == 'true') {
+                    sh '''
+                        echo '===== PR 模式:只构建 backend ====='
+                        docker compose -f docker-compose.learn.yml build backend
+                    '''
+                } else {
+                    // 保留现有普通模式构建逻辑
+                }
+            }
+        }
+    }
+}
+```
+
+**⚠️ 坑④：when 多条件默认 AND。** Notify 需要“非 PR 且 prod”，正好是 AND：
+
+```groovy
+when {
+    expression { env.IS_PR != 'true' }
+    expression { env.DEPLOY_TARGET == 'prod' }
+}
+```
+
+如果将来要 OR 语义，必须显式使用 `anyOf`，不能默认期待多个 expression 之间是 OR。
+
+**两种“跳过”的日志区别**：
+
+- #35 的 `skipped due to earlier failure(s)`：前面失败导致后续被动跳过，构建结果已是 FAILURE
+- 7c 的 when 跳过：主动声明当前模式不需要该 stage，构建仍可 SUCCESS
+- 验收时要在日志中看到 `Resolve Env` / `Deploy` / `Verify` / `Notify` 因 when 条件跳过的证据
+
+**7c 任务卡（我写环节）**：
+
+1. 把现有 `Resolve Env` 拆成 `Resolve Mode` + `Resolve Env`
+2. `Resolve Mode` 固化 `env.IS_PR`
+3. `Resolve Env` / `Deploy` / `Verify` 加非 PR 守卫
+4. `Build` 加 if/else：PR 只构建 backend，compose 文件写死 learn 版
+5. `Notify` 改成“非 PR 且 prod”组合 when
+6. 更新 `Jenkinsfile-learn` 头部注释，登记 Lesson 7c
+
+**验证点：**
+
+- #37：`PR_NUMBER` 留空 —— `IS_PR=false`，`Resolve Env` 执行，backend/frontend 都构建，Deploy/Verify 正常执行
+- #38：`PR_NUMBER=2` —— `IS_PR=true`，`Resolve Env`/`Deploy`/`Verify`/`Notify` 被 when 跳过，Build 只执行 backend
+- 附加负样本：#38 即使把 `DEPLOY_ENV=prod`，Notify 也必须因“非 PR”条件被跳过
 
 ## 三、复盘（7a/7b/7b' 已回填）
 
