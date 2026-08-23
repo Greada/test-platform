@@ -44,19 +44,22 @@
   - [x] 7b — 手写 fetch/checkout ✅ #31/#32/#33
   - [x] 7b' — GitSCM 对照版 ✅ #34/#35/#36 含坑⑩返工
   - [x] 7c — when 守卫矩阵 ✅ #37/#38/#39
-- [ ] Lesson 8 — 状态回写(Report PR Status + post.failure)
+- [x] Lesson 8 — 状态回写(Report PR Status + post.failure) ✅ 主线收官(2026-08-23)
+  - [x] 8a — Gitee Check Runs + `CHECK_RUN_ID` 贯穿 ✅ #47 / Check Run 26887948 success
+  - [x] 8b — 评论唯一触发 + 去重/权限/新 SHA 防误触 ✅ 离线测试与真实 Poller 日志
+  - [x] 8c — PR 审核项「测试」回写 ✅ `pr-test-review.sh` HTTP 204,tester `greada accept=true`
+  - [ ] 8b-plus — 真实 failure 回写加练（可选,不阻塞 L9）
 - [ ] Lesson 9 — 并行优化 + 回滚(parallel + 镜像 tag + 回滚 Job)
 
 ## 下次从这里继续
 
-- **Lesson 8 — 状态回写(2026-08-23 继续)** — 讲义已落盘 lesson-08-status-writeback.md;本地实现与离线测试已完成,触发规则已定为方案 B:仅提交者精确评论 `start build` 才构建
-- 学习节奏(5 步):你讲 ✅→我写 ✅→你查 ✅(离线)→**跑/审(当前环节)**→复盘
+- **Lesson 9 — 并行优化 + 回滚(下次从“你讲”开始)** — 先讲 parallel 结构、镜像 tag 策略、回滚 Job 与 L8 状态链路的关系
 - 新版 CI/CD 路线已定:完全抛弃旧生产版参照;继续以 `Jenkinsfile-learn` 演进,完成 L8/L9 并通过五类验收后,再整体替换正式 `Jenkinsfile` 并删除旧体系
-- L8 目标:Report PR Status + `post.failure`，让 PR #2 在 Gitee 上显示 Jenkins 构建 SUCCESS/FAILURE 状态
-- L8 当前待办:配置 `/opt/.env.ci` 与 Jenkins 容器凭据,跑普通模式回归/PR success/PR failure/重复评论/新 commit 不自动触发/新评论触发六类验收
-- L8 先修材料:`scripts/pr-report.sh`、Gitee Check Runs API、`post{}` 成功/失败收尾机制、PR 模式参数与凭据来源
+- L8 收官证据:Jenkins #47 SUCCESS;Check Run 26887948 completed/success;PR 审核项 tester `greada accept=true`;三个离线测试通过;#47 与 Poller 日志无 token
+- L8 关键定案:Check Run 绑定 commit SHA,PR 审核项「测试」绑定流程测试人;新 commit 推送后测试项会重置,必须重新评论 `start build`
+- L8 遗留:真实 failure 回写是 L8b 可选加练,不阻塞 L9;做法见 lesson-08-status-writeback.md
 - 7c 存档:方案 A 拆分 `Resolve Mode`/`Resolve Env`;#39 负样本证明 PR+prod 时 Notify 仍被 when 跳过
-- 常驻测试 PR:**PR #2**(head=20df4fb),保持 open 不合并
+- 常驻测试 PR:**PR #2**,保持 open 不合并;head 以 Gitee 页面/API 为准,新推送后需重新评论 `start build`
 - 🔴 生产版裁定(存档):停用参考 `test-platform/Jenkinsfile`;终局 L9 后 learn 替换生产版并删旧文件(docs 副本同步更新)
 
 ## 2026-08-22 今日战绩(L7 全天:7a 收官验证 + 7b/7b' 两个小步全流程)
@@ -82,15 +85,24 @@
 - 侦查实证:`git ls-remote origin 'refs/pull/*'` → PR #1 head=`802f67d`(另有 `refs/pull/1/MERGE` 试合并 ref),匿名可访问,PR #1 可当测试 PR
 - 高发坑:when 字符串比较带引号 / sh 内注释用 `#` / detached HEAD 可接受 / Notify 组合 when 默认 AND
 
+## 2026-08-23 今日战绩(L8 主线收官)
+
+- **真实链路闭环**:Poller 评论触发 → pending Check Run → Jenkins #47 → success Check Run → PR「测试」审核项通过
+- **关键实证**:Gitee 不支持 GitHub statuses API(405);PR Check Run 必须贯穿 `CHECK_RUN_ID`;PR 测试审核项与 Check Run 是两层状态
+- **新增能力**:`pr-report.sh` 显式 PATCH、`pr-test-review.sh` 测试项回写、Poller 精确评论/权限/去重/新 SHA 防误触
+- **验证证据**:Jenkins #47 SUCCESS、Check Run 26887948 success、tester `greada accept=true`、三个离线脚本测试 PASS、日志无 token
+- **收官裁定**:L8 主线完成;真实 failure 演练转 L8b 可选加练;下次进入 L9 你讲环节
+
 ## 关键文件清单
 
 | 文件 | 说明 |
 |---|---|
-| `test-platform/Jenkinsfile-learn` | 学习版 pipeline（当前到 L5 完结） |
+| `test-platform/Jenkinsfile-learn` | 学习版 pipeline（当前到 L8 主线完结） |
 | `test-platform/docker-compose.learn.yml` | 学习版 compose（含 mysql/backend/frontend） |
 | `test-platform/backend/Dockerfile-learn` | 多阶段 backend Dockerfile（L1.5 产出） |
 | `test-platform/frontend/Dockerfile-learn` | 多阶段 frontend Dockerfile（L1.5 产出） |
 | `test-platform/docs/notes/lesson-03-deploy-verify.md` | L3 笔记 |
+| `test-platform/docs/notes/lesson-08-status-writeback.md` | L8 状态回写与 PR 测试项回写笔记 |
 | `test-platform/docs/notes/README.md` | 课程进度总览 |
 
 ## 环境信息
@@ -134,3 +146,4 @@
 | 2026-08-22 | 全文档日终同步：README.md（Phase C 进度 + 生产版文件约定改停用标注）+ SESSION_CONTEXT（今日战绩存档 + 明日 7c 指针）；**2026-08-23 继续 7c 你讲环节** |
 | 2026-08-23 | 7c「你讲」完成：发现并修正原矩阵职责冲突（跳过 Resolve Env 会导致 IS_PR 未赋值），定案方案 A 拆分 Resolve Mode/Resolve Env；lesson-07 2.4 节落盘 when/if 分工、行为矩阵、坑③④、任务卡与 #37/#38 验证点；下一步用户实装 → AI 只读审查 |
 | 2026-08-23 | **Lesson 7 整课收官**：7c 实装经 R1-R3 审查修正后，#37 普通模式回归/#38 PR 模式主路径/#39 PR+prod 负样本全部 SUCCESS；lesson-07 3.5 复盘回填，SESSION_CONTEXT 与 notes/README 进度同步；下一步 Lesson 8 你讲环节 |
+| 2026-08-23 | **Lesson 8 主线收官**：定案评论唯一触发与 Check Run/PR 测试项两层状态；`CHECK_RUN_ID` 贯穿 Poller→Jenkins→回写；新增 `pr-test-review.sh`；#47 真实链路 SUCCESS，Check Run 26887948 success，tester `greada accept=true`；离线测试与 token 扫描通过。真实 failure 演练转 L8b 可选，下次 L9 你讲环节 |

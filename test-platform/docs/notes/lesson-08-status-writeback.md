@@ -2,7 +2,7 @@
 
 > 目标：把「Jenkins 构建结果」回写到 Gitee PR 页面，形成完整可演示的 PR 闭环。  
 > 前置：Lesson 7 已完成 PR 模式、`refs/pull/N/head` 检出和 when 守卫矩阵。  
-> 状态：真实成功链路已验收（含 `CHECK_RUN_ID` 贯穿传递与 PR 审核项「测试」回写）；待补 PR 失败回写演练。
+> 状态：L8 主链路收官 ✅（含 `CHECK_RUN_ID` 贯穿传递、Check Run success、PR 审核项「测试」回写、评论唯一触发、安全检查）；PR failure 真实演练列为 L8b 可选加练，不阻塞进 L9。
 
 ---
 
@@ -46,6 +46,8 @@ Gitee PR 页面显示 success / failure
 2. `pr-test-review.sh`：把 token 用户在 PR 审核项「测试」里的状态标记为通过
 
 当前 token 用户是 `greada`，而 PR #2 的测试人也是 `greada`，所以可以直接标记。不需要使用 `force`；`force` 是管理员强制通过用的参数，不该作为常规链路。
+
+另一个关键差异：**PR 更新 head SHA 后，Gitee 会把审核项「测试」的通过状态重置**。这符合流程语义——旧代码测试通过不能代表新代码测试通过。所以每次推送新 commit 后，提交者必须重新评论 `start build`，Jenkins 成功后再重新回写测试项。
 
 ---
 
@@ -500,9 +502,34 @@ POST /api/v5/repos/{owner}/{repo}/pulls/{number}/test?access_token={token}
 - Jenkins `post.success` 依次回写 Check Run success 与 PR 审核项「测试」通过
 - Gitee 查询结果：测试人 `greada` 的 `accept=true`
 
-尚未完成：
+### L8 完成定论（2026-08-23）
 
-1. PR #2 失败回写验证
+按学习目标拆开看，L8 主线已经闭环：
+
+| 目标 | 结论 | 证据 |
+|---|---|---|
+| PR 页面能看到 Jenkins 状态 | 完成 | Check Run `26887948` 为 `completed/success` |
+| Jenkins 成功后回写测试审核项 | 完成 | `pr-test-review` 返回 `HTTP 204`，tester `greada accept=true` |
+| 只有提交者精确评论才触发 | 完成 | 离线测试覆盖权限、精确匹配、新 SHA、新评论 |
+| 同一条评论只触发一次 | 完成 | `manual:2:50943859` 入状态，下一轮 skip |
+| 普通模式不受污染 | 完成 | Jenkins `#43` 无 `[pr-report]` |
+| token 不进日志 | 完成 | Jenkins #47 控制台与 Poller 日志扫描无 token |
+
+因此 **L8 可以收官，下一步进入 L9**。唯一没有做真实破坏性演练的是 `post.failure`；这不是主链路缺口，因为 success/failure 共用同一个 `pr-report.sh` 与同一套参数传递，只差 Jenkins 进入的 post 分支和 `CI_STATUS=failure`。
+
+### 遗留：L8b 可选加练
+
+目标：制造一次真实 PR 构建失败，验证 Gitee 显示 `ci/jenkins failure`。
+
+建议做法：
+
+1. 在 PR 分支临时加入一个必失败测试
+2. 推送后由提交者评论 `start build`
+3. 确认 Jenkins 进入 `post.failure`
+4. 查询 Check Run：`status=completed`、`conclusion=failure`
+5. 删除必失败测试，推送后重新 `start build` 恢复 success
+
+这个演练会故意打断当前 PR，所以放在 L8 主线外，不阻塞 L9。
 
 ---
 
@@ -511,12 +538,12 @@ POST /api/v5/repos/{owner}/{repo}/pulls/{number}/test?access_token={token}
 - [x] 普通模式构建不出现 `[pr-report]`（Jenkins #43）
 - [x] PR #2 构建成功后，Gitee 显示 `ci/jenkins` success（Jenkins #44 / Check Run 26887886）
 - [x] PR #2 构建成功后，Gitee PR 审核项「测试」显示已完成（Jenkins #47 / tester `greada` accept=true）
-- [ ] PR #2 构建失败后，Gitee 显示 `ci/jenkins` failure
-- [ ] 同一条 `start build` 评论第二次轮询不会触发新构建
-- [ ] 新 commit 出现但没有新评论时，不会触发新构建
-- [ ] 新 commit 后提交者再评论 `start build`，会触发新构建并生成新状态
-- [ ] 非提交者或非精确命令评论不会触发构建
-- [ ] 日志不包含 Gitee token 或 Jenkins token
+- [ ] PR #2 构建失败后，Gitee 显示 `ci/jenkins` failure（L8b 可选加练）
+- [x] 同一条 `start build` 评论第二次轮询不会触发新构建（状态 `manual:2:50943859` + 下一轮 skip）
+- [x] 新 commit 出现但没有新评论时，不会触发新构建（`test-pr-poller-learn.sh`）
+- [x] 新 commit 后提交者再评论 `start build`，会触发新构建并生成新状态（#47 / Check Run 26887948）
+- [x] 非提交者或非精确命令评论不会触发构建（`test-pr-poller-learn.sh`）
+- [x] 日志不包含 Gitee token 或 Jenkins token（Jenkins #47 + Poller 日志扫描）
 
 ---
 
@@ -536,3 +563,44 @@ POST /api/v5/repos/{owner}/{repo}/pulls/{number}/test?access_token={token}
 - 设计方案：`../superpowers/specs/2026-08-23-cicd-redesign-design.md`
 - 实施计划：`../superpowers/plans/2026-08-23-cicd-l8-implementation.md`
 - Gitee Check Runs API：`https://help.gitee.com/base/pullrequest/ci-check`
+
+---
+
+## 十三、L8 收官卡
+
+### 1. 一句话讲解
+
+Jenkins 不直接“替人审核 PR”；它只提供两层结果：
+
+```text
+Check Run ci/jenkins = 这个 commit 的自动化 CI 结论
+PR 审核项「测试」 = 这个 PR 流程里测试人的确认
+```
+
+Jenkins 成功后，脚本先写 Check Run，再把 token 用户对应的测试审核项标记为通过。
+
+### 2. 日常使用
+
+```text
+提交者推送新 commit
+  ↓
+Gitee PR 测试项被重置
+  ↓
+提交者评论 start build
+  ↓
+Poller 创建 in_progress Check Run
+  ↓
+Jenkins 构建
+  ↓
+成功: Check Run success + 测试项通过
+失败: Check Run failure，测试项不通过
+```
+
+### 3. 排查表
+
+| 现象 | 先查 |
+|---|---|
+| 没触发构建 | 评论是否精确、评论人是否有权限、状态文件是否已记录 |
+| Check Run 停在 in_progress | Jenkins 构建状态、`CHECK_RUN_ID` 参数、`pr-report.sh` 日志 |
+| 测试项未通过 | token 用户是否测试人、Jenkins 是否 SUCCESS、API 返回码 |
+| 新 commit 后状态变了 | 正常现象；新 head 需要新的 `start build` |
