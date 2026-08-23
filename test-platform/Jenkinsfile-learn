@@ -20,7 +20,7 @@
 // Lesson 7b: Checkout stage(PR 模式:fetch refs/pull/N/head + checkout FETCH_HEAD;⚠️sh 单引号把 $ 留给 shell;坑⑦:detached HEAD 为预期)
 // Lesson 7b': Checkout PR 分支换 GitSCM 声明式(坑⑧:无 shell 层→双引号 ${params.X} 由 Groovy 插值;坑⑨:LocalBranch 后无"HEAD is now at",找分支切换痕迹)
 // Lesson 7c: when 守卫矩阵(Resolve Mode 常驻;PR 模式跳过 Resolve Env/Deploy/Verify/Notify,Build 只建 backend)
-// Lesson 8: PR 状态回写(Poller 传入 PR_SHA;post.success/post.failure 调 pr-report.sh 写 Gitee Check Run)
+// Lesson 8: PR 状态回写(Poller 传入 PR_SHA/CHECK_RUN_ID;post.success/post.failure 调 pr-report.sh 写 Gitee Check Run)
 // ============================================================================
 
 pipeline {
@@ -47,6 +47,7 @@ pipeline {
 	parameters {
 		string(name: 'PR_NUMBER', defaultValue: '', description: 'PR 编号(非空=PR 模式;普通构建留空)')
 		string(name: 'PR_SHA', defaultValue: '', description: 'PR head SHA(手动 PR 构建可留空,自动触发时由 Poller 传入)')
+		string(name: 'CHECK_RUN_ID', defaultValue: '', description: 'Gitee Check Run ID(自动触发时由 Poller 传入;手动构建可留空)')
 		choice(name: 'DEPLOY_ENV', choices: ['auto', 'test', 'prod'], description: '部署环境:auto/test/prod')
 	}
 
@@ -65,6 +66,7 @@ pipeline {
 					// ?: 三元 = if/else 压成一行;坑①:env 无布尔,只能存字符串 'true'/'false'
 					env.IS_PR = (params.PR_NUMBER ?: '') ? 'true' : 'false'
 					env.PR_SHA = params.PR_SHA ?: ''
+					env.CHECK_RUN_ID = params.CHECK_RUN_ID ?: ''
 					echo "===== 构建模式: IS_PR = ${env.IS_PR} ====="
 				}
 			}

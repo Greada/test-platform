@@ -140,10 +140,17 @@ for comment in comments:
       fi
 
       log "PR #${PR_NUMBER} comment ${COMMENT_ID} accepted for ${PR_SHA}, writing pending status"
-      if ! ENV_FILE="$ENV_FILE" PR_REPORT_STRICT=1 PR_NUMBER="$PR_NUMBER" PR_ID="$PR_ID" PR_SHA="$PR_SHA" \
+      if ! PENDING_OUTPUT="$(ENV_FILE="$ENV_FILE" PR_REPORT_STRICT=1 PR_NUMBER="$PR_NUMBER" PR_ID="$PR_ID" PR_SHA="$PR_SHA" \
         CI_STATUS=pending BUILD_URL="${JENKINS_URL}/job/${JENKINS_JOB}/" \
-        bash "$REPORT_SCRIPT" >> "$LOG_FILE" 2>&1; then
+        bash "$REPORT_SCRIPT" 2>&1)"; then
+        printf '%s\n' "$PENDING_OUTPUT" >> "$LOG_FILE"
         log "PR #${PR_NUMBER} pending write failed, retry next cycle"
+        continue
+      fi
+      printf '%s\n' "$PENDING_OUTPUT" >> "$LOG_FILE"
+      CHECK_RUN_ID="$(printf '%s\n' "$PENDING_OUTPUT" | sed -n 's/^\[pr-report\] CHECK_RUN_ID=//p' | tail -n 1)"
+      if [ -z "$CHECK_RUN_ID" ]; then
+        log "PR #${PR_NUMBER} pending write did not return check run ID, retry next cycle"
         continue
       fi
 
@@ -151,7 +158,8 @@ for comment in comments:
         -u "${JENKINS_USER}:${JENKINS_TOKEN}" \
         -X POST "${JENKINS_INTERNAL_URL}/job/${JENKINS_JOB}/buildWithParameters" \
         --data-urlencode "PR_NUMBER=${PR_NUMBER}" \
-        --data-urlencode "PR_SHA=${PR_SHA}")"
+        --data-urlencode "PR_SHA=${PR_SHA}" \
+        --data-urlencode "CHECK_RUN_ID=${CHECK_RUN_ID}")"
 
       if [ "$HTTP_CODE" = "201" ]; then
         echo "$KEY" >> "$STATE_FILE"
