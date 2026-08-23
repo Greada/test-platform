@@ -248,6 +248,7 @@ pipeline {
 					withEnv(['CI_STATUS=success']) {
 						sh 'bash test-platform/scripts/pr-report.sh || true'
 					}
+					sh 'bash test-platform/scripts/pr-test-review.sh || true'
 				}
 			}
 		}
