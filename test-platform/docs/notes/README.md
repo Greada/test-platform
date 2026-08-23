@@ -17,8 +17,8 @@
 - [x] Lesson 6 — 规范化(options + 镜像锁版本)
 
 ### Phase C — 高级（进行中）
-- [ ] Lesson 7 — PR 模式(IS_PR + refs/pull/N/head)— 7a ✅ 7b ✅ 7b' ✅,7c 待做(when 守卫矩阵)
-- [ ] Lesson 8 — 状态回写(Report PR Status + post.failure)
+- [x] Lesson 7 — PR 模式(IS_PR + refs/pull/N/head) ✅ 整课收官(#37/#38/#39)
+- [ ] Lesson 8 — 状态回写(Report PR Status + post.failure)— 当前进度
 - [ ] Lesson 9 — 并行优化 + 回滚(parallel + 镜像 tag + 回滚 Job)
 
 ## 补充知识

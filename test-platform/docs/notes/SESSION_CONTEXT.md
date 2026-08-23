@@ -17,7 +17,7 @@
 9. **安全性能自检**：交付时附带安全与性能自检清单
 10. **及时更新文档**：每次变更后同步更新相关文档
 
-## 课程进度（截至 2026-08-21）
+## 课程进度（截至 2026-08-23）
 
 ### Phase A — 能跑起来(MVP)
 
@@ -39,16 +39,21 @@
   - [x] 6c — 镜像锁版本 ✅ 4 tag 锁定(curl 8.21.0/temurin 17.0.19_10/node 20.19.4/nginx 1.31.4),#10 绿灯
 
 ### Phase C — 高级（进行中）
-- [ ] Lesson 7 — PR 模式(IS_PR + refs/pull/N/head)— 7a ✅(#29/#30),7b ✅(#31/#32/#33),7b' ✅(#34/#35/#36 含坑⑩返工),7c 待开
+- [x] Lesson 7 — PR 模式(IS_PR + refs/pull/N/head) ✅ 整课收官(2026-08-23)
+  - [x] 7a — PR_NUMBER 参数 + Resolve Mode ✅ #29/#30
+  - [x] 7b — 手写 fetch/checkout ✅ #31/#32/#33
+  - [x] 7b' — GitSCM 对照版 ✅ #34/#35/#36 含坑⑩返工
+  - [x] 7c — when 守卫矩阵 ✅ #37/#38/#39
 - [ ] Lesson 8 — 状态回写(Report PR Status + post.failure)
 - [ ] Lesson 9 — 并行优化 + 回滚(parallel + 镜像 tag + 回滚 Job)
 
 ## 下次从这里继续
 
-- **Lesson 7 — 7c 我写环节(2026-08-23 继续)** — 7a/7b/7b' 已收官(#36 绿,坑⑩修复验收);你讲环节已落盘 lesson-07 2.4 节
-- 学习节奏(5 步):你讲 ✅→**我写(当前环节)**→你查→跑/审→复盘
-- 7c 定案(方案 A):拆分 `Resolve Mode`(永远执行,固化 `IS_PR`)与 `Resolve Env`(仅普通模式,固化 `DEPLOY_TARGET`);Deploy/Verify 加非 PR when;Build if/else(PR 只建 backend,compose 写死 learn 版);Notify 用“非 PR 且 prod”组合 when
-- 已有先修认知:#35 的 `skipped due to earlier failure(s)` 是"挂了才跳",7c 的 when 是"主动声明跳"——两种跳的日志形态对照(when 跳显示 stage 名+skipped,原因注明 when 条件)
+- **Lesson 8 — 状态回写你讲环节(2026-08-23 继续)** — Lesson 7 已整课收官(#37/#38/#39 三连全绿)
+- 学习节奏(5 步):**你讲(当前环节)**→我写→你查→跑/审→复盘
+- L8 目标:Report PR Status + `post.failure`，让 PR #2 在 Gitee 上显示 Jenkins 构建 SUCCESS/FAILURE 状态
+- L8 先修材料:`scripts/pr-report.sh`、Gitee Commit Status API、`post{}` 成功/失败收尾机制、PR 模式参数与凭据来源
+- 7c 存档:方案 A 拆分 `Resolve Mode`/`Resolve Env`;#39 负样本证明 PR+prod 时 Notify 仍被 when 跳过
 - 常驻测试 PR:**PR #2**(head=20df4fb),保持 open 不合并
 - 🔴 生产版裁定(存档):停用参考 `test-platform/Jenkinsfile`;终局 L9 后 learn 替换生产版并删旧文件(docs 副本同步更新)
 
@@ -126,3 +131,4 @@
 | 2026-08-22 | **7b' 返工收官 + 复盘回填**：R5 审出 refspec 大括号错位（编译级）+ refs 掉 s → 用户重打五段结构 → R6 过审提交（d24dbcb）；#36 SUCCESS 四大验收点全中（自定义 refspec 替换默认 / rev-parse 裸名复活 / `checkout -b pr-2 20df4fb` 对号 / 91 用例+双 200）；坑⑨兑现（`checkout -b` 即分支切换痕迹）+ 双 fetch 彩蛋（pipeline 来自 main、代码来自 PR 的字节级实证）；复盘 3.4 回填（R1-R6 审查史）；按裁定 A：AI 代复盘提交推送 → 下次 7c（when 守卫矩阵）你讲环节 |
 | 2026-08-22 | 全文档日终同步：README.md（Phase C 进度 + 生产版文件约定改停用标注）+ SESSION_CONTEXT（今日战绩存档 + 明日 7c 指针）；**2026-08-23 继续 7c 你讲环节** |
 | 2026-08-23 | 7c「你讲」完成：发现并修正原矩阵职责冲突（跳过 Resolve Env 会导致 IS_PR 未赋值），定案方案 A 拆分 Resolve Mode/Resolve Env；lesson-07 2.4 节落盘 when/if 分工、行为矩阵、坑③④、任务卡与 #37/#38 验证点；下一步用户实装 → AI 只读审查 |
+| 2026-08-23 | **Lesson 7 整课收官**：7c 实装经 R1-R3 审查修正后，#37 普通模式回归/#38 PR 模式主路径/#39 PR+prod 负样本全部 SUCCESS；lesson-07 3.5 复盘回填，SESSION_CONTEXT 与 notes/README 进度同步；下一步 Lesson 8 你讲环节 |

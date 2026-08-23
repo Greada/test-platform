@@ -459,7 +459,7 @@ when {
 - #38：`PR_NUMBER=2` —— `IS_PR=true`，`Resolve Env`/`Deploy`/`Verify`/`Notify` 被 when 跳过，Build 只执行 backend
 - 附加负样本：#38 即使把 `DEPLOY_ENV=prod`，Notify 也必须因“非 PR”条件被跳过
 
-## 三、复盘（7a/7b/7b' 已回填）
+## 三、复盘（7a/7b/7b'/7c 已回填）
 
 ### 3.1 7a — 验证通过（2026-08-22，#29/#30 双绿）
 
@@ -522,7 +522,31 @@ when {
 
 **坑⑩的教学价值**：它不是手滑，是**机制盲区**——branches 只管"查"、refspec 才管"拉"，两个职责被名字掩盖（branches 听起来像"我要拉哪些分支"）。#35 用一次真实失败把这条机制刻进了经验，比讲义预告十个观察点都值。
 
-<!-- 7c 完成后继续回填 -->
+### 3.5 7c — 验证通过，Lesson 7 整课收官（2026-08-23，#37/#38/#39 三连）
+
+**实装审查史（R1-R3）**：
+
+| 轮次 | 病灶 | 修正 |
+|---|---|---|
+| R1 | `steps{}` 内直接写 `if/else`，未包 `script{}` | Build 分流包进 `script{}` |
+| R2 | Notify 写成 `env.PR_IS`，变量名拼写错误 | 改为 `env.IS_PR` |
+| R3 | 两个条件写在同一个 `expression{}` 里，Groovy 闭包只返回最后一条表达式，`DEPLOY_TARGET == 'prod'` 被丢弃 | 拆成两个独立 `expression{}`，Declarative Pipeline 默认 AND |
+
+**三次构建实证**：
+
+| build | 参数 | 关键证据 | 结果 |
+|---|---|---|---|
+| #37 | `PR_NUMBER` 留空 + `DEPLOY_ENV=prod` | `IS_PR=false`；91 用例通过；backend/frontend 都构建；Deploy/Verify 执行且双 200；Notify 执行 | SUCCESS ✅ 普通模式回归 |
+| #38 | `PR_NUMBER=2` + `DEPLOY_ENV=auto` | `IS_PR=true`；检出 PR #2（`20df4fb`）；91 用例通过；只构建 backend；Resolve Env/Deploy/Verify/Notify 均显示 `skipped due to when conditional` | SUCCESS ✅ PR 模式主路径 |
+| #39 | `PR_NUMBER=2` + `DEPLOY_ENV=prod` | `IS_PR=true`；91 用例通过；只构建 backend；四个部署相关 stage 仍全部 when 跳过，Notify 不因 prod 参数触发 | SUCCESS ✅ 负样本闭环 |
+
+**验收结论**：
+
+1. 方案 A 职责拆分成立：`Resolve Mode` 常驻固化模式，`Resolve Env` 仅普通模式解析部署目标
+2. `when` 主动跳过与失败被动跳过的日志差异已实证：when 输出 `Stage "X" skipped due to when conditional`
+3. Build 的 PR 分支不依赖 `DEPLOY_TARGET`，compose 文件写死 learn 版，坑③未复发
+4. Notify 的两个独立 `expression{}` 按默认 AND 生效，坑④通过 #37/#39 正反样本验证
+5. Lesson 7 四个小步全部收官，下一步进入 Lesson 8 状态回写
 
 ## 变更日志
 
@@ -537,3 +561,4 @@ when {
 | 2026-08-22 | 7b'「你讲」环节落盘 2.3 节：命令式 vs 声明式 / 生产版 GitSCM 逐块解剖（$class/branches/userRemoteConfigs/LocalBranch+CleanCheckout）/ **坑⑧ = $ 归属**（7b 单引号 shell vs 7b' 双引号 Groovy，引号规则对称） / **坑⑨ = GitSCM 证据行变化** / 两版能力对照表（谁管 clean/localBranch/changelog/refspec）+ 任务卡 + #34/#35 验证点。下一步：用户实装 → AI 只读审查 |
 | 2026-08-22 | 7b' 实装与审查：用户手写 GitSCM 版（R1 extensions 缺失 → R2 坑⑧复发 localBranch 单引号 + $class 类名小写 → R4 全清过审）+ AI 补头注释随代码提交（c40d839）；跑/审：#34 绿（回归✅）/**#35 FAILURE 爆坑⑩**（branches 只管查不管拉，默认 refspec 不含 refs/pull）→ 返工任务卡（窄版 refspec，坑⑧再练）落盘 2.3；贴墙坑表扩至⑩；**生产版裁定：停用参照，终局 learn 替换生产版并删旧文件**。待返工 → 审查 → #36 |
 | 2026-08-22 | **7b' 返工收官**：R5 审出 refspec 大括号错位（编译级）+ refs 掉 s → 用户重打五段结构 → R6 过审（d24dbcb）；#36 SUCCESS 四大验收点全中（自定义 refspec 替换默认实证 / rev-parse 裸名复活 / `checkout -b pr-2` 对号 / 91+双200）；复盘 3.4 回填（R1-R6 审查史 + 坑⑨兑现 + 双 fetch 彩蛋）→ 进 7c（when 守卫矩阵） |
+| 2026-08-23 | **7c 验证通过，Lesson 7 整课收官**：R1-R3 审查修正（script 包裹 / PR_IS 拼写 / expression 拆分）；#37 普通模式回归 + #38 PR 模式主路径 + #39 PR+prod 负样本三连全绿；复盘 3.5 回填 → 进 Lesson 8（状态回写） |
