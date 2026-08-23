@@ -16,9 +16,9 @@
 - [x] Lesson 5 — 失败处理 + 产物(post + junit + CI 看板)
 - [x] Lesson 6 — 规范化(options + 镜像锁版本)
 
-### Phase C — 高级
-- [ ] Lesson 7 — PR 模式(IS_PR + refs/pull/N/head)
-- [ ] Lesson 8 — 状态回写(Report PR Status + post.failure)
+### Phase C — 高级（进行中）
+- [x] Lesson 7 — PR 模式(IS_PR + refs/pull/N/head) ✅ 整课收官(#37/#38/#39)
+- [ ] Lesson 8 — 状态回写(Report PR Status + post.failure)— 讲义/本地实现完成,`start build` 评论唯一触发已定案,待真实环境验收
 - [ ] Lesson 9 — 并行优化 + 回滚(parallel + 镜像 tag + 回滚 Job)
 
 ## 补充知识
@@ -27,7 +27,7 @@
 
 ## 文件约定
 - `test-platform/Jenkinsfile-learn` — 本课程逐课构建的新 pipeline
-- `test-platform/Jenkinsfile` — 旧版,保留作参考,不动
+- `test-platform/Jenkinsfile` — ⚠️ 旧生产版,2026-08-22 裁定**停用参照**(其 PR 检出缺 refspec,坑⑩同在且未被验证);终局:L9 后 learn 版升级替换并删除
 - `test-platform/docs/notes/lesson-XX-*.md` — 每课笔记
 
 ## 学习节奏(每课固定 5 步,2026-08-21 起)

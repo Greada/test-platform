@@ -17,7 +17,7 @@
 9. **安全性能自检**：交付时附带安全与性能自检清单
 10. **及时更新文档**：每次变更后同步更新相关文档
 
-## 课程进度（截至 2026-08-21）
+## 课程进度（截至 2026-08-23）
 
 ### Phase A — 能跑起来(MVP)
 
@@ -39,18 +39,33 @@
   - [x] 6c — 镜像锁版本 ✅ 4 tag 锁定(curl 8.21.0/temurin 17.0.19_10/node 20.19.4/nginx 1.31.4),#10 绿灯
 
 ### Phase C — 高级（进行中）
-- [ ] Lesson 7 — PR 模式(IS_PR + refs/pull/N/head)— 7a ✅(#29/#30 双绿),7b 进行中
+- [x] Lesson 7 — PR 模式(IS_PR + refs/pull/N/head) ✅ 整课收官(2026-08-23)
+  - [x] 7a — PR_NUMBER 参数 + Resolve Mode ✅ #29/#30
+  - [x] 7b — 手写 fetch/checkout ✅ #31/#32/#33
+  - [x] 7b' — GitSCM 对照版 ✅ #34/#35/#36 含坑⑩返工
+  - [x] 7c — when 守卫矩阵 ✅ #37/#38/#39
 - [ ] Lesson 8 — 状态回写(Report PR Status + post.failure)
 - [ ] Lesson 9 — 并行优化 + 回滚(parallel + 镜像 tag + 回滚 Job)
 
 ## 下次从这里继续
 
-- **Lesson 7 — 7b 跑/审环节** — 7a 收官(#29/#30 双绿);7b 代码已实装+提交+推送(cf7218d),AI 只读审查过(坑②✅ 单引号✅ 无越界✅)
-- 学习节奏(5 步):你讲✅→我写✅→你查✅→**跑/审(当前环节)**→复盘
-- 7b 验证点:#31(留空)→ Checkout 走 else 分支 echo,全流程与 #29 无差异,双 200;#32(PR_NUMBER=1)→ ①fetch 日志 ②`HEAD is now at 802f67d`(与侦查对号=检出铁证) ③detached HEAD 警告(坑⑦预期) ④Test 91 用例绿 ⑤Build/Deploy/Verify 照跑(7c 才跳过)
-- 侦查补充:PR #1 head=802f67d 仅改 AGENTS.md(+30/-15,后端零改动)→ PR 构建 Test 预期同绿
-- 验证双绿后:复盘回填 lesson-07(三、复盘 + 2.2「待实装」状态) + SESSION_CONTEXT → 进 7b'(GitSCM 对照版)
-- 重启后快速续接:对 AI 说「读 SESSION_CONTEXT 继续 L7」即可
+- **Lesson 8 — 状态回写(2026-08-23 继续)** — 讲义已落盘 lesson-08-status-writeback.md;本地实现与离线测试已完成,触发规则已定为方案 B:仅提交者精确评论 `start build` 才构建
+- 学习节奏(5 步):你讲 ✅→我写 ✅→你查 ✅(离线)→**跑/审(当前环节)**→复盘
+- 新版 CI/CD 路线已定:完全抛弃旧生产版参照;继续以 `Jenkinsfile-learn` 演进,完成 L8/L9 并通过五类验收后,再整体替换正式 `Jenkinsfile` 并删除旧体系
+- L8 目标:Report PR Status + `post.failure`，让 PR #2 在 Gitee 上显示 Jenkins 构建 SUCCESS/FAILURE 状态
+- L8 当前待办:配置 `/opt/.env.ci` 与 Jenkins 容器凭据,跑普通模式回归/PR success/PR failure/重复评论/新 commit 不自动触发/新评论触发六类验收
+- L8 先修材料:`scripts/pr-report.sh`、Gitee Check Runs API、`post{}` 成功/失败收尾机制、PR 模式参数与凭据来源
+- 7c 存档:方案 A 拆分 `Resolve Mode`/`Resolve Env`;#39 负样本证明 PR+prod 时 Notify 仍被 when 跳过
+- 常驻测试 PR:**PR #2**(head=20df4fb),保持 open 不合并
+- 🔴 生产版裁定(存档):停用参考 `test-platform/Jenkinsfile`;终局 L9 后 learn 替换生产版并删旧文件(docs 副本同步更新)
+
+## 2026-08-22 今日战绩(L7 全天:7a 收官验证 + 7b/7b' 两个小步全流程)
+
+- **7 个小环节**:7a 验证收官(#29/#30)→ 7b 讲义→实装(R1-R2 审查)→验证(#31/#32/#33)→复盘 → 7b' 讲义→实装(R1-R4)→跑审(#34/#35 爆坑⑩)→返工(R5-R6)→验证(#36)→复盘
+- **12 次构建**:#29-#36(+中间穿插),含 3 次高价值失败(#32 老 PR 负样本/#35 坑⑩/#35 内 retry 双轮)
+- **坑表扩至 ⑩**,最重:⑧($ 归属:有 shell 层→单引号放行;无 shell 层→双引号 GString `${params.X}`)⑩(GitSCM branches 只管"查"不管"拉",refs/pull 需显式 refspec)⑦实证修正(隐式 checkout 本就 detached)
+- **方法论收获**:①侦查-实证循环(PR #1 纠偏:PR 补丁≠树距离)②负样本价值(两次失败>多次成功)③五段拆解法拼 GString(前缀/插值/冒号/前缀/插值/后缀)④R1-R6 审查病灶规律:抄生产版全对,自己拼参数就错
+- **工程决策**:生产版停用裁定(参照物自身未经验证)→ learn 终局升级替换
 
 ### L7 定案计划(2026-08-22,零猜测侦查完成)
 
@@ -110,3 +125,12 @@
 | 2026-08-22 | 7b「你讲」环节完成并落盘 lesson-07 2.2 节(隐式 checkout 真相/fetch+FETCH_HEAD 拆解/坑⑦=验收证据/params 三层注入/新坑:sh 单引号留 $ 给 shell/任务卡+验证点);侦查补充:本地 fetch PR #1(802f67d)实证仅改 AGENTS.md 后端零改动;下一步:用户写 Checkout stage → AI 只读审查 |
 | 2026-08-21 | L6b 彻底闭环（#9 绿灯 89.3s，双 HTTP 200，91 用例，检出 7c55751）→ 进 L6c 镜像锁版本 |
 | 2026-08-22 | 7b「我写→你查」完成：用户实装 Checkout stage（含 else 分支 echo）并提交推送（cf7218d，随附 lesson-07 2.2 文档）；AI 只读审查过——代码本体过审，1 个一致性问题（头注释缺 7b 登记行）+ SESSION_CONTEXT 尾巴过时；按裁定 B：先补头注释登记 + SESSION_CONTEXT 状态同步成一个自洽提交，再跑 #31/#32 验证 |
+| 2026-08-22 | **侦查纠偏**（用户指出 PR #1 太老会报错，实证属实）：PR #1 树停在 2026-07-05（merge-base），main 领先 63 提交，learn 文件全缺 → "#32 填 1"方案作废（Build 必挂）；lesson-07 三处 + SESSION_CONTEXT 错误侦查记载同步修正；按裁定 A：AI 备好 smoke PR 分支（lesson7-smoke-pr + 占位文档 pr-smoke.md，已推送），待用户 Gitee 建 PR |
+| 2026-08-22 | **7b 验证收官 + 复盘回填**：用户实操三连——#31（留空，else echo + 双 200）/#32（填 1=老 PR，负样本：Build 挂 compose 缺失，纠偏预言实证；retry(2) 从头重跑双轮目击）/#33（填 2=用户自建真 PR，`HEAD is now at 20df4fb` 对号铁证 + 91 用例 + 双 200，71s）；坑⑦实证修正（隐式 checkout 本就 detached，无警告，`Previous HEAD position` 是证据行）；lesson-07 3.3 回填；smoke 分支未用已删（本地+远端）；PR #2 任常驻测试 PR；按裁定 A：AI 代复盘提交推送 → 下次 7b'（GitSCM 对照版）你讲环节 |
+| 2026-08-22 | 7b'「你讲」环节完成并落盘 lesson-07 2.3 节：命令式 vs 声明式 / 生产版 GitSCM 逐块解剖 / 坑⑧=$ 归属（7b 单引号 shell vs 7b' 双引号 Groovy）/ 坑⑨=GitSCM+LocalBranch 后验收证据行变化 / 两版能力对照表 + 任务卡 + #34/#35 验证点；贴墙坑表扩至 ⑨。下一步：用户实装 Checkout PR 分支 GitSCM 化 → AI 只读审查 |
+| 2026-08-22 | 7b'「我写→你查」完成：用户实装 GitSCM 版 Checkout（R1：extensions 整块缺失；R2：坑⑧复发 localBranch 单引号 + $class 类名小写——病灶集中在"照抄生产版全对、自己拼参数就错"，坑⑧肌肉记忆未建立；R3 保存事故后 R4 全清过审，`&& params.PR_NUMBER` 冗余条件已删）；按裁定 A：AI 补头注释登记 + SESSION_CONTEXT 指针拨到跑/审，随用户代码一笔提交 → 待跑 #34/#35 |
+| 2026-08-22 | **7b' 跑/审：#34 绿（回归✅）/ #35 FAILURE 爆坑⑩**——GitSCM branches 只管"查"不管"拉"，默认 refspec（+refs/heads/*）不含 refs/pull，rev-parse 三连扑空（Test/Build `skipped due to earlier failure(s)`=7c 短路活教材；retry(2) 双轮目击第二次）；诊断+返工任务卡（窄版 refspec，坑⑧再练）落盘 lesson-07 2.3，贴墙坑表扩至⑩。**生产版裁定（用户指令）**：停止参考生产版，终局 learn 替换生产版并删旧文件。待用户返工 → 审查 → #36 |
+| 2026-08-22 | **7b' 返工收官 + 复盘回填**：R5 审出 refspec 大括号错位（编译级）+ refs 掉 s → 用户重打五段结构 → R6 过审提交（d24dbcb）；#36 SUCCESS 四大验收点全中（自定义 refspec 替换默认 / rev-parse 裸名复活 / `checkout -b pr-2 20df4fb` 对号 / 91 用例+双 200）；坑⑨兑现（`checkout -b` 即分支切换痕迹）+ 双 fetch 彩蛋（pipeline 来自 main、代码来自 PR 的字节级实证）；复盘 3.4 回填（R1-R6 审查史）；按裁定 A：AI 代复盘提交推送 → 下次 7c（when 守卫矩阵）你讲环节 |
+| 2026-08-22 | 全文档日终同步：README.md（Phase C 进度 + 生产版文件约定改停用标注）+ SESSION_CONTEXT（今日战绩存档 + 明日 7c 指针）；**2026-08-23 继续 7c 你讲环节** |
+| 2026-08-23 | 7c「你讲」完成：发现并修正原矩阵职责冲突（跳过 Resolve Env 会导致 IS_PR 未赋值），定案方案 A 拆分 Resolve Mode/Resolve Env；lesson-07 2.4 节落盘 when/if 分工、行为矩阵、坑③④、任务卡与 #37/#38 验证点；下一步用户实装 → AI 只读审查 |
+| 2026-08-23 | **Lesson 7 整课收官**：7c 实装经 R1-R3 审查修正后，#37 普通模式回归/#38 PR 模式主路径/#39 PR+prod 负样本全部 SUCCESS；lesson-07 3.5 复盘回填，SESSION_CONTEXT 与 notes/README 进度同步；下一步 Lesson 8 你讲环节 |
