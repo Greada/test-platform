@@ -19,6 +19,7 @@
 ### Phase C — 高级（进行中）
 - [x] Lesson 7 — PR 模式(IS_PR + refs/pull/N/head) ✅ 整课收官(#37/#38/#39)
 - [x] Lesson 8 — 状态回写(Report PR Status + post.failure) ✅ 主线收官(#47/Check Run 26887948/测试项通过;failure 演练转 L8b 可选)
+- 📌 L8 日终状态:PR #2 已 merged 且测试项被重置,不再作为常驻测试 PR;L9 开始前先从干净 main 新建 docs-only open PR
 - [ ] Lesson 9 — 并行优化 + 回滚(parallel + 镜像 tag + 回滚 Job)
 
 ## 补充知识

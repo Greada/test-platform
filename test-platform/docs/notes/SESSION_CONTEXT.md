@@ -59,7 +59,9 @@
 - L8 关键定案:Check Run 绑定 commit SHA,PR 审核项「测试」绑定流程测试人;新 commit 推送后测试项会重置,必须重新评论 `start build`
 - L8 遗留:真实 failure 回写是 L8b 可选加练,不阻塞 L9;做法见 lesson-08-status-writeback.md
 - 7c 存档:方案 A 拆分 `Resolve Mode`/`Resolve Env`;#39 负样本证明 PR+prod 时 Notify 仍被 when 跳过
-- 常驻测试 PR:**PR #2**,保持 open 不合并;head 以 Gitee 页面/API 为准,新推送后需重新评论 `start build`
+- 🔴 L8 收官后环境变化:**PR #2 已被 Gitee 判定为 merged**,不能再当常驻 open PR 使用。原因是 main 曾 fast-forward 到 PR head `4098de5`;此后即使 main 用 revert 保持文件内容干净,PR 状态也不会回到 open。
+- **L9 前置动作**:从最新 main 新建干净 docs-only 分支,推送 fork 后创建新的 open PR 并指定 `greada` 为 tester。不要复用旧 `docs/update-agents-md-v3.3` 分支,因为它还继承 `AGENTS.md` 大改和后端临时注释等无关实验改动。
+- 新常驻 PR 建好后:提交者推送新 head → Gitee 重置测试项 → 提交者精确评论 `start build` → Poller 触发 Jenkins。评论 `50943911` 属于已 merged 的 PR #2,不会被消费,这是当前 Poller 报 “No open PR with a valid head SHA” 的直接原因。
 - 🔴 生产版裁定(存档):停用参考 `test-platform/Jenkinsfile`;终局 L9 后 learn 替换生产版并删旧文件(docs 副本同步更新)
 
 ## 2026-08-22 今日战绩(L7 全天:7a 收官验证 + 7b/7b' 两个小步全流程)
@@ -92,6 +94,7 @@
 - **新增能力**:`pr-report.sh` 显式 PATCH、`pr-test-review.sh` 测试项回写、Poller 精确评论/权限/去重/新 SHA 防误触
 - **验证证据**:Jenkins #47 SUCCESS、Check Run 26887948 success、tester `greada accept=true`、三个离线脚本测试 PASS、日志无 token
 - **收官裁定**:L8 主线完成;真实 failure 演练转 L8b 可选加练;下次进入 L9 你讲环节
+- **最终收尾发现**:PR #2 因 main fast-forward 到同 head 被判定 merged;API 实证 `state=merged`、head 冻结 `4098de5`、tester `greada accept=False`。L8 的 #47/Check Run/测试项通过是历史验收事实,不代表当前 PR 状态仍 open。
 
 ## 关键文件清单
 
@@ -147,3 +150,4 @@
 | 2026-08-23 | 7c「你讲」完成：发现并修正原矩阵职责冲突（跳过 Resolve Env 会导致 IS_PR 未赋值），定案方案 A 拆分 Resolve Mode/Resolve Env；lesson-07 2.4 节落盘 when/if 分工、行为矩阵、坑③④、任务卡与 #37/#38 验证点；下一步用户实装 → AI 只读审查 |
 | 2026-08-23 | **Lesson 7 整课收官**：7c 实装经 R1-R3 审查修正后，#37 普通模式回归/#38 PR 模式主路径/#39 PR+prod 负样本全部 SUCCESS；lesson-07 3.5 复盘回填，SESSION_CONTEXT 与 notes/README 进度同步；下一步 Lesson 8 你讲环节 |
 | 2026-08-23 | **Lesson 8 主线收官**：定案评论唯一触发与 Check Run/PR 测试项两层状态；`CHECK_RUN_ID` 贯穿 Poller→Jenkins→回写；新增 `pr-test-review.sh`；#47 真实链路 SUCCESS，Check Run 26887948 success，tester `greada accept=true`；离线测试与 token 扫描通过。真实 failure 演练转 L8b 可选，下次 L9 你讲环节 |
+| 2026-08-23 | **L8 日终收尾**：复核 PR #2 当前 API 状态为 merged、head `4098de5`、tester 已重置；Poller 连续输出 “No open PR with a valid head SHA”。定论：#2 不再是常驻 PR，L8 验收证据保留为历史事实；下次先从干净 main 建新 docs-only 常驻 PR，再开 L9 |

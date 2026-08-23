@@ -56,7 +56,7 @@ Gitee PR 页面显示 success / failure
 ```text
 ┌──────────────┐
 │   Gitee      │
-│  Open PR #2  │
+│  Open PR #2  │(历史验收时)
 └──────┬───────┘
        │ 1. 查询 open PR、head SHA 和评论
        ▼
@@ -517,6 +517,47 @@ POST /api/v5/repos/{owner}/{repo}/pulls/{number}/test?access_token={token}
 
 因此 **L8 可以收官，下一步进入 L9**。唯一没有做真实破坏性演练的是 `post.failure`；这不是主链路缺口，因为 success/failure 共用同一个 `pr-report.sh` 与同一套参数传递，只差 Jenkins 进入的 post 分支和 `CI_STATUS=failure`。
 
+### 收官后的重要环境变化：PR #2 已 merged
+
+L8 的验收结论没有变，但测试载体在收官后发生了状态变化。最终复核结果：
+
+```text
+PR #2 state = merged
+head_sha    = 4098de5c44e08a829106cac6b13c11b4033aabae
+tester      = greada, accept=False
+Poller      = No open PR with a valid head SHA
+```
+
+这四行要分开解读：
+
+| 证据 | 含义 |
+|---|---|
+| `state=merged` | PR #2 已不是 open PR，Poller 不再把它纳入触发候选 |
+| head 冻结在 `4098de5` | merged PR 的 head 不会继续代表当前实验分支 |
+| `accept=False` | Gitee 在 PR 合并/状态变化后重置了测试项；这不能否定 #47 当时回写过 `accept=True` |
+| Poller 输出 no open PR | 当前不是 Poller 故障，而是候选列表为空的正常结果 |
+
+PR #2 被合并的原因是 main 曾 fast-forward 到 PR head `4098de5`。Gitee 判断 PR 是否 merged 的依据是目标分支是否包含 PR head；后续即使用 revert commit 让文件内容回到干净状态，也不能让 PR #2 重新变成 open。
+
+因此形成两个容易混淆的时间点：
+
+```text
+验收时刻: Jenkins #47 SUCCESS + Check Run success + tester accept=True
+当前时刻: PR #2 merged + tester accept=False + Poller 无候选 PR
+```
+
+前者证明 L8 链路已经打通；后者只说明测试载体生命周期结束。二者不冲突。
+
+L9 开始前需要重新准备常驻测试 PR：
+
+1. 从最新 main 新建分支，保证起点干净；
+2. 只加一个极小的 docs-only 变更；
+3. 推送到 fork；
+4. 向主仓 `main` 创建 open PR，并指定 `greada` 为 tester；
+5. 提交者在新 PR 评论精确的 `start build` 再验证触发。
+
+不建议复用旧 `docs/update-agents-md-v3.3` 分支。它除了 L8 文档外，还继承过 `AGENTS.md` 大改、后端临时注释等无关实验内容；新分支从最新 main 出发更利于判断 L9 变更本身。
+
 ### 遗留：L8b 可选加练
 
 目标：制造一次真实 PR 构建失败，验证 Gitee 显示 `ci/jenkins failure`。
@@ -544,6 +585,7 @@ POST /api/v5/repos/{owner}/{repo}/pulls/{number}/test?access_token={token}
 - [x] 新 commit 后提交者再评论 `start build`，会触发新构建并生成新状态（#47 / Check Run 26887948）
 - [x] 非提交者或非精确命令评论不会触发构建（`test-pr-poller-learn.sh`）
 - [x] 日志不包含 Gitee token 或 Jenkins token（Jenkins #47 + Poller 日志扫描）
+- [x] 收官后复核 PR 生命周期：PR #2 当前为 merged，测试项已重置；L8 验收证据保留为历史事实
 
 ---
 
@@ -604,3 +646,11 @@ Jenkins 构建
 | Check Run 停在 in_progress | Jenkins 构建状态、`CHECK_RUN_ID` 参数、`pr-report.sh` 日志 |
 | 测试项未通过 | token 用户是否测试人、Jenkins 是否 SUCCESS、API 返回码 |
 | 新 commit 后状态变了 | 正常现象；新 head 需要新的 `start build` |
+| Poller 报 No open PR | 先确认是否还有 open PR；PR #2 已 merged，下次先建新常驻 PR |
+
+### 4. 今日结束状态
+
+- L8 主线关闭：评论触发、Check Run、PR 测试项、安全检查全部有实证；
+- L8b 不阻塞：真实 failure 回写留作可选加练；
+- PR #2 关闭：已 merged，不再作为常驻测试载体；
+- 下次入口：先建新的 docs-only open PR，再进入 L9「你讲」环节。
