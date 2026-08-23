@@ -2,7 +2,7 @@
 
 > 目标：把「Jenkins 构建结果」回写到 Gitee PR 页面，形成完整可演示的 PR 闭环。  
 > 前置：Lesson 7 已完成 PR 模式、`refs/pull/N/head` 检出和 when 守卫矩阵。  
-> 状态：本地实现与真实成功链路已验收（含 `CHECK_RUN_ID` 贯穿传递）；PR 审核项「测试」回写已实现，待真实构建验收；待补 PR 失败回写演练。
+> 状态：真实成功链路已验收（含 `CHECK_RUN_ID` 贯穿传递与 PR 审核项「测试」回写）；待补 PR 失败回写演练。
 
 ---
 
@@ -495,7 +495,10 @@ POST /api/v5/repos/{owner}/{repo}/pulls/{number}/test?access_token={token}
 - Jenkins `#45`：PR head `17e5bc7...` 构建 `SUCCESS`
 - 最新 Check Run：`id=26887892`、`status=completed`、`conclusion=success`、`name=ci/jenkins`
 
-本次新增的 PR 审核项「测试」回写还没有跑真实 Jenkins 构建，待新提交触发后验收。
+- Jenkins `#47`：PR head `810ef0e...` 构建 `SUCCESS`
+- Poller 新评论 `50943859` 触发 Check Run `26887948`
+- Jenkins `post.success` 依次回写 Check Run success 与 PR 审核项「测试」通过
+- Gitee 查询结果：测试人 `greada` 的 `accept=true`
 
 尚未完成：
 
@@ -507,7 +510,7 @@ POST /api/v5/repos/{owner}/{repo}/pulls/{number}/test?access_token={token}
 
 - [x] 普通模式构建不出现 `[pr-report]`（Jenkins #43）
 - [x] PR #2 构建成功后，Gitee 显示 `ci/jenkins` success（Jenkins #44 / Check Run 26887886）
-- [ ] PR #2 构建成功后，Gitee PR 审核项「测试」显示已完成
+- [x] PR #2 构建成功后，Gitee PR 审核项「测试」显示已完成（Jenkins #47 / tester `greada` accept=true）
 - [ ] PR #2 构建失败后，Gitee 显示 `ci/jenkins` failure
 - [ ] 同一条 `start build` 评论第二次轮询不会触发新构建
 - [ ] 新 commit 出现但没有新评论时，不会触发新构建
