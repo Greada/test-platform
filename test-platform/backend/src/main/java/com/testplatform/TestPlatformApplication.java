@@ -12,7 +12,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @MapperScan("com.testplatform.mapper")
 public class TestPlatformApplication {
     public static void main(String[] args) {
-		// 加一行注释
         SpringApplication.run(TestPlatformApplication.class, args);
     }
 }
