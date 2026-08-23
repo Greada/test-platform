@@ -110,6 +110,10 @@ if ! grep -q 'PR_SHA=abc123' "${TMP_DIR}/curl-args.txt"; then
   echo "FAIL: triggered build did not use current PR SHA"
   exit 1
 fi
+if ! grep -q 'CHECK_RUN_ID=9001' "${TMP_DIR}/curl-args.txt"; then
+  echo "FAIL: triggered build did not receive the pending check-run ID"
+  exit 1
+fi
 if ! grep -q '"pull_request_id":18150115' "${TMP_DIR}/curl-args.txt"; then
   echo "FAIL: pending check-run did not use the Gitee PR internal ID"
   exit 1

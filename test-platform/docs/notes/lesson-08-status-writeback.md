@@ -2,7 +2,7 @@
 
 > 目标：把「Jenkins 构建结果」回写到 Gitee PR 页面，形成完整可演示的 PR 闭环。  
 > 前置：Lesson 7 已完成 PR 模式、`refs/pull/N/head` 检出和 when 守卫矩阵。  
-> 状态：本地实现已完成，离线测试通过；已确认 Gitee 需使用 Check Runs API，待完成真实 Jenkins/Gitee 验收。
+> 状态：本地实现已完成（含 `CHECK_RUN_ID` 贯穿传递），离线测试通过；待完成真实 Jenkins/Gitee 验收。
 
 ---
 
@@ -55,6 +55,7 @@ Gitee PR 页面显示 success / failure
 │ Jenkins test-platform-learn │
 │ - PR_NUMBER              │
 │ - PR_SHA                 │
+│ - CHECK_RUN_ID           │
 │ - Test / Build backend   │
 └──────┬───────────────────┘
        │ 3. post.success / post.failure
@@ -100,6 +101,7 @@ Gitee PR 页面上看到的 `ci/jenkins ✓/✗`，本质上是一条 Check Run 
 | 字段 | 含义 | 本课取值 |
 |---|---|---|
 | `name` | 检查任务名称 | `ci/jenkins` |
+| `id` | Check Run 唯一 ID | 创建接口返回，Poller 捕获后传给 Jenkins |
 | `head_sha` | 绑定的 commit | PR head SHA |
 | `pull_request_id` | Gitee PR 内部 ID | Poller 从 PR API 解析 |
 | `status` | 执行状态 | `in_progress` / `completed` |
@@ -120,7 +122,28 @@ in_progress ──► completed(success)
 | `completed + success` | Jenkins `post.success` | PR 构建成功后 |
 | `completed + failure` | Jenkins `post.failure` | PR 构建失败后 |
 
-### 3. 为什么绑定 SHA，而不是 PR 编号
+### 3. 为什么必须传递 `CHECK_RUN_ID`
+
+真实环境验证过两个关键事实：
+
+1. `POST /check-runs` 创建 pending 成功后，响应里会返回这条 Check Run 的 `id`。
+2. 对 PR 关联的 Check Run，用 `GET /repos/{owner}/{repo}/commits/{sha}/check-runs` 反查可能返回 `total_count=0`，即使页面已经存在这条 pending 记录。
+
+所以完成态不能依赖“按 SHA 反查 ID”，必须走这条确定性链路：
+
+```text
+Poller 创建 pending
+  ↓ 解析响应中的 check_run_id
+buildWithParameters 传入 CHECK_RUN_ID
+  ↓
+Jenkins post.success / post.failure
+  ↓
+pr-report.sh 直接 PATCH /check-runs/{check_run_id}
+```
+
+手动触发且没有 `CHECK_RUN_ID` 时，`pr-report.sh` 仍保留按 SHA 反查的兜底逻辑；自动触发链路则必须拿到 ID 才会触发 Jenkins。
+
+### 4. 为什么绑定 SHA，而不是 PR 编号
 
 PR 编号不变，但 PR 里的 commit 会变。
 
@@ -167,8 +190,8 @@ JENKINS_INTERNAL_URL
 5. 校验评论人必须是 PR 创建者或 head 分支提交者
 6. 用 `manual:PR_NUMBER:COMMENT_ID` 作为去重键
 7. 如果该评论已处理，跳过
-8. 如果未处理，先创建或更新 `in_progress` Check Run
-9. `in_progress` 写成功后，触发 Jenkins
+8. 如果未处理，先创建或更新 `in_progress` Check Run，并解析响应中的 `check_run_id`
+9. `in_progress` 写成功且拿到 `check_run_id` 后，触发 Jenkins
 10. Jenkins 返回 `201`，才把评论 key 写入状态文件
 
 ### 3. 为什么只有评论能触发
@@ -296,14 +319,19 @@ attempt:2:101:20df4fb2a0e723c42db55954bada569cf39cdb49
 |---|---|
 | `PR_NUMBER` | PR 编号，非空即 PR 模式 |
 | `PR_SHA` | PR head SHA，由 Poller 传入 |
+| `CHECK_RUN_ID` | Gitee Check Run ID，由 Poller 传入，完成态直接 PATCH 它 |
 
 手动触发 PR 构建时，`PR_SHA` 可以留空，Pipeline 会从当前 checkout 的 commit 自动获取。
+`CHECK_RUN_ID` 也可以留空，此时完成态会走按 SHA 反查的兜底逻辑；自动触发时则必须传入。
+
+> ⚠️ Jenkins 参数声明有一个历史坑：新增参数通常要到下一次读取新版 Jenkinsfile 后才注册。推送本次改动后，需要先让 Job 读取一次新版 `Jenkinsfile-learn`，再触发 PR 构建，避免 `CHECK_RUN_ID` 被当成未声明参数丢弃。
 
 ### 2. 模式判断
 
 ```groovy
 env.IS_PR = (params.PR_NUMBER ?: '') ? 'true' : 'false'
 env.PR_SHA = params.PR_SHA ?: ''
+env.CHECK_RUN_ID = params.CHECK_RUN_ID ?: ''
 ```
 
 这两行在 `Resolve Mode` stage 中执行，保证后续所有 stage 都能使用同一份模式判断结果。
@@ -353,6 +381,7 @@ post {
 |---|---|---|
 | `PR_SHA` | 是 | 写到哪个 commit |
 | `CI_STATUS` | 是 | `pending/success/failure` |
+| `CHECK_RUN_ID` | 自动触发时是 | 指定后直接 PATCH，不再按 SHA 反查 |
 | `PR_ID` | 创建时必填 | Gitee PR 内部 ID，不是 PR number |
 | `PR_NUMBER` | 否 | 日志展示 |
 | `BUILD_URL` | 否 | Gitee 状态跳转链接 |
@@ -403,19 +432,18 @@ post {
 
 | 文件 | 状态 | 说明 |
 |---|---|---|
-| `scripts/pr-report.sh` | 已完成 | 支持状态校验、配置注入、严格模式 |
-| `scripts/pr-poller-learn.sh` | 已完成 | 支持评论查询、权限校验、in_progress、触发、评论去重 |
-| `scripts/tests/test-pr-report.sh` | 已通过 | 验证 Check Runs payload、PR 内部 ID 和 token 不泄露 |
-| `scripts/tests/test-pr-poller-learn.sh` | 已通过 | 验证评论唯一触发、权限、精确匹配、去重和失败语义 |
-| `Jenkinsfile-learn` | 已接入 | `PR_SHA` + `post.success/failure` |
+| `scripts/pr-report.sh` | 已完成 | 支持显式 `CHECK_RUN_ID`、状态校验、配置注入、严格模式 |
+| `scripts/pr-poller-learn.sh` | 已完成 | 支持评论查询、权限校验、in_progress、ID 捕获、触发、评论去重 |
+| `scripts/tests/test-pr-report.sh` | 已通过 | 验证 Check Runs payload、显式 ID PATCH、PR 内部 ID 和 token 不泄露 |
+| `scripts/tests/test-pr-poller-learn.sh` | 已通过 | 验证评论唯一触发、权限、精确匹配、ID 传递、去重和失败语义 |
+| `Jenkinsfile-learn` | 已接入 | `PR_SHA` + `CHECK_RUN_ID` + `post.success/failure` |
 
 尚未完成：
 
-1. `/opt/.env.ci` 凭据配置
-2. Jenkins 容器内 `.env.ci` 挂载/复制
-3. 普通模式回归构建
-4. PR #2 成功回写验证
-5. PR 失败回写验证
+1. 推送后让 Jenkins 注册新增 `CHECK_RUN_ID` 参数
+2. 普通模式回归构建
+3. PR #2 成功回写验证
+4. PR 失败回写验证
 
 ---
 

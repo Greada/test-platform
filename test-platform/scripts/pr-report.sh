@@ -44,6 +44,7 @@ JENKINS_JOB="${JENKINS_JOB:-test-platform-learn}"
 CURL_BIN="${CURL_BIN:-curl}"
 PR_NUMBER="${PR_NUMBER:-unknown}"
 PR_ID="${PR_ID:-}"
+CHECK_RUN_ID="${CHECK_RUN_ID:-}"
 BUILD_URL="${BUILD_URL:-${JENKINS_URL:-}/job/${JENKINS_JOB}/}"
 CHECK_NAME="ci/jenkins"
 TMP_DIR="$(mktemp -d)"
@@ -68,15 +69,17 @@ fail() {
   exit 0
 }
 
-CHECK_RUNS_URL="${GITEE_API}/repos/${GITEE_OWNER}/${GITEE_REPO}/commits/${PR_SHA}/check-runs?access_token=${GITEE_TOKEN}&check_name=ci%2Fjenkins"
-if ! HTTP_CODE="$("$CURL_BIN" -sS -o "$RESPONSE_FILE" -w '%{http_code}' "$CHECK_RUNS_URL")"; then
-  fail "cannot query existing check runs"
-fi
-if [ "$HTTP_CODE" != "200" ]; then
-  fail "query HTTP ${HTTP_CODE}"
-fi
+if [ -z "$CHECK_RUN_ID" ]; then
+  CHECK_RUNS_URL="${GITEE_API}/repos/${GITEE_OWNER}/${GITEE_REPO}/commits/${PR_SHA}/check-runs?access_token=${GITEE_TOKEN}&check_name=ci%2Fjenkins"
+  if ! HTTP_CODE="$("$CURL_BIN" -sS -o "$RESPONSE_FILE" -w '%{http_code}' "$CHECK_RUNS_URL")"; then
+    fail "cannot query existing check runs"
+  fi
+  if [ "$HTTP_CODE" != "200" ]; then
+    fail "query HTTP ${HTTP_CODE}"
+  fi
 
-CHECK_RUN_ID="$(sed -n 's/.*"id"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p' "$RESPONSE_FILE" | head -n 1)"
+  CHECK_RUN_ID="$(sed -n 's/.*"id"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p' "$RESPONSE_FILE" | head -n 1)"
+fi
 
 if [ "$CI_STATUS" = "pending" ]; then
   GITEE_STATUS="in_progress"
@@ -112,6 +115,12 @@ fi
 
 if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "201" ]; then
   echo "[pr-report] Check Run write succeeded (HTTP ${HTTP_CODE})"
+  WRITTEN_CHECK_RUN_ID="$(sed -n 's/.*"id"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p' "$RESPONSE_FILE" | head -n 1)"
+  if [ -n "$WRITTEN_CHECK_RUN_ID" ]; then
+    echo "[pr-report] CHECK_RUN_ID=${WRITTEN_CHECK_RUN_ID}"
+  elif [ -n "$CHECK_RUN_ID" ]; then
+    echo "[pr-report] CHECK_RUN_ID=${CHECK_RUN_ID}"
+  fi
   exit 0
 fi
 

@@ -60,6 +60,7 @@ run_report() {
     PR_ID=18150115 \
     PR_SHA=abc123 \
     CI_STATUS="$1" \
+    CHECK_RUN_ID="${CHECK_RUN_ID:-}" \
     BUILD_URL=http://localhost:8088/job/test-platform-learn/2/ \
     bash "$REPORT_SCRIPT" 2>&1
   )"
@@ -82,6 +83,14 @@ grep -q '"head_sha":"abc123"' "${TMP_DIR}/curl-args.txt"
 grep -q '"pull_request_id":18150115' "${TMP_DIR}/curl-args.txt"
 grep -q '"status":"in_progress"' "${TMP_DIR}/curl-args.txt"
 
+CHECK_RUN_ID=9001 run_report pending
+if grep -q 'repos/demo-owner/demo-repo/commits/abc123/check-runs' "${TMP_DIR}/curl-args.txt"; then
+  echo "FAIL: explicit pending check-run ID should not query commits"
+  exit 1
+fi
+grep -q 'repos/demo-owner/demo-repo/check-runs/9001?access_token=demo-token' "${TMP_DIR}/curl-args.txt"
+grep -q '"status":"in_progress"' "${TMP_DIR}/curl-args.txt"
+
 printf '%s' '{"total_count":1,"check_runs":[{"id":9001,"name":"ci/jenkins","head_sha":"abc123"}]}' > "${TMP_DIR}/check-runs.json"
 run_report success
 grep -q 'repos/demo-owner/demo-repo/commits/abc123/check-runs' "${TMP_DIR}/curl-args.txt"
@@ -89,6 +98,15 @@ grep -q 'repos/demo-owner/demo-repo/check-runs/9001?access_token=demo-token' "${
 grep -q '"status":"completed"' "${TMP_DIR}/curl-args.txt"
 grep -q '"conclusion":"success"' "${TMP_DIR}/curl-args.txt"
 grep -q '"completed_at":' "${TMP_DIR}/curl-args.txt"
+
+CHECK_RUN_ID=9001 run_report success
+if grep -q 'repos/demo-owner/demo-repo/commits/abc123/check-runs' "${TMP_DIR}/curl-args.txt"; then
+  echo "FAIL: explicit check-run ID should not query commits"
+  exit 1
+fi
+grep -q 'repos/demo-owner/demo-repo/check-runs/9001?access_token=demo-token' "${TMP_DIR}/curl-args.txt"
+grep -q '"status":"completed"' "${TMP_DIR}/curl-args.txt"
+grep -q '"conclusion":"success"' "${TMP_DIR}/curl-args.txt"
 
 run_report failure
 grep -q '"conclusion":"failure"' "${TMP_DIR}/curl-args.txt"
