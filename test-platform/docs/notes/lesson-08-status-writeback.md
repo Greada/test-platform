@@ -2,7 +2,7 @@
 
 > 目标：把「Jenkins 构建结果」回写到 Gitee PR 页面，形成完整可演示的 PR 闭环。  
 > 前置：Lesson 7 已完成 PR 模式、`refs/pull/N/head` 检出和 when 守卫矩阵。  
-> 状态：本地实现已完成（含 `CHECK_RUN_ID` 贯穿传递），离线测试通过；待完成真实 Jenkins/Gitee 验收。
+> 状态：本地实现与真实成功链路已验收（含 `CHECK_RUN_ID` 贯穿传递）；待补 PR 失败回写演练。
 
 ---
 
@@ -438,19 +438,24 @@ post {
 | `scripts/tests/test-pr-poller-learn.sh` | 已通过 | 验证评论唯一触发、权限、精确匹配、ID 传递、去重和失败语义 |
 | `Jenkinsfile-learn` | 已接入 | `PR_SHA` + `CHECK_RUN_ID` + `post.success/failure` |
 
+### 真实验收记录（2026-08-23）
+
+- Jenkins `#43`：普通模式构建 `SUCCESS`，日志中没有 `[pr-report]`
+- Jenkins `#44`：PR head `36f37155...` 构建 `SUCCESS`
+- Poller 创建 pending Check Run 成功，返回 `CHECK_RUN_ID=26887886`
+- Jenkins 完成态直接 `PATCH /check-runs/26887886`，返回 `HTTP 200`
+- Gitee 查询结果：`id=26887886`、`status=completed`、`conclusion=success`、`name=ci/jenkins`
+
 尚未完成：
 
-1. 推送后让 Jenkins 注册新增 `CHECK_RUN_ID` 参数
-2. 普通模式回归构建
-3. PR #2 成功回写验证
-4. PR 失败回写验证
+1. PR #2 失败回写验证
 
 ---
 
 ## 十、验收清单
 
-- [ ] 普通模式构建不出现 `[pr-report]`
-- [ ] PR #2 构建成功后，Gitee 显示 `ci/jenkins` success
+- [x] 普通模式构建不出现 `[pr-report]`（Jenkins #43）
+- [x] PR #2 构建成功后，Gitee 显示 `ci/jenkins` success（Jenkins #44 / Check Run 26887886）
 - [ ] PR #2 构建失败后，Gitee 显示 `ci/jenkins` failure
 - [ ] 同一条 `start build` 评论第二次轮询不会触发新构建
 - [ ] 新 commit 出现但没有新评论时，不会触发新构建
