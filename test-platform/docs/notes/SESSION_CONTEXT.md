@@ -49,10 +49,12 @@
 
 ## 下次从这里继续
 
-- **Lesson 8 — 状态回写你讲环节(2026-08-23 继续)** — Lesson 7 已整课收官(#37/#38/#39 三连全绿)
-- 学习节奏(5 步):**你讲(当前环节)**→我写→你查→跑/审→复盘
+- **Lesson 8 — 状态回写(2026-08-23 继续)** — 讲义已落盘 lesson-08-status-writeback.md;本地实现与离线测试已完成,触发规则已定为方案 B:仅提交者精确评论 `start build` 才构建
+- 学习节奏(5 步):你讲 ✅→我写 ✅→你查 ✅(离线)→**跑/审(当前环节)**→复盘
+- 新版 CI/CD 路线已定:完全抛弃旧生产版参照;继续以 `Jenkinsfile-learn` 演进,完成 L8/L9 并通过五类验收后,再整体替换正式 `Jenkinsfile` 并删除旧体系
 - L8 目标:Report PR Status + `post.failure`，让 PR #2 在 Gitee 上显示 Jenkins 构建 SUCCESS/FAILURE 状态
-- L8 先修材料:`scripts/pr-report.sh`、Gitee Commit Status API、`post{}` 成功/失败收尾机制、PR 模式参数与凭据来源
+- L8 当前待办:配置 `/opt/.env.ci` 与 Jenkins 容器凭据,跑普通模式回归/PR success/PR failure/重复评论/新 commit 不自动触发/新评论触发六类验收
+- L8 先修材料:`scripts/pr-report.sh`、Gitee Check Runs API、`post{}` 成功/失败收尾机制、PR 模式参数与凭据来源
 - 7c 存档:方案 A 拆分 `Resolve Mode`/`Resolve Env`;#39 负样本证明 PR+prod 时 Notify 仍被 when 跳过
 - 常驻测试 PR:**PR #2**(head=20df4fb),保持 open 不合并
 - 🔴 生产版裁定(存档):停用参考 `test-platform/Jenkinsfile`;终局 L9 后 learn 替换生产版并删旧文件(docs 副本同步更新)
