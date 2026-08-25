@@ -5,6 +5,7 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -17,16 +18,24 @@ import javax.crypto.SecretKey;
 
 @Component
 public class JwtUtil {
-    @Value("${jwt.secret:test-platform-secret-key-2026-for-jwt}")
+    @Value("${jwt.secret:}")
     private String secret;
 
     @Value("${jwt.expiration:86400000}")
     private long expiration;
 
+    @PostConstruct
+    void validateSecret() {
+        if (secret == null || secret.getBytes(StandardCharsets.UTF_8).length < 32) {
+            throw new IllegalStateException("JWT_SECRET 未配置或短于 32 字符，拒绝启动：弱密钥可被暴力破解后伪造任意用户 token");
+        }
+    }
+
     private SecretKey signingKey() {
         try {
-            byte[] hash = MessageDigest.getInstance("SHA-256").digest(
-                    secret.getBytes(StandardCharsets.UTF_8));
+            byte[] hash =
+                    MessageDigest.getInstance("SHA-256")
+                            .digest(secret.getBytes(StandardCharsets.UTF_8));
             return Keys.hmacShaKeyFor(hash);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
@@ -44,11 +53,7 @@ public class JwtUtil {
     }
 
     public Claims parseToken(String token) {
-        return Jwts.parser()
-                .verifyWith(signingKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+        return Jwts.parser().verifyWith(signingKey()).build().parseSignedClaims(token).getPayload();
     }
 
     public boolean validateToken(String token) {

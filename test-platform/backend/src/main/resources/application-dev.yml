@@ -1,6 +1,8 @@
 spring:
   datasource:
-    password: 1234
+    password: ${DB_PASSWORD:1234}
+jwt:
+  secret: dev-only-secret-key-change-me-please!!
 mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
