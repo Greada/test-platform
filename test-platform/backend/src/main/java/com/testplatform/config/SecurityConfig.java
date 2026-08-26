@@ -5,14 +5,18 @@ import com.testplatform.common.Result;
 
 import jakarta.servlet.http.HttpServletResponse;
 
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.LogoutFilter;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
  * @author admin
@@ -29,20 +33,21 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, CiAuthFilter ciAuthFilter)
+            throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> {})
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(
                         auth ->
                                 auth.requestMatchers(
-                                                "/api/auth/**",
-                                                "/v3/api-docs/**",
-                                                "/swagger-ui/**",
-                                                "/api/ci/**")
+                                                "/api/auth/**", "/v3/api-docs/**", "/swagger-ui/**")
                                         .permitAll()
+                                        .requestMatchers(HttpMethod.POST, "/api/ci/builds")
+                                        .hasRole("CI")
                                         .anyRequest()
                                         .authenticated())
+                .addFilterBefore(ciAuthFilter, LogoutFilter.class)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
@@ -74,5 +79,14 @@ public class SecurityConfig {
                                                                                     403, "权限不足")));
                                                 }));
         return http.build();
+    }
+
+    @Bean
+    public FilterRegistrationBean<OncePerRequestFilter> ciAuthFilterRegistration(
+            CiAuthFilter ciAuthFilter) {
+        FilterRegistrationBean<OncePerRequestFilter> registrationBean =
+                new FilterRegistrationBean<>(ciAuthFilter);
+        registrationBean.setEnabled(false);
+        return registrationBean;
     }
 }

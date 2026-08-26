@@ -19,6 +19,8 @@ cors:
     - http://localhost:80
     - http://localhost:81
     - http://localhost:82
+ci:
+  api-key: ${CI_API_KEY:}
 mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl

@@ -12,7 +12,7 @@ services:
     ports:
       - "3308:3306"
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -27,6 +27,7 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: prod
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
+      CI_API_KEY: ${CI_API_KEY:?CI_API_KEY must be set}
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/test_platform?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-1234}
       AGNES_API_KEY: ${AGNES_API_KEY:-}
