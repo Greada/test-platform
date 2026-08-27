@@ -89,4 +89,14 @@ public class SecurityConfig {
         registrationBean.setEnabled(false);
         return registrationBean;
     }
+
+    /** 禁用 JwtAuthFilter 的 Servlet 容器自动注册（只保留 Security 链内一次，防双重过滤） */
+    @Bean
+    public FilterRegistrationBean<OncePerRequestFilter> jwtAuthFilterRegistration(
+            JwtAuthFilter jwtAuthFilter) {
+        FilterRegistrationBean<OncePerRequestFilter> registrationBean =
+                new FilterRegistrationBean<>(jwtAuthFilter);
+        registrationBean.setEnabled(false);
+        return registrationBean;
+    }
 }

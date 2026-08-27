@@ -17,10 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
-
-import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.HashMap;
 import java.util.List;
@@ -58,8 +54,6 @@ public class ExecutionServiceImpl implements ExecutionService {
             return Result.notFound("testcase not found!");
         }
 
-        injectAuthTokenIfLocalhost(testCase);
-
         // 2.execution http
         HttpResult httpResult;
         try {
@@ -76,41 +70,6 @@ public class ExecutionServiceImpl implements ExecutionService {
         record.setStatus(resolveStatus(testCase.getExpectedResult(), httpResult.getBody()));
         executionRecordMapper.insert(record);
         return Result.success(record);
-    }
-
-    private void injectAuthTokenIfLocalhost(TestCase testCase) {
-        if (testCase.getRequestUrl() == null
-                || !testCase.getRequestUrl().contains("localhost:8080")) {
-            return;
-        }
-        try {
-            ServletRequestAttributes attrs =
-                    (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-            if (attrs == null) {
-                return;
-            }
-            HttpServletRequest request = attrs.getRequest();
-            String authHeader = request.getHeader("Authorization");
-            if (authHeader == null || authHeader.isEmpty()) {
-                return;
-            }
-            String existing = testCase.getRequestHeaders();
-            if (existing == null || existing.trim().isEmpty()) {
-                testCase.setRequestHeaders(
-                        "{\"Authorization\":\"" + authHeader + "\"}");
-            } else {
-                Map<String, String> map =
-                        objectMapper.readValue(
-                                existing, new TypeReference<Map<String, String>>() {});
-                map.put("Authorization", authHeader);
-                testCase.setRequestHeaders(
-                        objectMapper
-                                .writerWithDefaultPrettyPrinter()
-                                .writeValueAsString(map));
-            }
-        } catch (Exception e) {
-            log.warn("Failed to inject auth token for localhost execution", e);
-        }
     }
 
     private String resolveStatus(String expected, String actual) {

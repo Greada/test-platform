@@ -39,7 +39,7 @@ public class UserServiceImpl implements UserService {
         if (!passwordEncoder.matches(password, user.getPassword())) {
             return Result.error("username or password error");
         }
-        String token = jwtUtil.generateToken(user.getId(), user.getUsername());
+        String token = jwtUtil.generateToken(user.getId(), user.getUsername(), user.getRole());
         Map<String, Object> data = new HashMap<>();
         data.put("token", token);
         user.setPassword(null);

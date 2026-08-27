@@ -1,8 +1,5 @@
 package com.testplatform.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.testplatform.common.Result;
-
 import io.jsonwebtoken.Claims;
 
 import jakarta.annotation.Nonnull;
@@ -12,12 +9,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Collections;
+import java.util.List;
 
 /**
  * @author admin
@@ -26,7 +25,6 @@ import java.util.Collections;
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public JwtAuthFilter(JwtUtil jwtUtil) {
         this.jwtUtil = jwtUtil;
@@ -44,18 +42,26 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             if (jwtUtil.validateToken(token)) {
                 Claims claims = jwtUtil.parseToken(token);
                 Long userId = Long.parseLong(claims.getSubject());
+                String role = claims.get("role", String.class);
                 UsernamePasswordAuthenticationToken auth =
                         new UsernamePasswordAuthenticationToken(
-                                userId, null, Collections.emptyList());
-                SecurityContextHolder.getContext().setAuthentication(auth);
-                filterChain.doFilter(request, response);
+                                userId,
+                                null,
+                                List.of(new SimpleGrantedAuthority(
+                                        "ROLE_" + (role != null ? role : "USER"))));
+                SecurityContext context = SecurityContextHolder.createEmptyContext();
+                context.setAuthentication(auth);
+                SecurityContextHolder.setContext(context);
+                try {
+                    filterChain.doFilter(request, response);
+                } finally {
+                    SecurityContextHolder.clearContext();
+                }
             } else {
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.setContentType("application/json;charset=UTF-8");
-                response.getWriter()
-                        .write(
-                                objectMapper.writeValueAsString(
-                                        Result.error(401, "token过期或者无效，请重新登录")));
+                // 坏/过期 token 视为匿名：清上下文继续走链，由授权层裁决
+                // （过期用户仍可访问公开端点如 /api/auth/login，避免 401 死循环）
+                SecurityContextHolder.clearContext();
+                filterChain.doFilter(request, response);
             }
         } else {
             filterChain.doFilter(request, response);
