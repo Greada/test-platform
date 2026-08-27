@@ -5,9 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.testplatform.common.HttpResult;
 import com.testplatform.entity.TestCase;
 
+import com.testplatform.util.UrlValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -16,6 +18,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
+import java.net.URISyntaxException;
 import java.util.Map;
 
 @Component
@@ -24,14 +27,21 @@ public class HttpExecutor {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
 
+    private final boolean allowInternal;
+
     @Autowired
-    public HttpExecutor(RestTemplate restTemplate, ObjectMapper objectMapper) {
+    public HttpExecutor(
+            RestTemplate restTemplate,
+            ObjectMapper objectMapper,
+            @Value("${ssrf.allow-internal:false}") boolean allowInternal) {
         this.restTemplate = restTemplate;
         this.objectMapper = objectMapper;
+        this.allowInternal = allowInternal;
     }
 
     public HttpResult execute(TestCase testCase) {
         String url = testCase.getRequestUrl();
+        UrlValidator.validate(url, allowInternal);
         HttpHeaders headers = parseHeaders(testCase.getRequestHeaders());
         HttpEntity<String> entity = new HttpEntity<>(testCase.getRequestParams(), headers);
         long start = System.currentTimeMillis();
@@ -39,7 +49,7 @@ public class HttpExecutor {
             ResponseEntity<String> response =
                     exchange(url, testCase.getRequestMethod().toUpperCase(), entity);
             long duration = System.currentTimeMillis() - start;
-            return new HttpResult(response.getBody(), duration, response.getStatusCodeValue());
+            return new HttpResult(response.getBody(), duration, response.getStatusCode().value());
         } catch (HttpStatusCodeException e) {
             long duration = System.currentTimeMillis() - start;
             return new HttpResult(e.getResponseBodyAsString(), duration, e.getStatusCode().value());
@@ -54,18 +64,13 @@ public class HttpExecutor {
     }
 
     private ResponseEntity<String> exchange(String url, String method, HttpEntity<String> entity) {
-        switch (method) {
-            case "POST":
-                return restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
-            case "PUT":
-                return restTemplate.exchange(url, HttpMethod.PUT, entity, String.class);
-            case "PATCH":
-                return restTemplate.exchange(url, HttpMethod.PATCH, entity, String.class);
-            case "DELETE":
-                return restTemplate.exchange(url, HttpMethod.DELETE, entity, String.class);
-            default:
-                return restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
-        }
+        return switch (method) {
+            case "POST" -> restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
+            case "PUT" -> restTemplate.exchange(url, HttpMethod.PUT, entity, String.class);
+            case "PATCH" -> restTemplate.exchange(url, HttpMethod.PATCH, entity, String.class);
+            case "DELETE" -> restTemplate.exchange(url, HttpMethod.DELETE, entity, String.class);
+            default -> restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
+        };
     }
 
     private HttpHeaders parseHeaders(String headersJson) {

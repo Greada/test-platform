@@ -1,29 +1,20 @@
 package com.testplatform.common;
 
+import lombok.Getter;
+
 /**
  * @author admin
  * @version 1.0.0
  */
+@Getter
 public class HttpResult {
-    private String body;
-    private long duration;
-    private int statusCode;
+    private final String body;
+    private final long duration;
+    private final int statusCode;
 
     public HttpResult(String body, long duration, int statusCode) {
         this.body = body;
         this.duration = duration;
         this.statusCode = statusCode;
-    }
-
-    public String getBody() {
-        return body;
-    }
-
-    public long getDuration() {
-        return duration;
-    }
-
-    public int getStatusCode() {
-        return statusCode;
     }
 }

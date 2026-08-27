@@ -31,7 +31,7 @@ class HttpExecutorTest {
     void setUp() {
         com.fasterxml.jackson.databind.ObjectMapper objectMapper =
                 new com.fasterxml.jackson.databind.ObjectMapper();
-        executor = new com.testplatform.service.HttpExecutor(restTemplate, objectMapper);
+        executor = new com.testplatform.service.HttpExecutor(restTemplate, objectMapper, true);
     }
 
     @Test

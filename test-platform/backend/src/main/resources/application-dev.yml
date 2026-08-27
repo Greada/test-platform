@@ -6,3 +6,5 @@ jwt:
 mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+ssrf:
+  allow-internal: true

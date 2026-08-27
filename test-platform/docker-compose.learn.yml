@@ -28,6 +28,7 @@ services:
       SPRING_PROFILES_ACTIVE: prod
       JWT_SECRET: ${JWT_SECRET:-learn-only-secret-change-me-32-chars-ok}
       CI_API_KEY: ${CI_API_KEY:-learn-only-ci-token-change-me}
+      SSRF_ALLOW_INTERNAL: "true"
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/test_platform?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8
       SPRING_DATASOURCE_PASSWORD: 1234
     ports:
