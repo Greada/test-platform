@@ -46,7 +46,7 @@ public class ErrorPatternService {
                         .map(ExecutionRecord::getTestCaseId)
                         .distinct()
                         .collect(Collectors.toList());
-        List<TestCase> cases = testCaseMapper.selectBatchIds(caseIds);
+        List<TestCase> cases = testCaseMapper.selectByIds(caseIds);
         Map<Long, TestCase> caseMap =
                 cases.stream().collect(Collectors.toMap(TestCase::getId, c -> c));
 

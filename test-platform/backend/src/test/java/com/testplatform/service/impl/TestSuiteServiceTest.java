@@ -236,7 +236,7 @@ class TestSuiteServiceTest {
         tc2.setId(20L);
         tc2.setName("Case 2");
         when(testSuiteCaseMapper.selectList(any())).thenReturn(Arrays.asList(rel1, rel2));
-        when(testCaseMapper.selectBatchIds(any())).thenReturn(Arrays.asList(tc1, tc2));
+        when(testCaseMapper.selectByIds(any())).thenReturn(Arrays.asList(tc1, tc2));
 
         // Act
         Result<List<TestCase>> result = testSuiteService.listCases(1L);

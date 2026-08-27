@@ -88,7 +88,7 @@ public class TestSuiteServiceImpl implements TestSuiteService {
                 testSuiteCases.stream()
                         .map(TestSuiteCase::getCaseId)
                         .collect(Collectors.toList());
-        List<TestCase> testCaseList = testCaseMapper.selectBatchIds(caseIds);
+        List<TestCase> testCaseList = testCaseMapper.selectByIds(caseIds);
         Map<Long, TestCase> caseMap =
                 testCaseList.stream().collect(Collectors.toMap(TestCase::getId, c -> c));
         List<TestCase> ordered =

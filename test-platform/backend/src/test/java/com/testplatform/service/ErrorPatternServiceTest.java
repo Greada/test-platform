@@ -64,7 +64,7 @@ class ErrorPatternServiceTest {
         TestCase testCase = new TestCase();
         testCase.setRequestUrl("https://httpbin.org/get");
         testCase.setRequestMethod("GET");
-        when(testCaseMapper.selectBatchIds(any())).thenReturn(Arrays.asList(testCase));
+        when(testCaseMapper.selectByIds(any())).thenReturn(Arrays.asList(testCase));
 
         // Act
         Result<ErrorPatternResult> result = errorPatternService.analyze(1L);
@@ -90,7 +90,7 @@ class ErrorPatternServiceTest {
         TestCase testCase = new TestCase();
         testCase.setRequestUrl("https://httpbin.org/post");
         testCase.setRequestMethod("POST");
-        when(testCaseMapper.selectBatchIds(any())).thenReturn(Arrays.asList(testCase));
+        when(testCaseMapper.selectByIds(any())).thenReturn(Arrays.asList(testCase));
 
         // Act
         Result<ErrorPatternResult> result = errorPatternService.analyze(1L);
@@ -122,7 +122,7 @@ class ErrorPatternServiceTest {
         tc2.setId(2L);
         tc2.setRequestUrl("https://httpbin.org/get");
         tc2.setRequestMethod("GET");
-        when(testCaseMapper.selectBatchIds(any())).thenReturn(Arrays.asList(tc1, tc2));
+        when(testCaseMapper.selectByIds(any())).thenReturn(Arrays.asList(tc1, tc2));
 
         // Act
         Result<ErrorPatternResult> result = errorPatternService.analyze(1L);
@@ -171,7 +171,7 @@ class ErrorPatternServiceTest {
         tc3.setId(3L);
         tc3.setRequestUrl("https://httpbin.org/put");
         tc3.setRequestMethod("PUT");
-        when(testCaseMapper.selectBatchIds(any())).thenReturn(Arrays.asList(tc1, tc2, tc3));
+        when(testCaseMapper.selectByIds(any())).thenReturn(Arrays.asList(tc1, tc2, tc3));
 
         // Act
         Result<ErrorPatternResult> result = errorPatternService.analyze(1L);
@@ -203,7 +203,7 @@ class ErrorPatternServiceTest {
         tc2.setId(2L);
         tc2.setRequestUrl("https://httpbin.org/broken");
         tc2.setRequestMethod("GET");
-        when(testCaseMapper.selectBatchIds(any())).thenReturn(Arrays.asList(tc1, tc2));
+        when(testCaseMapper.selectByIds(any())).thenReturn(Arrays.asList(tc1, tc2));
 
         // Act
         Result<ErrorPatternResult> result = errorPatternService.analyze(1L);
@@ -236,7 +236,7 @@ class ErrorPatternServiceTest {
         tc2.setId(2L);
         tc2.setRequestUrl("https://httpbin.org/api");
         tc2.setRequestMethod("GET");
-        when(testCaseMapper.selectBatchIds(any())).thenReturn(Arrays.asList(tc1, tc2));
+        when(testCaseMapper.selectByIds(any())).thenReturn(Arrays.asList(tc1, tc2));
 
         // Act
         Result<ErrorPatternResult> result = errorPatternService.analyze(1L);
@@ -253,7 +253,7 @@ class ErrorPatternServiceTest {
         record.setStatus("ERROR");
         record.setTestCaseId(999L);
         when(executionRecordMapper.selectList(any())).thenReturn(Arrays.asList(record));
-        when(testCaseMapper.selectBatchIds(any())).thenReturn(Collections.emptyList());
+        when(testCaseMapper.selectByIds(any())).thenReturn(Collections.emptyList());
 
         // Act
         Result<ErrorPatternResult> result = errorPatternService.analyze(1L);
