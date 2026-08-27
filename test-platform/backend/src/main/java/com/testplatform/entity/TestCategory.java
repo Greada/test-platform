@@ -1,6 +1,7 @@
 package com.testplatform.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 
 import lombok.Data;
@@ -22,6 +23,7 @@ public class TestCategory {
     private Integer sortOrder;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
+    @TableLogic private Integer deleted;
 
     @TableField(exist = false)
     private List<TestCategory> children;

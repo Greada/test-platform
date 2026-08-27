@@ -1,5 +1,6 @@
 package com.testplatform.entity;
 
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 
 import lombok.Data;
@@ -19,4 +20,5 @@ public class User {
     private String displayName;
     private String role;
     private LocalDateTime createTime;
+    @TableLogic private Integer deleted;
 }

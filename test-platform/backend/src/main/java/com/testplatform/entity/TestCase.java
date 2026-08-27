@@ -1,13 +1,14 @@
 package com.testplatform.entity;
 
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 
 import lombok.Data;
 
 import java.time.LocalDateTime;
-
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
 
 @Data
 @TableName("test_case")
@@ -16,6 +17,7 @@ public class TestCase {
     private String testNo;
     private String name;
     private Long categoryId;
+    @TableLogic private Integer deleted;
 
     @NotBlank(message = "Request URL is required")
     private String requestUrl;
