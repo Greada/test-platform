@@ -54,7 +54,7 @@
                :close-on-click-modal="false" :close-on-press-escape="false">
       <div style="text-align: center; padding: 30px">
         <el-icon class="is-loading" :size="32" style="margin-bottom: 15px">
-          <i class="el-icon-loading"></i>
+          <Loading />
         </el-icon>
         <p style="font-size: 16px; margin-top: 10px">正在执行套件，请稍候...</p>
       </div>

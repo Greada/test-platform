@@ -29,6 +29,17 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
     const token = localStorage.getItem('token')
+    const tokenExp = Number(localStorage.getItem('tokenExp') || 0)
+    const expired = tokenExp > 0 && (Date.now() / 1000) > tokenExp
+
+    // token 过期：清登录态强制重新登录（无 exp 信息则退化为仅判存在，兼容旧 token）
+    if (token && expired) {
+        localStorage.removeItem('token')
+        localStorage.removeItem('tokenExp')
+        localStorage.removeItem('user')
+        return next('/login')
+    }
+
     if (to.path !== '/login' && !token) {
         next('/login')
     } else if (to.path === '/login' && token) {

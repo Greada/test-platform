@@ -82,6 +82,13 @@ async function handleLogin() {
     if (res.data.code === 200) {
       localStorage.setItem('token', res.data.data.token)
       localStorage.setItem('user', JSON.stringify(res.data.data.user))
+      // 解析 JWT exp 存 localStorage（单位秒），路由守卫据此拦截过期 token
+      try {
+        const b64 = res.data.data.token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
+        const bin = atob(b64 + '='.repeat((4 - (b64.length % 4)) % 4))
+        const decoded = JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0))))
+        localStorage.setItem('tokenExp', String(decoded.exp || ''))
+      } catch { /* 解析失败不阻塞登录，守卫侧按无 exp 处理 */ }
       ElMessage.success('登录成功')
       router.push('/')
     } else {

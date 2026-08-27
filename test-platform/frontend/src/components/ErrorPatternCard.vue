@@ -8,7 +8,7 @@
     </div>
     <template v-else>
       <div v-if="worstEndpoint" style="margin-bottom:12px;padding:8px 12px;background:#fef0f0;border-radius:4px;font-size:13px;color:#f56c6c">
-        <el-icon style="vertical-align:-2px"><i class="el-icon-warning-outline"></i></el-icon>
+        <el-icon style="vertical-align:-2px"><WarningFilled /></el-icon>
         通过率最低端点：{{ worstEndpoint }}
       </div>
       <el-table :data="items" border size="small" max-height="400">

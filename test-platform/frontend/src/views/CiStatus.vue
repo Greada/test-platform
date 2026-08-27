@@ -60,13 +60,13 @@
                 <el-table-column prop="buildNumber" label="构建 #" width="90" />
                 <el-table-column prop="totalTests" label="用例数" width="80" align="center" />
                 <el-table-column prop="passed" label="通过" width="80" align="center">
-                    <template #default>
-                        <el-icon color="#67c23a"><CircleCheckFilled /></el-icon>
+                    <template #default="scope">
+                        <span style="color: #67c23a; font-weight: 600">{{ scope.row.passed }}</span>
                     </template>
                 </el-table-column>
                 <el-table-column prop="failed" label="失败" width="80" align="center">
-                    <template #default>
-                        <el-icon color="#f56c6c"><CircleCloseFilled /></el-icon>
+                    <template #default="scope">
+                        <span style="color: #f56c6c; font-weight: 600">{{ scope.row.failed }}</span>
                     </template>
                 </el-table-column>
                 <el-table-column label="通过率" width="160">

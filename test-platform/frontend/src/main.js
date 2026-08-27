@@ -11,7 +11,12 @@ const app = createApp(App)
 
 app.config.errorHandler = (err, instance, info) => {
   console.error('Vue error:', err)
-  ElMessage.error('页面异常: ' + err.message)
+  // 生产环境脱敏：err.message 可能含内部路径/堆栈，不展示给用户
+  if (import.meta.env.PROD) {
+    ElMessage.error('系统异常，请稍后重试')
+  } else {
+    ElMessage.error('页面异常: ' + err.message)
+  }
 }
 
 app.use(ElementPlus)

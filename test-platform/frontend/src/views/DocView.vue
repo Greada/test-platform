@@ -100,10 +100,7 @@
     <el-descriptions :column="1" border>
       <el-descriptions-item label="后端">运行 <code>TestPlatformApplication.main()</code>，监听 <code>http://localhost:8080</code></el-descriptions-item>
       <el-descriptions-item label="前端">在 <code>frontend/</code> 目录执行 <code>npm run dev</code>，访问 <code>http://localhost:3000</code></el-descriptions-item>
-      <el-descriptions-item label="数据库 V1">执行 <code>init_v1.sql</code> + <code>insert_test_case_v1.sql</code>，默认连接 <code>root:1234@localhost:3306</code></el-descriptions-item>
-      <el-descriptions-item label="数据库 V2.1 升级">在 V1 基础上执行 <code>init_v2.sql</code>（新增 3 表 + 4 字段）</el-descriptions-item>
-      <el-descriptions-item label="数据库 V3 升级">在 V2.1 基础上执行 <code>init_v3.sql</code>（新增 test_category 表）</el-descriptions-item>
-      <el-descriptions-item label="数据库 V3.2 升级">执行 <code>sql/init_v3.sql</code> 中的 user 表部分（新增 user 表 + 默认管理员）</el-descriptions-item>
+      <el-descriptions-item label="数据库初始化">依次执行 <code>init_v1.sql → init_v2.sql → init_v3.sql → init_v4.sql → insert_test_case_v1.sql</code>（连接信息见后端 <code>application.yml</code> 配置）</el-descriptions-item>
       <el-descriptions-item label="AI 集成">启动前设置环境变量 <code>AGNES_API_KEY</code></el-descriptions-item>
     </el-descriptions>
 
