@@ -13,7 +13,11 @@
     <packaging>jar</packaging>
     <properties>
         <java.version>17</java.version>
-        <spring-boot.version>3.3.6</spring-boot.version>
+        <!-- 3.3 系最终补丁版（3.3.13）：修复 Tomcat 10.1.33 的 9.8 系 CVE、Spring Security 6.3.x、
+             logback 1.5.12、bcrypt 无最大长度(7.4) 等传递依赖漏洞（Mend.io 扫描驱动）。
+             残余项（spring 41249/jackson WS-2026-0003/2026 系 CVE）需 Boot 3.5.x 大版本
+             （另立任务，需评估 MyBatis-Plus 3.5.9 兼容性） -->
+        <spring-boot.version>3.3.13</spring-boot.version>
         <mybatis-plus.version>3.5.9</mybatis-plus.version>
     </properties>
     <dependencyManagement>
@@ -24,6 +28,13 @@
                 <version>${spring-boot.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <!-- commons-lang3 由 springdoc→swagger 传递引入且不受 Boot BOM 管理，
+                 直接 pin 修复版本（工具库向后兼容，跨版本风险≈0；CVE-2025-48924 5.3） -->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>3.18.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
