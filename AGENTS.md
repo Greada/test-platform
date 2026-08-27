@@ -11,13 +11,13 @@ Spring Boot 3.3.6 + MyBatis-Plus 3.5.9 + MySQL 5.7 + Vue 3 + Element Plus + Vite
 ## 启动命令
 
 ```bash
-# 数据库初始化（依次执行）
+# 数据库初始化（依次执行；脚本自带 CREATE/USE test_platform，无需指定库名；
+# 全新初始化语义——init_v1 建表无 IF NOT EXISTS、init_v3 含 ALTER，重复执行会报错）
 test-platform/backend/src/main/resources/sql/init_v1.sql
-test-platform/backend/src/main/resources/sql/insert_test_case_v1.sql
-# V2.1+ 升级
 test-platform/backend/src/main/resources/sql/init_v2.sql
-# V3 (分类) + V3.2 (用户)
-test-platform/backend/src/main/resources/sql/init_v3.sql
+test-platform/backend/src/main/resources/sql/init_v3.sql   # V3 分类 + V3.2 用户
+test-platform/backend/src/main/resources/sql/init_v4.sql   # V4 CI 构建记录（ci_build 表）
+test-platform/backend/src/main/resources/sql/insert_test_case_v1.sql
 
 # 后端 — 在 test-platform/ 下（测试已可正常编译运行，无需跳过）
 mvn package -pl backend && java -jar backend/target/test-platform-backend-1.0.0.jar
@@ -29,7 +29,7 @@ npm install && npm run dev
 # 端口 3000，/api 自动代理到 8080
 ```
 
-**数据库连接**：`root:1234@localhost:3306/test_platform`（`application.yml` 明文配置，非生产用）
+**数据库连接**：`root:1234@localhost:3306/test_platform`（`application.yml` 明文配置，非生产用）。本地 3306 不可用时可用 WSL learn-mysql（`localhost:3309`，root/1234）：IDEA 启动时以环境变量 `SPRING_DATASOURCE_URL` 覆盖 url 即可，不改仓库配置。
 
 ## 项目结构
 
@@ -82,6 +82,12 @@ test-platform/
 - MyBatis-Plus 3.5.9: `BaseMapper.insert(T)` 与 `insert(Collection<T>)` 重载冲突 → **已解决**，测试文件使用 `any(TestCase.class)` 等显式类型匹配，`mvn test` 可正常编译运行（91 个测试全部通过）
 - PowerShell 下 Maven `-D` 属性需引号包裹（如 `-D"maven.test.skip=true"`）否则被解析为生命周期阶段
 - 未用 `spring-boot-starter-parent` 时，`spring-boot-maven-plugin` 需显式声明 `<goal>repackage</goal>` 否则生成普通 JAR 而非 fat JAR
+- Shell 里 Maven 默认走 JDK 8（报"无效目标发行版: 17"），需先 `$env:JAVA_HOME = "D:\software\ms-21.0.12.1"`；IDEA 启动不受影响
+- GlobalExceptionHandler 会把业务异常吞成统一 500（B3.17 待修）——**排查 500 先看控制台真实堆栈**，响应体里没有线索
+- `sql/` 与 `docker/init/init.sql` 曾双轨不一致（init_v3.sql 缺分类 DDL、init_v4.sql 缺 USE，2026-08-27 已补齐）；两套并存问题待 B2.x Flyway 根治
+- 判断命令成败看**退出码**而非输出文本：PowerShell 管道后 `$?` 取的是末端命令的，bash 下用 `${PIPESTATUS[0]}`；GBK 乱码会让 grep 误判
+- Spring Security 自定义 Filter 挂链：锚点必须用注册表标准类（如 `LogoutFilter`，自定义类报 "does not have a registered order"）；`@Component` Filter 会被 Boot 自动注册进 Servlet 全局链 + Security 链**跑两遍**，需 `FilterRegistrationBean.setEnabled(false)` 关闭自动注册
+- JWT secret 相关：`signingKey()` 若先做 SHA-256 预哈希，空/短 secret 也能生成合法密钥——长度校验必须在原始 secret 上做（JwtUtil `@PostConstruct` 已守卫）
 
 ## 注意事项
 
@@ -90,7 +96,7 @@ test-platform/
 - **无 Maven Wrapper**：本地构建需预装 Maven 3.9+（CI 使用 `maven:3.9-eclipse-temurin-17` 镜像）
 - **无 Linter/Formatter**：前端无 ESLint/Prettier，后端无 Checkstyle
 - 前端开发时确保后端已启动（vite proxy `/api` → localhost:8080）
-- SQL 初始化必须先 `init_v1.sql` 再 `init_v2.sql` 再 `init_v3.sql`（增量 DDL）
+- SQL 初始化必须 `init_v1 → v2 → v3 → v4 → insert_test_case_v1` 顺序执行（增量 DDL；漏 v4 会导致 CI 看板接口 500）
 - 12 条种子数据（TC-001 ~ TC-012）用于自测验证
 - **V3.2 开始所有接口需要 JWT token**，先访问 `/login` 用 `admin/admin123` 登录
 

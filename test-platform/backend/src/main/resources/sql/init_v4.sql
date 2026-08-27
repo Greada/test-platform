@@ -1,4 +1,7 @@
 -- V4 — CI/CD 构建记录表
+-- 执行前请确保已执行 init_v1.sql ~ init_v3.sql
+USE test_platform;
+
 CREATE TABLE IF NOT EXISTS ci_build (
     id BIGINT(20) AUTO_INCREMENT PRIMARY KEY,
     build_number INT NOT NULL COMMENT 'Jenkins 构建编号',
