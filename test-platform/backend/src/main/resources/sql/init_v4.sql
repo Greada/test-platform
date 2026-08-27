@@ -1,3 +1,4 @@
+-- [已降级] 见 init_v1.sql 头部说明（存量路径；新库走 db/migration/）
 -- V4 — CI/CD 构建记录表
 -- 执行前请确保已执行 init_v1.sql ~ init_v3.sql
 USE test_platform;

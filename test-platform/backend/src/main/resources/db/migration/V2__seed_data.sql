@@ -1,9 +1,16 @@
--- [已降级] 见 init_v1.sql 头部说明（存量路径；新库走 db/migration/V2__seed_data.sql）
-USE test_platform;
+-- =====================================================================
+-- V2__seed_data.sql — 系统运转必需的种子数据
+-- 内容：默认管理员（admin/admin123）+ 12 条自测用例（TC-001 ~ TC-012）
+-- 幂等性：INSERT IGNORE 依赖唯一键（uk_username / uk_test_no），重放不炸不重
+-- 注意：本文件是版本化迁移的一部分，一经应用不可修改（checksum 校验）
+-- =====================================================================
 
-TRUNCATE test_case;
+-- 默认管理员（密码: admin123）
+INSERT IGNORE INTO `user` (`username`, `password`, `display_name`, `role`)
+VALUES ('admin', '$2a$10$ikuTUlx1bNz3j/fr6EB0m.YH9SDLj0k9RmNZPW36AsJ0gccTUbB0K', '管理员', 'ADMIN');
 
-INSERT INTO test_case (test_no, name, request_url, request_method, request_headers, request_params, expected_result)
+-- 12 条种子数据（TC-001 ~ TC-012）
+INSERT IGNORE INTO test_case (test_no, name, request_url, request_method, request_headers, request_params, expected_result)
 VALUES
 ('TC-001', 'HTTP GET 请求', 'https://httpbin.org/get', 'GET', NULL, NULL,
  '{"url":"https://httpbin.org/get"}'),
@@ -42,5 +49,3 @@ VALUES
 
 ('TC-012', '文本降级匹配', 'https://httpbin.org/ip', 'GET', NULL, NULL,
  'origin');
-
-SELECT * FROM test_case;

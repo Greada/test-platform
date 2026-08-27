@@ -1,3 +1,5 @@
+-- [已降级] 本脚本组（init_v1~v4 + insert_test_case_v1）为 Flyway 引入前的存量初始化路径，
+-- 仅用于升级存量库或 docker/init 场景；全新初始化由 db/migration/（Flyway）接管，不再更新本组。
 CREATE DATABASE IF NOT EXISTS test_platform
     DEFAULT CHARACTER SET utf8mb4
     DEFAULT COLLATE utf8mb4_general_ci;

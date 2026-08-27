@@ -1,3 +1,4 @@
+-- [已降级] 见 init_v1.sql 头部说明（存量路径；新库走 db/migration/）
 -- V3: 分类管理 + V3.2: JWT 权限管理
 -- 执行前请确保已执行 init_v1.sql 和 init_v2.sql
 -- 本脚本组为"全新初始化"语义：ALTER 不可重复执行（MySQL 5.7 无 ADD COLUMN IF NOT EXISTS）

@@ -1,3 +1,4 @@
+-- [已降级] 见 init_v1.sql 头部说明（存量路径；新库走 db/migration/）
 USE test_platform;
 
 CREATE TABLE IF NOT EXISTS test_suite
