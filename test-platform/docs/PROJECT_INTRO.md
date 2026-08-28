@@ -13,7 +13,7 @@
 | **[进度报告.md](进度报告.md)** | 📊 项目进度总览、里程碑、功能统计 |
 | **[开发进度.md](开发进度.md)** | 📝 分阶段详细任务跟踪与修复记录 |
 | **[阶段总结报告.md](阶段总结报告.md)** | 🏁 阶段总结、技术决策、经验教训 |
-| **[resume.html](resume.html)** | 🔄 开发恢复指南（下次继续用） |
+| **[resume.html](resume.html)** | 🔄 开发恢复指南（已废弃，续接请看仓库根 AGENTS.md） |
 | **[Jenkinsfile](../Jenkinsfile)** | 🔧 CI/CD Pipeline 配置 |
 
 ---

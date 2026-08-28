@@ -5,6 +5,8 @@
 > 技术栈：Vue 3 + Vite 5 + Element Plus + Axios + Vue Router 4
 >
 > 更新日期：2026-08-05
+>
+> ⚠️ **时效声明**：本文写于优化工程启动前。此后前端已变化：路由守卫增加 JWT 过期校验（tokenExp）、main.js 生产环境错误脱敏、CiStatus 数据列修复、Element Plus 失效图标替换（详见 `test-platform/docs/优化计划.md` 进展表）。架构性描述（目录结构/请求流程/组件职责）仍然有效，细节以代码为准。
 
 ---
 
