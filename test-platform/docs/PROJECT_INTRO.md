@@ -9,6 +9,7 @@
 | **[PROJECT_INTRO.md](PROJECT_INTRO.md)** | 🏠 项目介绍（本文档） |
 | **[API.md](API.md)** | 📡 API 接口文档（V1 ~ V3.3） |
 | **[sql.md](sql.md)** | 🗄️ 数据库 ER 图与表结构 |
+| **[优化计划.md](优化计划.md)** | 🚀 优化工程总账（核查/进展/后续路线图） |
 | **[进度报告.md](进度报告.md)** | 📊 项目进度总览、里程碑、功能统计 |
 | **[开发进度.md](开发进度.md)** | 📝 分阶段详细任务跟踪与修复记录 |
 | **[阶段总结报告.md](阶段总结报告.md)** | 🏁 阶段总结、技术决策、经验教训 |
@@ -26,9 +27,10 @@
 | 层 | 技术 | 版本 |
 |---|---|---|
 | 语言 | Java | 17 |
-| 框架 | Spring Boot | 3.3.6 |
+| 框架 | Spring Boot | 3.3.13 |
 | ORM | MyBatis-Plus | 3.5.9 |
 | 数据库 | MySQL | 5.7+ (驱动 8.0.33) |
+| 迁移 | Flyway | 10.10 |
 | 前端 | Vue 3 + Element Plus | — |
 | 构建 | Maven (父子模块) | — |
 | CI/CD | Jenkins + Docker Compose | — |
@@ -54,17 +56,18 @@ test-platform/
 │   └── src/main/
 │       ├── java/com/testplatform/
 │       │   ├── TestPlatformApplication.java
-│       │   ├── common/ (Result + HttpResult + JsonDiffResult + ErrorPattern + EndpointDef + GlobalExceptionHandler)
-│       │   ├── config/ (Cors + Security + RestTemplate + JwtUtil + JwtAuthFilter + PasswordEncoder + AiConfig)
+│       │   ├── common/ (Result + HttpResult + JsonDiffResult + ErrorPattern + EndpointDef + exception/GlobalExceptionHandler)
+│       │   ├── config/ (Cors+CorsProperties + Security + RestTemplate + JwtUtil + JwtAuthFilter + CiAuthFilter + PasswordEncoder + AiConfig)
 │       │   ├── dto/CategoryNode.java
-│   │   ├── controller/ (Auth + Ai + Category + Execution + TestCase + TestSuite + ExecutionReport + CiBuild)
-│   │   ├── entity/ (User + TestCase + ExecutionRecord + TestCategory + TestSuite + TestSuiteCase + ExecutionReport + CiBuild)
-│   │   ├── mapper/ (9 个 Mapper)
+│       │   ├── controller/ (Auth + Ai + Category + Execution + TestCase + TestSuite + ExecutionReport + CiBuild)
+│       │   ├── entity/ (User + TestCase + ExecutionRecord + TestCategory + TestSuite + TestSuiteCase + ExecutionReport + CiBuild)
+│       │   ├── mapper/ (9 个 Mapper)
 │       │   ├── service/ (10 个接口 + 6 个实现)
-│       │   └── util/ (OpenApiParser + SchemaToJsonGenerator)
+│       │   └── util/ (UrlValidator SSRF防护 + OpenApiParser + SchemaToJsonGenerator)
 │       └── resources/
-│           ├── application.yml
-│           └── sql/ (init_v1 + init_v2 + init_v3 + init_v4 + V4 ci_build + insert_test_case_v1)
+│           ├── application.yml (+ application-dev.yml)
+│           ├── db/migration/ (Flyway: V1 init_schema + V2 seed_data + V3 soft_delete_and_indexes)  ← schema 权威来源
+│           └── sql/ (已降级：手工脚本组，仅维护存量)
 ├── docker/
 │   └── init/init.sql                     # Docker 入口 SQL（合并 V1+V2+V3+V4+种子数据）
 ├── docker-compose.yml                    # mysql + backend + frontend 三服务编排
@@ -604,7 +607,7 @@ docker compose up -d
 
 **前端**：在 `frontend/` 目录执行 `npm run dev`，访问 `http://localhost:3000`
 
-**数据库**：依次执行 `init_v1.sql` → `init_v2.sql` → `init_v3.sql` → `init_v4.sql`，然后 `insert_test_case_v1.sql`（可选种子数据）。MySQL 连接默认 `root:1234@localhost:3306`。
+**数据库**：建空库即可（`CREATE DATABASE test_platform DEFAULT CHARSET utf8mb4;`），后端首次启动时 Flyway 自动建表+灌种子（`db/migration/`，B2.1 起为 schema 权威来源；存量旧库自动 baseline）。数据库连接见 `backend/src/main/resources/application.yml`（密码走 `DB_PASSWORD` 环境变量，dev profile 有本地兜底）。
 
 ## AI 接入（V3.1）
 

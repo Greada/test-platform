@@ -1159,10 +1159,17 @@ Token 有效期 **24 小时**，过期后需重新登录。
 
 ## CI 构建接口 (V3.3)
 
+### 鉴权说明（B1.4 起）
+
+CI 接口族采用**混合鉴权**：
+- `POST /ci/builds`（机器写入）：请求头携带 `X-CI-Token: <CI_API_KEY>`（常量时间比对；未配置 CI_API_KEY 时 fail-closed 拒绝）
+- `GET /ci/builds`、`GET /ci/builds/latest`（前端看板读取）：走用户 JWT（Authorization: Bearer）
+
 ### 创建构建记录
 
 ```
 POST /ci/builds
+Headers: X-CI-Token: <CI_API_KEY>
 ```
 
 Jenkins Pipeline 执行完成后回调此接口保存构建结果。

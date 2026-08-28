@@ -133,7 +133,9 @@ test-platform/
 
 ## 文档
 
-完整文档在 `test-platform/docs/`：PROJECT_INTRO, API, sql, 进度报告, 开发进度, 阶段总结, 优化计划, 本地部署与CICD搭建指南, resume.html
+完整文档在 `test-platform/docs/`：PROJECT_INTRO, API, sql, **优化计划（核查/进展/后续路线图——续接优化工程先读这个）**, 进度报告, 开发进度, 阶段总结, 本地部署与CICD搭建指南, resume.html
+
+历史文档（进度报告/开发进度/阶段总结/resume.html）编写于优化工程之前，描述的是 V1~V4 原始功能开发期，其中技术栈版本与初始化方式已过时——以 AGENTS.md 和优化计划.md 为准。
 
 
 <!-- open-mem-context -->

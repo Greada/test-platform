@@ -12,7 +12,9 @@ erDiagram
         VARCHAR password "BCrypt 密码"
         VARCHAR display_name "显示名称"
         VARCHAR role "USER/ADMIN"
+        TINYINT deleted "V3迁移-软删标记"
         DATETIME create_time
+        DATETIME update_time "V3迁移-补齐"
     }
 
     test_case {
@@ -24,6 +26,8 @@ erDiagram
         TEXT request_headers "JSON"
         TEXT request_params "JSON"
         TEXT expected_result "预期结果"
+        BIGINT category_id "V3-所属分类"
+        TINYINT deleted "V3迁移-软删标记 0/1"
         DATETIME create_time
         DATETIME update_time
     }
@@ -46,6 +50,7 @@ erDiagram
         BIGINT id PK
         VARCHAR name "套件名称"
         VARCHAR description "描述"
+        TINYINT deleted "V3迁移-软删标记"
         DATETIME create_time
         DATETIME update_time
     }
@@ -96,3 +101,12 @@ erDiagram
 | V3.2 | 新增 user 表 |
 | V3.3 | 新增 ci_build 表（V4 迁移 init_v4.sql） |
 | Docker | 合并 DDL 为 `docker/init/init.sql` 单入口（V1+V2+V3+种子数据+SET NAMES utf8mb4） |
+| Flyway V1/V2 | db/migration 快照基线（8 表最终形态 + 种子数据；存量库自动 baseline） |
+| Flyway V3 | 软删字段（test_case/test_suite/test_category/user）+ user/execution_report 补 update_time + 索引（test_case.category_id / ci_build.build_number / execution_record.execute_time） |
+
+## 当前 schema 管理（B2.1 起）
+
+- **权威来源**：`backend/src/main/resources/db/migration/`（Flyway V1~V3）
+- **新变更 = 新建 Vn 脚本**，禁改历史脚本（checksum 校验会拒启动）
+- 软删已生效：上述 4 表 deleteById 实际为 `UPDATE deleted=1`，查询自动 `WHERE deleted=0`
+- `sql/` 手工脚本组已降级为存量维护路径；`docker/init/init.sql` 的 ALTER 不可重入待修（B2.3）
