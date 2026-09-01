@@ -4,17 +4,17 @@
 
 实际项目根目录是 `test-platform/`（含 `pom.xml`、`backend/`、`frontend/`）。
 
-## 当前状态与续接指南（2026-08-27 更新）
+## 当前状态与续接指南（2026-09-01 更新）
 
 > **跨设备续接先读这里**。完整路线图见 `test-platform/docs/优化计划.md` 的「后续路线图」章节（含每项的内容/预估/验证手段）。
 
 **优化工程进度**（始于 2026-08-25 核查，提交 `4b556a8`→`dcbef9e`）：
 
 - ✅ **阶段一安全加固完成**（后端 B1.1~B1.7/B1.9 + 前端 F1.1~F1.6 + 基建 I1.1~I1.3；验收 12 勾 11）
-- 🔄 **阶段二数据治理过半**（Flyway V1/V2/V3 落地双路径验证 + 软删 + 索引 + 冗余脚本清理；B2.3/B2.11-14/B2.7 外键专项待做）
+- 🔄 **阶段二数据治理收尾中**（Flyway V1/V2/V3 落地双路径验证 + 软删 + 索引 + 冗余脚本清理；B2.3/B2.11-B2.14 已完成，剩余 B2.7 外键专项）
 - ➕ 顺带完成：Maven 零告警、CVE 可达高危清零（Boot 3.3.6→3.3.13）、前端 dist 出库
 
-**下次开工入口**（按序）：① B2.3 docker/init/init.sql ALTER 可重入守卫 → ② B2.11 application-prod.yml（注意：compose 已传 `SPRING_PROFILES_ACTIVE=prod` 但 prod 文件不存在，是空引用）+ actuator 成套上（依赖+management 配置+compose healthcheck+SecurityConfig 放行，一次讲完整故事）→ ③ B2.12 HikariCP → ④ B2.7 外键专项（先查存量孤儿数据）→ ⑤ 阶段三 IDOR（V5__creator_id 迁移）。
+**下次开工入口**（按序）：① B2.7 外键专项（先查存量孤儿数据 → 定删除策略 RESTRICT → V4__foreign_keys 迁移 → 业务删除顺序回归）→ ② 阶段三 IDOR（V5__creator_id 迁移）。
 
 **环境矩阵（本机现状，换设备需重建的项标注 ✚）**：
 
@@ -114,7 +114,7 @@ test-platform/
 - 未用 `spring-boot-starter-parent` 时，`spring-boot-maven-plugin` 需显式声明 `<goal>repackage</goal>` 否则生成普通 JAR 而非 fat JAR
 - Shell 里 Maven 默认走 JDK 8（报"无效目标发行版: 17"），需先 `$env:JAVA_HOME = "D:\software\ms-21.0.12.1"`；IDEA 启动不受影响
 - GlobalExceptionHandler 会把业务异常吞成统一 500（B3.17 待修）——**排查 500 先看控制台真实堆栈**，响应体里没有线索
-- `sql/` 与 `docker/init/init.sql` 曾双轨不一致（init_v3.sql 缺分类 DDL、init_v4.sql 缺 USE，2026-08-27 已补齐）；**已由 Flyway 根治**（B2.1 起 db/migration 为准，sql/ 手工脚本组降级为存量维护路径）；docker/init/init.sql 的 ALTER 不可重入仍待 B2.3 修
+- `sql/` 与 `docker/init/init.sql` 曾双轨不一致（init_v3.sql 缺分类 DDL、init_v4.sql 缺 USE，2026-08-27 已补齐）；**已由 Flyway 根治**（B2.1 起 db/migration 为准，sql/ 手工脚本组降级为存量维护路径）；docker/init/init.sql 的 ALTER 已折叠进 CREATE，2026-09-01 实测可重入
 - 判断命令成败看**退出码**而非输出文本：PowerShell 管道后 `$?` 取的是末端命令的，bash 下用 `${PIPESTATUS[0]}`；GBK 乱码会让 grep 误判
 - Spring Security 自定义 Filter 挂链：锚点必须用注册表标准类（如 `LogoutFilter`，自定义类报 "does not have a registered order"）；`@Component` Filter 会被 Boot 自动注册进 Servlet 全局链 + Security 链**跑两遍**，需 `FilterRegistrationBean.setEnabled(false)` 关闭自动注册
 - JWT secret 相关：`signingKey()` 若先做 SHA-256 预哈希，空/短 secret 也能生成合法密钥——长度校验必须在原始 secret 上做（JwtUtil `@PostConstruct` 已守卫）

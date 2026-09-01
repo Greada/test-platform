@@ -109,4 +109,4 @@ erDiagram
 - **权威来源**：`backend/src/main/resources/db/migration/`（Flyway V1~V3）
 - **新变更 = 新建 Vn 脚本**，禁改历史脚本（checksum 校验会拒启动）
 - 软删已生效：上述 4 表 deleteById 实际为 `UPDATE deleted=1`，查询自动 `WHERE deleted=0`
-- `sql/` 手工脚本组已降级为存量维护路径；`docker/init/init.sql` 的 ALTER 不可重入待修（B2.3）
+- `sql/` 手工脚本组已降级为存量维护路径；`docker/init/init.sql` 的 ALTER 已折叠进 CREATE（B2.3，2026-09-01 实测可重入）
