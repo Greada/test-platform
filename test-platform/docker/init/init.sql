@@ -21,15 +21,20 @@ CREATE TABLE IF NOT EXISTS test_case
 
 CREATE TABLE IF NOT EXISTS execution_record
 (
-    id              BIGINT(20)  NOT NULL AUTO_INCREMENT,
-    test_case_id    BIGINT(20)  NOT NULL,
-    status          VARCHAR(10) NOT NULL DEFAULT 'PENDING',
-    request_detail  TEXT,
-    response_detail TEXT,
-    actual_result   TEXT,
-    execute_time    DATETIME             DEFAULT CURRENT_TIMESTAMP,
+    id               BIGINT(20)  NOT NULL AUTO_INCREMENT,
+    test_case_id     BIGINT(20)  NOT NULL,
+    report_id        BIGINT(20)  DEFAULT NULL COMMENT '关联报告ID',
+    test_no          VARCHAR(20)  DEFAULT NULL COMMENT '快照-用例编号',
+    case_name        VARCHAR(255) DEFAULT NULL COMMENT '快照-用例名称',
+    execute_duration BIGINT(20)   DEFAULT NULL COMMENT '执行耗时(ms)',
+    status           VARCHAR(10) NOT NULL DEFAULT 'PENDING',
+    request_detail   TEXT,
+    response_detail  TEXT,
+    actual_result    TEXT,
+    execute_time     DATETIME              DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    KEY idx_test_case_id (test_case_id)
+    KEY idx_test_case_id (test_case_id),
+    KEY idx_report_id (report_id)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;
 
@@ -75,13 +80,6 @@ CREATE TABLE IF NOT EXISTS execution_report
     KEY idx_report_suite (suite_id)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;
-
-ALTER TABLE execution_record
-    ADD COLUMN report_id        BIGINT(20)   DEFAULT NULL COMMENT '关联报告ID' AFTER test_case_id,
-    ADD COLUMN test_no          VARCHAR(20)  DEFAULT NULL COMMENT '快照-用例编号' AFTER report_id,
-    ADD COLUMN case_name        VARCHAR(255) DEFAULT NULL COMMENT '快照-用例名称' AFTER test_no,
-    ADD COLUMN execute_duration BIGINT(20)   DEFAULT NULL COMMENT '执行耗时(ms)' AFTER case_name,
-    ADD KEY idx_report_id (report_id);
 
 -- V3.2: 用户 + 分类
 CREATE TABLE IF NOT EXISTS `user` (
