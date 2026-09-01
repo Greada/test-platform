@@ -1,0 +1,18 @@
+spring:
+  main:
+    banner-mode: off
+logging:
+  level:
+    com.testplatform: INFO
+    org.springframework: WARN
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
