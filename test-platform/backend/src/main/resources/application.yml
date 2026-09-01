@@ -46,7 +46,7 @@ mybatis-plus:
       logic-not-delete-value: 0
 ai:
   agnes:
-    api-key: ${AGNES_API_KEY}
+    api-key: ${AGNES_API_KEY:}
     base-url: https://apihub.agnes-ai.com/v1
     model: agnes-2.0-flash
 logging:

@@ -1,6 +1,5 @@
 package com.testplatform.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.testplatform.config.AiConfig;
@@ -56,11 +55,15 @@ public class AiService {
     }
 
     private String callAgnes(String userMessage) {
+        String apiKey = aiConfig.getApiKey();
+        if (apiKey == null || apiKey.trim().isEmpty()) {
+            throw new RuntimeException("AGNES_API_KEY 未配置，无法调用 AI 服务");
+        }
         String url = aiConfig.getBaseUrl() + "/chat/completions";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(aiConfig.getApiKey());
+        headers.setBearerAuth(apiKey);
 
         Map<String, Object> systemMsg = new HashMap<>();
         systemMsg.put("role", "system");
@@ -89,16 +92,7 @@ public class AiService {
         }
     }
 
-    public String generateExpectedFromSchema(String schemaJson) {
-        String prompt =
-                "Generate a sample JSON response body based on the following JSON Schema. "
-                        + "Use realistic values for all fields. Return ONLY valid JSON, no extra text:\n"
-                        + schemaJson;
-        return callAgnes(prompt);
-    }
-
-    public List<String> generateExpectedBatch(List<String> schemaJsons)
-            throws JsonProcessingException {
+    public List<String> generateExpectedBatch(List<String> schemaJsons) {
         int batchSize = 15;
         String[] results = new String[schemaJsons.size()];
         Arrays.fill(results, "{}");
