@@ -100,9 +100,11 @@ erDiagram
 | V3.1 | 无 schema 变更（纯前后端 + AI 集成） |
 | V3.2 | 新增 user 表 |
 | V3.3 | 新增 ci_build 表（V4 迁移 init_v4.sql） |
+| V4 | `test_suite_case` / `execution_record` 核心关系加 RESTRICT 外键（B2.7） |
 | Docker | 合并 DDL 为 `docker/init/init.sql` 单入口（V1+V2+V3+种子数据+SET NAMES utf8mb4） |
 | Flyway V1/V2 | db/migration 快照基线（8 表最终形态 + 种子数据；存量库自动 baseline） |
 | Flyway V3 | 软删字段（test_case/test_suite/test_category/user）+ user/execution_report 补 update_time + 索引（test_case.category_id / ci_build.build_number / execution_record.execute_time） |
+| Flyway V4 | 核心关系外键约束（test_suite_case.suite_id/case_id、execution_record.test_case_id/report_id → RESTRICT） |
 
 ## 当前 schema 管理（B2.1 起）
 
