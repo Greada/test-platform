@@ -4,7 +4,11 @@ erDiagram
     test_suite ||--o{ test_suite_case : "包含"
     test_suite ||--o{ execution_report : "产生"
     execution_report ||--o{ execution_record : "汇总"
-    user ||--o{ test_case : "创建" (未实现)
+    user ||--o{ test_case : "创建"
+    user ||--o{ test_suite : "创建"
+    user ||--o{ execution_report : "创建"
+    user ||--o{ test_category : "创建"
+    test_category ||--o{ test_case : "归类"
 
     user {
         BIGINT id PK
@@ -27,6 +31,7 @@ erDiagram
         TEXT request_params "JSON"
         TEXT expected_result "预期结果"
         BIGINT category_id "V3-所属分类"
+        BIGINT creator_id "V5-创建人(IDOR数据隔离)"
         TINYINT deleted "V3迁移-软删标记 0/1"
         DATETIME create_time
         DATETIME update_time
@@ -50,6 +55,7 @@ erDiagram
         BIGINT id PK
         VARCHAR name "套件名称"
         VARCHAR description "描述"
+        BIGINT creator_id "V5-创建人(IDOR数据隔离)"
         TINYINT deleted "V3迁移-软删标记"
         DATETIME create_time
         DATETIME update_time
@@ -72,8 +78,21 @@ erDiagram
         INT errored "错误"
         DECIMAL pass_rate "通过率%"
         VARCHAR status "RUNNING/COMPLETED"
+        BIGINT creator_id "V5-创建人(IDOR数据隔离)"
         DATETIME execute_time "执行时间"
         DATETIME create_time
+    }
+
+    test_category {
+        BIGINT id PK
+        VARCHAR name "分类名称(同父级唯一)"
+        BIGINT parent_id "父级ID 0=顶级"
+        INT level "层级1-3"
+        INT sort_order "排序"
+        BIGINT creator_id "V5-创建人(IDOR数据隔离)"
+        TINYINT deleted "V3迁移-软删标记"
+        DATETIME create_time
+        DATETIME update_time
     }
 
     ci_build {
@@ -105,10 +124,12 @@ erDiagram
 | Flyway V1/V2 | db/migration 快照基线（8 表最终形态 + 种子数据；存量库自动 baseline） |
 | Flyway V3 | 软删字段（test_case/test_suite/test_category/user）+ user/execution_report 补 update_time + 索引（test_case.category_id / ci_build.build_number / execution_record.execute_time） |
 | Flyway V4 | 核心关系外键约束（test_suite_case.suite_id/case_id、execution_record.test_case_id/report_id → RESTRICT） |
+| Flyway V5 | IDOR 数据隔离：test_case/test_suite/execution_report/test_category 加 creator_id（NOT NULL DEFAULT 1，存量归 admin）+ 索引 |
 
 ## 当前 schema 管理（B2.1 起）
 
-- **权威来源**：`backend/src/main/resources/db/migration/`（Flyway V1~V3）
+- **权威来源**：`backend/src/main/resources/db/migration/`（Flyway V1~V5）
 - **新变更 = 新建 Vn 脚本**，禁改历史脚本（checksum 校验会拒启动）
 - 软删已生效：上述 4 表 deleteById 实际为 `UPDATE deleted=1`，查询自动 `WHERE deleted=0`
+- 数据隔离已生效（B3.19 起）：所有业务查询按 `creator_id = 当前登录用户` 过滤，越权访问返回 404
 - `sql/` 手工脚本组已降级为存量维护路径；`docker/init/init.sql` 的 ALTER 已折叠进 CREATE（B2.3，2026-09-01 实测可重入）

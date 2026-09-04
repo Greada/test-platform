@@ -84,6 +84,16 @@ GET /testcases/{id}
 }
 ```
 
+**不存在 / 非本人用例**（B3.19 起返回 404，见「数据隔离说明」）
+
+```json
+{
+  "code": 404,
+  "message": "用例不存在",
+  "data": null
+}
+```
+
 ---
 
 ### 新建用例
@@ -1120,6 +1130,24 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 ```
 
 Token 有效期 **24 小时**，过期后需重新登录。
+
+### 数据隔离说明（B3.19 起）
+
+所有业务数据（测试用例/测试套件/执行报告/分类）**按创建人隔离**：
+
+- **列表接口**（`GET /testcases`、`GET /test-suites`、`GET /execution-reports`、`GET /categories` 等）只返回当前登录用户创建的数据
+- **详情/修改/删除接口**访问他人数据时返回 **404**（与"不存在"不可区分，防止资源存在性探测）：
+
+```json
+{
+  "code": 404,
+  "message": "用例不存在",
+  "data": null
+}
+```
+
+- **新建接口**自动将 `creator_id` 设为当前登录用户，请求体中传入的 creatorId 会被忽略
+- 存量数据（V5 迁移前）默认归属 admin（user id=1）
 
 ### 认证错误响应
 

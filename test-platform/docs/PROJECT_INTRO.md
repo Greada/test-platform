@@ -435,6 +435,7 @@ JENKINS_TOKEN=你的Jenkins API Token
 | request_headers | TEXT | 请求头（JSON 格式） |
 | request_params | TEXT | 请求参数（JSON 格式） |
 | expected_result | TEXT NOT NULL | 预期结果（JSON 或文本） |
+| creator_id | BIGINT(20) NOT NULL | **V5** 创建人 ID（数据隔离，存量默认 1=admin） |
 | create_time | DATETIME | 创建时间 |
 | update_time | DATETIME | 更新时间 |
 
@@ -460,6 +461,7 @@ JENKINS_TOKEN=你的Jenkins API Token
 | name | VARCHAR(100) | 分类名称（同父级下唯一） |
 | level | INT(11) | 层级（1-3） |
 | sort_order | INT(11) | 排序序号 |
+| creator_id | BIGINT(20) NOT NULL | **V5** 创建人 ID（数据隔离） |
 | create_time | DATETIME | 创建时间 |
 | update_time | DATETIME | 更新时间 |
 
@@ -486,6 +488,7 @@ JENKINS_TOKEN=你的Jenkins API Token
 | id | BIGINT(20) PK | 自增主键 |
 | name | VARCHAR(255) | 套件名称 |
 | description | VARCHAR(500) | 描述 |
+| creator_id | BIGINT(20) NOT NULL | **V5** 创建人 ID（数据隔离） |
 | create_time | DATETIME | 创建时间 |
 | update_time | DATETIME | 更新时间 |
 
@@ -513,6 +516,7 @@ UNIQUE KEY on (suite_id, case_id)
 | errored | INT(11) | 错误数 |
 | pass_rate | DECIMAL(5,2) | 通过率 % |
 | status | VARCHAR(20) | RUNNING / COMPLETED |
+| creator_id | BIGINT(20) NOT NULL | **V5** 创建人 ID（数据隔离） |
 | execute_time | DATETIME | 执行时间 |
 | create_time | DATETIME | 创建时间 |
 
@@ -618,12 +622,12 @@ docker compose up -d
 ```yaml
 ai:
   agnes:
-    api-key: ${AGNES_API_KEY}
+    api-key: ${AGNES_API_KEY:}
     base-url: https://apihub.agnes-ai.com/v1
     model: agnes-2.0-flash
 ```
 
-启动前需设置环境变量 `AGNES_API_KEY`。
+`AGNES_API_KEY` 未设置时应用可正常启动（B2.13 容错），仅调用 AI 功能时报"AGNES_API_KEY 未配置"。
 
 ### 使用场景
 
