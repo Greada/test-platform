@@ -4,7 +4,7 @@
 
 实际项目根目录是 `test-platform/`（含 `pom.xml`、`backend/`、`frontend/`）。
 
-## 当前状态与续接指南（2026-09-01 更新）
+## 当前状态与续接指南（2026-09-04 更新）
 
 > **跨设备续接先读这里**。完整路线图见 `test-platform/docs/优化计划.md` 的「后续路线图」章节（含每项的内容/预估/验证手段）。
 
@@ -12,17 +12,18 @@
 
 - ✅ **阶段一安全加固完成**（后端 B1.1~B1.7/B1.9 + 前端 F1.1~F1.6 + 基建 I1.1~I1.3；验收 12 勾 11）
 - ✅ **阶段二数据治理完成**（Flyway V1/V2/V3 落地双路径验证 + 软删 + 索引 + 冗余脚本清理 + B2.7 外键约束；B2.3/B2.11-B2.14 全部完成）
-- ➕ 顺带完成：Maven 零告警、CVE 可达高危清零（Boot 3.3.6→3.3.13）、前端 dist 出库
+- ✅ **B3.19 IDOR 数据隔离完成**（`5f56052`：V5__creator_id 迁移 + 全 Service 归属校验 + 98 测试适配 + 真机 8 项越权实测全通过）
+- ➕ 顺带完成：Maven 零告警、CVE 可达高危清零（Boot 3.3.6→3.3.13）、前端 dist 出库、本地 MySQL 3306 密码重置（root/1234，与 learn 环境一致）
 
-**下次开工入口**（按序）：① 阶段三 IDOR（V5__creator_id 迁移）：`creator_id` 字段 + 存量默认 admin + 实体/查询过滤 + 用户 A 访问用户 B 数据返回 404 实测。
+**下次开工入口**（按序）：① B3.9+B3.1 分页（MybatisPlusConfig 分页插件 + list 接口 page/size 参数 + 前端 el-pagination，F3.1 同步）→ ② B3.10/B3.11 N+1 修复 → ③ B3.4 DTO 层 → ④ B3.17 异常处理补全。
 
 **环境矩阵（本机现状，换设备需重建的项标注 ✚）**：
 
 | 项 | 值 | 跨设备说明 |
 |---|---|---|
 | JDK 17+ | `D:\software\ms-21.0.12.1`（shell 的 Maven 默认 JDK8，**必须先设 JAVA_HOME**） | ✚ 任何 JDK 17+ 均可 |
-| MySQL | Windows 本地 3306 密码未知（root 猜不出）→ 实际用 WSL `tp-learn-mysql`（localhost:3309，root/1234） | ✚ 任意 MySQL 5.7：建空库即可，Flyway 自动迁移（存量库自动 baseline） |
-| 后端启动 | IDEA，Run Configuration 环境变量：`CI_API_KEY=test-ci-token-123` + `SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3309/...` | ✚ 环境变量不进仓库，换机要重配；dev profile 自带 jwt secret/db 密码兜底 |
+| MySQL | Windows 本地 3306 已重置可用（root/1234，2026-09-04 skip-grant-tables 重置，`test_platform` 空库已建，Flyway V1~V5 自动迁移）；备用 WSL `tp-learn-mysql`（localhost:3309，root/1234） | ✚ 任意 MySQL 5.7：建空库即可，Flyway 自动迁移（存量库自动 baseline） |
+| 后端启动 | IDEA 直接启动即可（默认 datasource 指向 3306，dev profile 密码兜底 1234）；如需连 learn 库再设 `SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3309/...` | ✚ 环境变量不进仓库，换机要重配；dev profile 自带 jwt secret/db 密码兜底 |
 | WSL Jenkins | 容器 `jenkins`（:8088），job `test-platform-learn` 跑 `Jenkinsfile-learn`，手动触发（DEPLOY_ENV=prod 实际部署 learn 环境 82/8090/3309） | ✚ 换机可跳过：本地 `mvn test` + 手动冒烟即可等价验证 |
 | learn 环境 | `docker-compose.learn.yml`：tp-learn-*（82/8090/3309），JWT/CI/SSRF 有兜底值开箱即用 | ✚ 同上 |
 | CI 回写契约 | POST `/api/ci/builds` 需 `X-CI-Token` 头；主 Jenkinsfile 的回写**未适配会 401**（`|| true` 兜底不炸构建，丢看板数据）——Jenkinsfile 重写时修 | 契约已定，见 SecurityConfig/CiAuthFilter |
