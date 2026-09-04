@@ -36,4 +36,5 @@ public class TestCase {
 
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
+    private Long creatorId;
 }

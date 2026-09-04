@@ -20,4 +20,5 @@ public class TestSuite {
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
     @TableLogic private Integer deleted;
+    private Long creatorId;
 }

@@ -9,6 +9,7 @@ import com.testplatform.mapper.TestSuiteCaseMapper;
 import com.testplatform.mapper.TestSuiteMapper;
 import com.testplatform.service.ExecutionService;
 import com.testplatform.service.TestSuiteService;
+import com.testplatform.util.SecurityUtils;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,24 +45,41 @@ public class TestSuiteServiceImpl implements TestSuiteService {
 
     @Override
     public Result<List<TestSuite>> listAll() {
-        List<TestSuite> testSuites = testSuiteMapper.selectList(new QueryWrapper<>());
+        QueryWrapper<TestSuite> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("creator_id", SecurityUtils.getCurrentUserId());
+        List<TestSuite> testSuites = testSuiteMapper.selectList(queryWrapper);
         return Result.success(testSuites);
     }
 
     @Override
     public Result<TestSuite> getById(Long id) {
         TestSuite testSuite = testSuiteMapper.selectById(id);
+        if (testSuite == null) {
+            return Result.error(404, "测试套不存在");
+        }
+        if (!Objects.equals(testSuite.getCreatorId(), SecurityUtils.getCurrentUserId())) {
+            return Result.error(404, "测试套不存在");
+        }
         return Result.success(testSuite);
     }
 
     @Override
     public Result<Void> save(TestSuite testSuite) {
+        testSuite.setCreatorId(SecurityUtils.getCurrentUserId());
         testSuiteMapper.insert(testSuite);
         return Result.success(null);
     }
 
     @Override
     public Result<Void> update(TestSuite testSuite) {
+        TestSuite existing = testSuiteMapper.selectById(testSuite.getId());
+        if (existing == null) {
+            return Result.error(404, "测试套不存在");
+        }
+        if (!Objects.equals(existing.getCreatorId(), SecurityUtils.getCurrentUserId())) {
+            return Result.error(404, "测试套不存在");
+        }
+        testSuite.setCreatorId(null);
         testSuiteMapper.updateById(testSuite);
         return Result.success(null);
     }
@@ -69,6 +87,13 @@ public class TestSuiteServiceImpl implements TestSuiteService {
     @Override
     @Transactional
     public Result<Void> deleteById(Long id) {
+        TestSuite existing = testSuiteMapper.selectById(id);
+        if (existing == null) {
+            return Result.error(404, "测试套不存在");
+        }
+        if (!Objects.equals(existing.getCreatorId(), SecurityUtils.getCurrentUserId())) {
+            return Result.error(404, "测试套不存在");
+        }
         QueryWrapper<TestSuiteCase> qw = new QueryWrapper<>();
         qw.eq("suite_id", id);
         testSuiteCaseMapper.delete(qw);
@@ -78,6 +103,13 @@ public class TestSuiteServiceImpl implements TestSuiteService {
 
     @Override
     public Result<List<TestCase>> listCases(Long suiteId) {
+        TestSuite existing = testSuiteMapper.selectById(suiteId);
+        if (existing == null) {
+            return Result.error(404, "测试套不存在");
+        }
+        if (!Objects.equals(existing.getCreatorId(), SecurityUtils.getCurrentUserId())) {
+            return Result.error(404, "测试套不存在");
+        }
         QueryWrapper<TestSuiteCase> qw = new QueryWrapper<>();
         qw.eq("suite_id", suiteId).orderByAsc("sort_order");
         List<TestSuiteCase> testSuiteCases = testSuiteCaseMapper.selectList(qw);
@@ -85,12 +117,13 @@ public class TestSuiteServiceImpl implements TestSuiteService {
             return Result.success(new ArrayList<>());
         }
         List<Long> caseIds =
-                testSuiteCases.stream()
-                        .map(TestSuiteCase::getCaseId)
-                        .collect(Collectors.toList());
+                testSuiteCases.stream().map(TestSuiteCase::getCaseId).collect(Collectors.toList());
         List<TestCase> testCaseList = testCaseMapper.selectByIds(caseIds);
+        Long currentUserId = SecurityUtils.getCurrentUserId();
         Map<Long, TestCase> caseMap =
-                testCaseList.stream().collect(Collectors.toMap(TestCase::getId, c -> c));
+                testCaseList.stream()
+                        .filter(c -> Objects.equals(currentUserId, c.getCreatorId()))
+                        .collect(Collectors.toMap(TestCase::getId, c -> c));
         List<TestCase> ordered =
                 testSuiteCases.stream()
                         .map(testSuiteCase -> caseMap.get(testSuiteCase.getCaseId()))
@@ -102,11 +135,19 @@ public class TestSuiteServiceImpl implements TestSuiteService {
     @Override
     @Transactional
     public Result<Void> addCase(Long suiteId, Long caseId) {
-        if (testSuiteMapper.selectById(suiteId) == null) {
+        TestSuite existing = testSuiteMapper.selectById(suiteId);
+        if (existing == null) {
             return Result.notFound("suite not found!");
         }
-        if (testCaseMapper.selectById(caseId) == null) {
+        if (!Objects.equals(existing.getCreatorId(), SecurityUtils.getCurrentUserId())) {
+            return Result.error(404, "测试套不存在");
+        }
+        TestCase testCase = testCaseMapper.selectById(caseId);
+        if (testCase == null) {
             return Result.notFound("testCase not found");
+        }
+        if (!Objects.equals(testCase.getCreatorId(), SecurityUtils.getCurrentUserId())) {
+            return Result.error(404, "用例不存在");
         }
 
         QueryWrapper<TestSuiteCase> qw = new QueryWrapper<>();
@@ -126,6 +167,13 @@ public class TestSuiteServiceImpl implements TestSuiteService {
     @Override
     @Transactional
     public Result<Void> removeCase(Long suiteId, Long caseId) {
+        TestSuite existing = testSuiteMapper.selectById(suiteId);
+        if (existing == null) {
+            return Result.error(404, "测试套不存在");
+        }
+        if (!Objects.equals(existing.getCreatorId(), SecurityUtils.getCurrentUserId())) {
+            return Result.error(404, "测试套不存在");
+        }
         QueryWrapper<TestSuiteCase> qw = new QueryWrapper<>();
         qw.eq("suite_id", suiteId).eq("case_id", caseId);
         testSuiteCaseMapper.delete(qw);
@@ -135,9 +183,12 @@ public class TestSuiteServiceImpl implements TestSuiteService {
     @Override
     @Transactional
     public Result<ExecutionReport> executeSuite(Long suiteId) {
-        TestSuite testSuite = testSuiteMapper.selectById(suiteId);
-        if (testSuite == null) {
+        TestSuite existing = testSuiteMapper.selectById(suiteId);
+        if (existing == null) {
             return Result.notFound("suite not found");
+        }
+        if (!Objects.equals(existing.getCreatorId(), SecurityUtils.getCurrentUserId())) {
+            return Result.error(404, "测试套不存在");
         }
 
         QueryWrapper<TestSuiteCase> qw = new QueryWrapper<>();
@@ -149,8 +200,9 @@ public class TestSuiteServiceImpl implements TestSuiteService {
 
         ExecutionReport report = new ExecutionReport();
         report.setSuiteId(suiteId);
+        report.setCreatorId(SecurityUtils.getCurrentUserId());
         report.setReportName(
-                testSuite.getName()
+                existing.getName()
                         + "-"
                         + LocalDateTime.now()
                                 .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
@@ -193,11 +245,19 @@ public class TestSuiteServiceImpl implements TestSuiteService {
 
     @Override
     public Result<Void> batchAddCases(Long suiteId, List<Long> caseIds) {
-        if (testSuiteMapper.selectById(suiteId) == null) {
+        TestSuite existing = testSuiteMapper.selectById(suiteId);
+        if (existing == null) {
             return Result.notFound("suite not found");
         }
+        if (!Objects.equals(existing.getCreatorId(), SecurityUtils.getCurrentUserId())) {
+            return Result.error(404, "测试套不存在");
+        }
         for (Long caseId : caseIds) {
-            if (testCaseMapper.selectById(caseId) == null) {
+            TestCase testCase = testCaseMapper.selectById(caseId);
+            if (testCase == null) {
+                continue;
+            }
+            if (!Objects.equals(testCase.getCreatorId(), SecurityUtils.getCurrentUserId())) {
                 continue;
             }
             TestSuiteCase link = new TestSuiteCase();

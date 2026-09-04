@@ -12,6 +12,7 @@ import com.testplatform.mapper.ExecutionRecordMapper;
 import com.testplatform.mapper.TestCaseMapper;
 import com.testplatform.service.ExecutionService;
 import com.testplatform.service.HttpExecutor;
+import com.testplatform.util.SecurityUtils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author admin
@@ -52,6 +54,9 @@ public class ExecutionServiceImpl implements ExecutionService {
         TestCase testCase = testCaseMapper.selectById(testCaseId);
         if (testCase == null) {
             return Result.notFound("testcase not found!");
+        }
+        if (!Objects.equals(testCase.getCreatorId(), SecurityUtils.getCurrentUserId())) {
+            return Result.error(404, "用例不存在");
         }
 
         // 2.execution http

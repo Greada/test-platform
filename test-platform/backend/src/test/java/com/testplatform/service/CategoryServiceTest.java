@@ -11,12 +11,15 @@ import com.testplatform.entity.TestCategory;
 import com.testplatform.mapper.TestCategoryMapper;
 import com.testplatform.service.impl.CategoryServiceImpl;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -33,6 +36,14 @@ class CategoryServiceTest {
     @BeforeEach
     void setUp() {
         categoryService = new CategoryServiceImpl(testCategoryMapper);
+        UsernamePasswordAuthenticationToken auth =
+                new UsernamePasswordAuthenticationToken(1L, null, Collections.emptyList());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -150,6 +161,7 @@ class CategoryServiceTest {
         TestCategory parent = new TestCategory();
         parent.setId(1L);
         parent.setLevel(1);
+        parent.setCreatorId(1L);
         when(testCategoryMapper.selectById(1L)).thenReturn(parent);
         when(testCategoryMapper.selectCount(any())).thenReturn(0L);
         when(testCategoryMapper.insert(any(TestCategory.class))).thenReturn(1);
@@ -173,16 +185,17 @@ class CategoryServiceTest {
         // Arrange
         TestCategory parent = new TestCategory();
         parent.setLevel(2);
+        parent.setCreatorId(1L);
         when(testCategoryMapper.selectById(1L)).thenReturn(parent);
         when(testCategoryMapper.selectCount(any())).thenReturn(0L);
         when(testCategoryMapper.insert(any(TestCategory.class))).thenReturn(1);
 
-        TestCategory cat = new TestCategory();
-        cat.setParentId(1L);
-        cat.setLevel(3);
+        TestCategory cate = new TestCategory();
+        cate.setParentId(1L);
+        cate.setLevel(3);
 
         // Act
-        Result<Void> result = categoryService.save(cat);
+        Result<Void> result = categoryService.save(cate);
 
         // Assert
         assertEquals(200, result.getCode());
@@ -227,16 +240,17 @@ class CategoryServiceTest {
         TestCategory parent = new TestCategory();
         parent.setId(1L);
         parent.setLevel(1);
+        parent.setCreatorId(1L);
         when(testCategoryMapper.selectById(1L)).thenReturn(parent);
         when(testCategoryMapper.selectCount(any())).thenReturn(1L);
 
-        TestCategory cat = new TestCategory();
-        cat.setName("Duplicate");
-        cat.setParentId(1L);
-        cat.setLevel(2);
+        TestCategory category = new TestCategory();
+        category.setName("Duplicate");
+        category.setParentId(1L);
+        category.setLevel(2);
 
         // Act
-        Result<Void> result = categoryService.save(cat);
+        Result<Void> result = categoryService.save(category);
 
         // Assert
         assertEquals(409, result.getCode());
@@ -267,6 +281,7 @@ class CategoryServiceTest {
         // Arrange
         TestCategory parent = new TestCategory();
         parent.setLevel(3);
+        parent.setCreatorId(1L);
         when(testCategoryMapper.selectById(1L)).thenReturn(parent);
 
         TestCategory cat = new TestCategory();
@@ -285,16 +300,18 @@ class CategoryServiceTest {
     @DisplayName("[CAT-UPDATE-01] update name should succeed")
     void updateName_shouldSucceed() {
         // Arrange
-        TestCategory cat = new TestCategory();
-        cat.setId(1L);
-        cat.setName("Updated");
-        cat.setParentId(0L);
-        cat.setLevel(1);
+        TestCategory existing = new TestCategory();
+        existing.setId(1L);
+        existing.setName("Updated");
+        existing.setParentId(0L);
+        existing.setLevel(1);
+        existing.setCreatorId(1L);
+        when(testCategoryMapper.selectById(1L)).thenReturn(existing);
         when(testCategoryMapper.selectCount(any())).thenReturn(0L);
         when(testCategoryMapper.updateById(any(TestCategory.class))).thenReturn(1);
 
         // Act
-        Result<Void> result = categoryService.update(cat);
+        Result<Void> result = categoryService.update(existing);
 
         // Assert
         assertEquals(200, result.getCode());
@@ -305,14 +322,16 @@ class CategoryServiceTest {
     @DisplayName("[CAT-UPDATE-02] duplicate name on update should fail")
     void update_duplicateName_shouldFail() {
         // Arrange
-        TestCategory cat = new TestCategory();
-        cat.setId(1L);
-        cat.setName("Dup");
-        cat.setParentId(0L);
+        TestCategory category = new TestCategory();
+        category.setId(1L);
+        category.setName("Dup");
+        category.setParentId(0L);
+        category.setCreatorId(1L);
+        when(testCategoryMapper.selectById(1L)).thenReturn(category);
         when(testCategoryMapper.selectCount(any())).thenReturn(1L);
 
         // Act
-        Result<Void> result = categoryService.update(cat);
+        Result<Void> result = categoryService.update(category);
 
         // Assert
         assertEquals(409, result.getCode());
@@ -322,6 +341,10 @@ class CategoryServiceTest {
     @DisplayName("[CAT-SAVE-10] delete has children should fail")
     void delete_hasChildren_shouldFail() {
         // Arrange
+        TestCategory existing = new TestCategory();
+        existing.setId(1L);
+        existing.setCreatorId(1L);
+        when(testCategoryMapper.selectById(1L)).thenReturn(existing);
         when(testCategoryMapper.selectCount(any())).thenReturn(2L);
 
         // Act
@@ -335,6 +358,10 @@ class CategoryServiceTest {
     @DisplayName("[CAT-DEL-02] delete without children should succeed")
     void delete_noChildren_shouldSucceed() {
         // Arrange
+        TestCategory category = new TestCategory();
+        category.setId(1L);
+        category.setCreatorId(1L);
+        when(testCategoryMapper.selectById(1L)).thenReturn(category);
         when(testCategoryMapper.selectCount(any())).thenReturn(0L);
         when(testCategoryMapper.deleteById(1L)).thenReturn(1);
 

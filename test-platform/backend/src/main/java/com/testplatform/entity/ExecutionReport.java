@@ -24,4 +24,5 @@ public class ExecutionReport {
     private String status;
     private LocalDateTime executeTime;
     private LocalDateTime createTime;
+    private Long creatorId;
 }

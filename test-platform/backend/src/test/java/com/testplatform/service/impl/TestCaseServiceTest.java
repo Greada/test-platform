@@ -2,20 +2,22 @@ package com.testplatform.service.impl;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import com.testplatform.common.Result;
 import com.testplatform.entity.TestCase;
 import com.testplatform.mapper.TestCaseMapper;
 import com.testplatform.service.TestCaseService;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Collections;
 import java.util.List;
@@ -31,6 +33,14 @@ class TestCaseServiceTest {
     @BeforeEach
     void setUp() {
         testCaseService = new TestCaseServiceImpl(testCaseMapper);
+        UsernamePasswordAuthenticationToken auth =
+                new UsernamePasswordAuthenticationToken(1L, null, Collections.emptyList());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -56,12 +66,16 @@ class TestCaseServiceTest {
     @Test
     @DisplayName("[TC-CRUD-02] update should call mapper updateById")
     void update_shouldCallMapperUpdate() {
+        TestCase existing = new TestCase();
+        existing.setId(1L);
+        existing.setName("Original");
+        existing.setCreatorId(1L);
+        when(testCaseMapper.selectById(1L)).thenReturn(existing);
+        when(testCaseMapper.updateById(any(TestCase.class))).thenReturn(1);
         // Arrange
         TestCase tc = new TestCase();
         tc.setId(1L);
         tc.setName("Updated");
-        when(testCaseMapper.updateById(tc)).thenReturn(1);
-
         // Act
         Result<Void> result = testCaseService.update(tc);
 
@@ -75,6 +89,10 @@ class TestCaseServiceTest {
     @DisplayName("[TC-CRUD-03] deleteById should succeed")
     void deleteById_shouldSucceed() {
         // Arrange
+        TestCase existing = new TestCase();
+        existing.setId(1L);
+        existing.setCreatorId(1L);
+        when(testCaseMapper.selectById(1L)).thenReturn(existing);
         when(testCaseMapper.deleteById(1L)).thenReturn(1);
 
         // Act
@@ -89,6 +107,10 @@ class TestCaseServiceTest {
     @DisplayName("[TC-CRUD-04] deleteById exception should propagate")
     void deleteById_shouldPropagateException() {
         // Arrange
+        TestCase existing = new TestCase();
+        existing.setId(1L);
+        existing.setCreatorId(1L);
+        when(testCaseMapper.selectById(1L)).thenReturn(existing);
         when(testCaseMapper.deleteById(1L)).thenThrow(new RuntimeException("db error"));
 
         // Act & Assert
@@ -102,6 +124,7 @@ class TestCaseServiceTest {
         TestCase tc = new TestCase();
         tc.setId(1L);
         tc.setName("Test Case");
+        tc.setCreatorId(1L);
         when(testCaseMapper.selectById(1L)).thenReturn(tc);
 
         // Act
@@ -114,8 +137,8 @@ class TestCaseServiceTest {
     }
 
     @Test
-    @DisplayName("[TC-CRUD-06] getById not found should return success with null")
-    void getById_notFound_shouldReturnNull() {
+    @DisplayName("[TC-CRUD-06] getById not found should return 404")
+    void getById_notFound_shouldReturn404() {
         // Arrange
         when(testCaseMapper.selectById(999L)).thenReturn(null);
 
@@ -123,8 +146,7 @@ class TestCaseServiceTest {
         Result<TestCase> result = testCaseService.getById(999L);
 
         // Assert
-        assertEquals(200, result.getCode());
-        assertNull(result.getData());
+        assertEquals(404, result.getCode());
     }
 
     @Test
@@ -150,7 +172,8 @@ class TestCaseServiceTest {
         // Arrange
         TestCase tc = new TestCase();
         tc.setName("Test");
-        when(testCaseMapper.insert(any(TestCase.class))).thenThrow(new RuntimeException("constraint violation"));
+        when(testCaseMapper.insert(any(TestCase.class)))
+                .thenThrow(new RuntimeException("constraint violation"));
 
         // Act & Assert
         assertThrows(RuntimeException.class, () -> testCaseService.save(tc));
@@ -162,7 +185,10 @@ class TestCaseServiceTest {
         // Arrange
         TestCase tc = new TestCase();
         tc.setId(1L);
-        when(testCaseMapper.updateById(any(TestCase.class))).thenThrow(new RuntimeException("db error"));
+        tc.setCreatorId(1L);
+        when(testCaseMapper.selectById(1L)).thenReturn(tc);
+        when(testCaseMapper.updateById(any(TestCase.class)))
+                .thenThrow(new RuntimeException("db error"));
 
         // Act & Assert
         assertThrows(RuntimeException.class, () -> testCaseService.update(tc));

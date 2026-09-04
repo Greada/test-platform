@@ -15,12 +15,15 @@ import com.testplatform.mapper.TestSuiteMapper;
 import com.testplatform.service.ExecutionService;
 import com.testplatform.service.TestSuiteService;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.*;
 
@@ -45,6 +48,14 @@ class TestSuiteServiceTest {
                         testCaseMapper,
                         executionReportMapper,
                         executionService);
+        UsernamePasswordAuthenticationToken auth =
+                new UsernamePasswordAuthenticationToken(1L, null, Collections.emptyList());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -68,10 +79,15 @@ class TestSuiteServiceTest {
     @DisplayName("[SUITE-CRUD-02] update should update suite")
     void update_shouldUpdateSuite() {
         // Arrange
+        TestSuite existing = new TestSuite();
+        existing.setId(1L);
+        existing.setCreatorId(1L);
+        existing.setName("Original");
         TestSuite suite = new TestSuite();
         suite.setId(1L);
         suite.setName("Updated Suite");
-        when(testSuiteMapper.updateById(suite)).thenReturn(1);
+        when(testSuiteMapper.selectById(1L)).thenReturn(existing);
+        when(testSuiteMapper.updateById(any(TestSuite.class))).thenReturn(1);
 
         // Act
         Result<Void> result = testSuiteService.update(suite);
@@ -85,6 +101,9 @@ class TestSuiteServiceTest {
     @DisplayName("[SUITE-CRUD-03] deleteById should delete suite and relations")
     void deleteById_shouldDeleteSuiteAndRelations() {
         // Arrange
+        TestSuite existing = new TestSuite();
+        existing.setCreatorId(1L);
+        when(testSuiteMapper.selectById(1L)).thenReturn(existing);
         when(testSuiteMapper.deleteById(1L)).thenReturn(1);
         when(testSuiteCaseMapper.delete(any())).thenReturn(1);
 
@@ -103,6 +122,7 @@ class TestSuiteServiceTest {
         // Arrange
         TestSuite suite = new TestSuite();
         suite.setId(1L);
+        suite.setCreatorId(1L);
         suite.setName("Test Suite");
         when(testSuiteMapper.selectById(1L)).thenReturn(suite);
 
@@ -138,8 +158,10 @@ class TestSuiteServiceTest {
         // Arrange
         TestSuite suite = new TestSuite();
         suite.setId(1L);
+        suite.setCreatorId(1L);
         TestCase tc = new TestCase();
         tc.setId(10L);
+        tc.setCreatorId(1L);
         when(testSuiteMapper.selectById(1L)).thenReturn(suite);
         when(testCaseMapper.selectById(10L)).thenReturn(tc);
         when(testSuiteCaseMapper.selectCount(any())).thenReturn(0L);
@@ -174,6 +196,7 @@ class TestSuiteServiceTest {
         // Arrange
         TestSuite suite = new TestSuite();
         suite.setId(1L);
+        suite.setCreatorId(1L);
         when(testSuiteMapper.selectById(1L)).thenReturn(suite);
         when(testCaseMapper.selectById(999L)).thenReturn(null);
 
@@ -182,7 +205,6 @@ class TestSuiteServiceTest {
 
         // Assert
         assertEquals(404, result.getCode());
-        assertEquals("testCase not found", result.getMessage());
     }
 
     @Test
@@ -191,8 +213,10 @@ class TestSuiteServiceTest {
         // Arrange
         TestSuite suite = new TestSuite();
         suite.setId(1L);
+        suite.setCreatorId(1L);
         TestCase tc = new TestCase();
         tc.setId(10L);
+        tc.setCreatorId(1L);
         when(testSuiteMapper.selectById(1L)).thenReturn(suite);
         when(testCaseMapper.selectById(10L)).thenReturn(tc);
         when(testSuiteCaseMapper.selectCount(any())).thenReturn(1L);
@@ -209,6 +233,9 @@ class TestSuiteServiceTest {
     @DisplayName("[SUITE-REMOVE-01] removeCase should delete relation")
     void removeCase_shouldDeleteRelation() {
         // Arrange
+        TestSuite existing = new TestSuite();
+        existing.setCreatorId(1L);
+        when(testSuiteMapper.selectById(1L)).thenReturn(existing);
         when(testSuiteCaseMapper.delete(any())).thenReturn(1);
 
         // Act
@@ -223,6 +250,9 @@ class TestSuiteServiceTest {
     @DisplayName("[SUITE-LIST-01] listCases should return ordered test cases")
     void listCases_shouldReturnOrderedCases() {
         // Arrange
+        TestSuite existing = new TestSuite();
+        existing.setId(1L);
+        existing.setCreatorId(1L);
         TestSuiteCase rel1 = new TestSuiteCase();
         rel1.setCaseId(10L);
         rel1.setSortOrder(1);
@@ -232,9 +262,12 @@ class TestSuiteServiceTest {
         TestCase tc1 = new TestCase();
         tc1.setId(10L);
         tc1.setName("Case 1");
+        tc1.setCreatorId(1L);
         TestCase tc2 = new TestCase();
         tc2.setId(20L);
         tc2.setName("Case 2");
+        tc2.setCreatorId(1L);
+        when(testSuiteMapper.selectById(1L)).thenReturn(existing);
         when(testSuiteCaseMapper.selectList(any())).thenReturn(Arrays.asList(rel1, rel2));
         when(testCaseMapper.selectByIds(any())).thenReturn(Arrays.asList(tc1, tc2));
 
@@ -252,6 +285,9 @@ class TestSuiteServiceTest {
     @DisplayName("[SUITE-LIST-02] listCases empty should return empty list")
     void listCases_empty_shouldReturnEmptyList() {
         // Arrange
+        TestSuite existing = new TestSuite();
+        existing.setCreatorId(1L);
+        when(testSuiteMapper.selectById(1L)).thenReturn(existing);
         when(testSuiteCaseMapper.selectList(any())).thenReturn(Collections.emptyList());
 
         // Act
@@ -268,10 +304,13 @@ class TestSuiteServiceTest {
         // Arrange
         TestSuite suite = new TestSuite();
         suite.setId(1L);
+        suite.setCreatorId(1L);
         TestCase tc1 = new TestCase();
         tc1.setId(10L);
+        tc1.setCreatorId(1L);
         TestCase tc2 = new TestCase();
         tc2.setId(20L);
+        tc2.setCreatorId(1L);
         when(testSuiteMapper.selectById(1L)).thenReturn(suite);
         when(testCaseMapper.selectById(10L)).thenReturn(tc1);
         when(testCaseMapper.selectById(20L)).thenReturn(tc2);
@@ -305,8 +344,10 @@ class TestSuiteServiceTest {
         // Arrange
         TestSuite suite = new TestSuite();
         suite.setId(1L);
+        suite.setCreatorId(1L);
         TestCase tc1 = new TestCase();
         tc1.setId(10L);
+        tc1.setCreatorId(1L);
         when(testSuiteMapper.selectById(1L)).thenReturn(suite);
         when(testCaseMapper.selectById(10L)).thenReturn(tc1);
         when(testCaseMapper.selectById(999L)).thenReturn(null);

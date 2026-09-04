@@ -27,4 +27,6 @@ public class TestCategory {
 
     @TableField(exist = false)
     private List<TestCategory> children;
+
+    private Long creatorId;
 }
