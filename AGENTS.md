@@ -39,7 +39,7 @@ Spring Boot 3.3.13 + MyBatis-Plus 3.5.9 + MySQL 5.7 + Vue 3 + Element Plus + Vit
 ```bash
 # 数据库初始化（B2.1 起 Flyway 为准）：
 # 【推荐】全新初始化：建空库即可（CREATE DATABASE test_platform DEFAULT CHARSET utf8mb4;），
-#         后端启动时 Flyway 自动执行 db/migration/V1__init_schema.sql + V2__seed_data.sql（8 表+种子+账本）
+#         后端启动时 Flyway 自动执行 db/migration/V1~V5（8 表+种子+软删/索引+外键+creator_id 数据隔离）
 # 【存量库】无 flyway_schema_history 的旧库：启动时自动 baseline（baseline-version=2，不执行 V1/V2，数据不动）
 # 【旧手工路径（已降级）】脚本自带 CREATE/USE test_platform，无需指定库名；全新初始化语义——
 #         init_v1 建表无 IF NOT EXISTS、init_v3 含 ALTER，重复执行会报错；仅用于维护存量
@@ -71,7 +71,7 @@ test-platform/
 │   ├── controller/ — Auth, TestCase, Execution, TestSuite, ExecutionReport, Category, Ci, Ai（8 个 Controller）
 │   ├── entity/     — User, TestCase, ExecutionRecord, TestSuite, TestSuiteCase, ExecutionReport, TestCategory, CiBuild
 │   ├── mapper/     — 8 个 Mapper（对应 8 个 Entity）
-│   ├── util/       — UrlValidator（SSRF 防护）, OpenApiParser, SchemaToJsonGenerator
+│   ├── util/       — UrlValidator（SSRF 防护）, SecurityUtils（当前用户/IDOR）, OpenApiParser, SchemaToJsonGenerator
 │   └── service/    — UserService, TestCaseSvc, ExecutionSvc, HttpExecutor, TestSuiteSvc, ExecutionReportSvc,
 │                     JsonDiffService, ErrorPatternService, CategoryService, AiService, CiBuildService + impl/
 └── frontend/src/

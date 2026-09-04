@@ -18,7 +18,7 @@ docker compose up -d
 
 ```bash
 # 数据库：建空库即可（CREATE DATABASE test_platform DEFAULT CHARSET utf8mb4;）
-#         后端首次启动时 Flyway 自动建表+灌种子（db/migration/V1~V3）
+#         后端首次启动时 Flyway 自动建表+灌种子+软删/索引+外键+creator_id 数据隔离（db/migration/V1~V5）
 # 后端
 cd backend && mvn package && java -jar target/*.jar
 # 前端
@@ -32,6 +32,7 @@ cd frontend && npm install && npm run dev
 - CI 回写接口独立机器令牌鉴权（X-CI-Token，与用户 JWT 分离）
 - SSRF 防护（内网/保留地址黑名单，分环境开关）
 - 核心业务表软删除（deleted 字段 + MyBatis-Plus @TableLogic）
+- 按用户数据隔离（creator_id，越权访问返回 404——B3.19 起）
 
 ## 版本功能
 
@@ -46,7 +47,7 @@ cd frontend && npm install && npm run dev
 | V3.3 | Jenkins CI/CD 自动化部署（Pipeline + crontab 自动触发） |
 | V4 | CI Build 构建记录持久化 + 前端看板 |
 | Docker | 容器化部署（Dockerfile + Nginx + docker-compose） |
-| 优化工程 | 安全加固（阶段一）+ Flyway 数据治理（阶段二进行中），详见 [docs/优化计划.md](test-platform/docs/优化计划.md) |
+| 优化工程 | 安全加固（阶段一✅）+ Flyway 数据治理（阶段二✅）+ IDOR 数据隔离（B3.19✅，阶段三进行中），详见 [docs/优化计划.md](test-platform/docs/优化计划.md) |
 
 ---
 

@@ -589,9 +589,20 @@ nano .env
 # MySQL root 密码（改为你的强密码）
 DB_PASSWORD=your_strong_password_here
 
-# AI 服务（可选，不设则 AI 功能不可用）
+# JWT 签名密钥（必须 ≥32 字符；缺失会拒绝部署——B1.1 起强制）
+JWT_SECRET=change_me_32_chars_minimum
+
+# CI 回写接口机器令牌（必须；缺失会拒绝部署——B1.4 起强制）
+CI_API_KEY=change_me_32_chars_minimum
+
+# AI 服务（可选，不设则 AI 功能降级，启动不报错——B2.13 起）
 AGNES_API_KEY=
+
+# CORS 允许的前端来源（可选，逗号分隔；不设走 application.yml 默认值——B2.14 起）
+CORS_ALLOWED_ORIGINS=http://localhost:80
 ```
+
+> **注意**：以上必填项与 `.env.example` 模板一致；`DB_PASSWORD`/`JWT_SECRET`/`CI_API_KEY` 三项缺失时 `docker compose up` 会直接报错拒绝插值（`:?` 强制语法），属于**有意设计**的 fail-fast。
 
 ### 2.3 Docker Compose 启动
 
