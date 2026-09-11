@@ -29,9 +29,9 @@
           </div>
 
           <el-skeleton :rows="5" animated v-if="loading" />
-          <el-empty v-else-if="filteredAndSearchedList.length === 0"
-            :description="selectedCategory ? '该分类暂无用例' : '暂无测试用例，点击新建用例开始'" />
-          <el-table v-else :data="filteredAndSearchedList" border stripe>
+          <el-empty v-else-if="list.length === 0"
+            :description="selectedCategory ? '该分类暂无用例' : searchQuery.trim() ? '未找到匹配的用例' : '暂无测试用例，点击新建用例开始'" />
+          <el-table v-else :data="list" border stripe>
             <el-table-column prop="testNo" label="编号" width="100" />
             <el-table-column prop="name" label="名称" />
             <el-table-column label="分类" width="120">
@@ -60,6 +60,13 @@
               </template>
             </el-table-column>
           </el-table>
+
+          <el-pagination v-if="!loading && total > 0"
+            :current-page="page" :page-size="size" :total="total"
+            :page-sizes="[10, 20, 50, 100]"
+            layout="total, sizes, prev, pager, next, jumper"
+            background style="margin-top: 16px; justify-content: flex-end"
+            @current-change="handlePageChange" @size-change="handleSizeChange" />
         </template>
 
         <!-- 编辑/新建面板 -->
@@ -137,7 +144,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '../api'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -149,6 +156,9 @@ import { useConfirmDelete } from '../composables/useConfirmDelete'
 import { formatDate, formatJson } from '../utils/format'
 
 const list = ref([])
+const total = ref(0)
+const page = ref(1)
+const size = ref(20)
 const loading = ref(true)
 const loadingId = ref(null)
 const searchQuery = ref('')
@@ -171,25 +181,20 @@ const importLoading = ref(false)
 const importPreview = ref([])
 const importUseAi = ref(false)
 
-const filteredAndSearchedList = computed(() => {
-  let result = list.value
-  if (selectedCategory.value) {
-    result = result.filter(item => item.categoryId === selectedCategory.value.id)
-  }
-  const query = searchQuery.value.toLowerCase().trim()
-  if (!query) return result
-  return result.filter(item =>
-    (item.testNo && item.testNo.toLowerCase().includes(query)) ||
-    (item.name && item.name.toLowerCase().includes(query))
-  )
+let searchDebounceTimer = null
+watch(searchQuery, () => {
+  clearTimeout(searchDebounceTimer)
+  searchDebounceTimer = setTimeout(() => {
+    page.value = 1
+    fetchList()
+  }, 300)
 })
 
 onMounted(async () => {
-  loading.value = true
-  try {
-    await Promise.all([fetchList(), fetchCategories()])
+  await Promise.all([fetchList(), fetchCategories()])
 
-    if (route.query.editId && route.query.fix) {
+  if (route.query.editId && route.query.fix) {
+    try {
       const suggested = localStorage.getItem('fix_expected')
       localStorage.removeItem('fix_expected')
       const res = await api.get('/testcases/' + route.query.editId)
@@ -198,17 +203,33 @@ onMounted(async () => {
         editingCase.value = res.data.data
         creating.value = false
       }
+    } catch (e) {
+      ElMessage.error('加载失败')
     }
-  } catch (e) {
-    ElMessage.error('加载失败')
-  } finally {
-    loading.value = false
   }
 })
 
 async function fetchList() {
-  const res = await api.get('/testcases')
-  list.value = res.data.data || []
+  loading.value = true
+  try {
+    const params = { page: page.value, size: size.value }
+    const kw = searchQuery.value.trim()
+    if (kw) params.keyword = kw
+    if (selectedCategory.value) params.categoryId = selectedCategory.value.id
+    const res = await api.get('/testcases', { params })
+    const data = res.data.data || {}
+    list.value = data.records || []
+    total.value = data.total || 0
+    const maxPage = Math.max(1, Math.ceil(total.value / size.value))
+    if (page.value > maxPage) {
+      page.value = maxPage
+      await fetchList()
+    }
+  } catch (e) {
+    ElMessage.error('加载用例列表失败')
+  } finally {
+    loading.value = false
+  }
 }
 
 function getCategoryName(id) {
@@ -228,6 +249,19 @@ async function fetchCategories() {
 
 async function handleCategoryChange(category) {
   selectedCategory.value = category
+  page.value = 1
+  await fetchList()
+}
+
+function handlePageChange(p) {
+  page.value = p
+  fetchList()
+}
+
+function handleSizeChange(s) {
+  size.value = s
+  page.value = 1
+  fetchList()
 }
 
 function openCategoryManage() {
@@ -343,9 +377,10 @@ async function confirmImport() {
     if (res.data.code === 200) {
       ElMessage.success(`成功导入 ${importPreview.value.length} 个用例`)
       importDialogVisible.value = false
-      importPreview.value = []
-      importJson.value = ''
-      await fetchList()
+        importPreview.value = []
+        importJson.value = ''
+        page.value = 1
+        await fetchList()
     } else {
       ElMessage.error(res.data.message || '导入失败')
     }
