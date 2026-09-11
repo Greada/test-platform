@@ -1,5 +1,6 @@
 package com.testplatform.service;
 
+import com.testplatform.common.PageResult;
 import com.testplatform.common.Result;
 import com.testplatform.entity.TestCase;
 
@@ -9,6 +10,8 @@ public interface TestCaseService {
     Result<List<TestCase>> listAll();
 
     Result<List<TestCase>> listByCategoryId(Long categoryId);
+
+    Result<PageResult<TestCase>> page(long page, long size, String keyword, Long categoryId);
 
     Result<TestCase> getById(Long id);
 

@@ -1,6 +1,8 @@
 package com.testplatform.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.testplatform.common.PageResult;
 import com.testplatform.common.Result;
 import com.testplatform.entity.TestCase;
 import com.testplatform.mapper.TestCaseMapper;
@@ -35,6 +37,30 @@ public class TestCaseServiceImpl implements TestCaseService {
         qw.eq("category_id", categoryId).eq("creator_id", SecurityUtils.getCurrentUserId());
         List<TestCase> testCaseList = testCaseMapper.selectList(qw);
         return Result.success(testCaseList);
+    }
+
+    @Override
+    public Result<PageResult<TestCase>> page(
+            long page, long size, String keyword, Long categoryId) {
+        // 1.钳制入参(在service层做,不在controller)
+        long safePage = Math.max(1, page);
+        long safeSize = Math.min(100, Math.max(1, size));
+
+        // 2.构建queryWrapper creator_id恒等 category_id 和 keyword可选
+        QueryWrapper<TestCase> qw = new QueryWrapper<>();
+        qw.eq("creator_id", SecurityUtils.getCurrentUserId());
+        if (categoryId != null) {
+            qw.eq("category_id", categoryId);
+        }
+        if (keyword != null && !keyword.isBlank()) {
+            qw.and(w -> w.like("test_no", keyword).or().like("name", keyword));
+        }
+        // 3.排序
+        qw.orderByDesc("id");
+
+        // 4.selectPage + 翻译返回
+        Page<TestCase> testCasePage = testCaseMapper.selectPage(new Page<>(safePage, safeSize), qw);
+        return Result.success(PageResult.of(testCasePage));
     }
 
     @Override

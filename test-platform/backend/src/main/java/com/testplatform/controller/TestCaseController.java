@@ -1,6 +1,5 @@
 package com.testplatform.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.testplatform.common.EndpointDef;
 import com.testplatform.common.Result;
 import com.testplatform.entity.TestCase;
@@ -9,32 +8,36 @@ import com.testplatform.service.TestCaseService;
 import com.testplatform.util.OpenApiParser;
 import com.testplatform.util.SchemaToJsonGenerator;
 
+import jakarta.validation.Valid;
+
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/testcases")
 public class TestCaseController {
     private final TestCaseService testCaseService;
     private final AiService aiService;
-    private final ObjectMapper objectMapper;
 
-    public TestCaseController(
-            TestCaseService testCaseService, AiService aiService, ObjectMapper objectMapper) {
+    public TestCaseController(TestCaseService testCaseService, AiService aiService) {
         this.testCaseService = testCaseService;
         this.aiService = aiService;
-        this.objectMapper = objectMapper;
     }
 
     @GetMapping
-    public Result<List<TestCase>> listAll(@RequestParam(required = false) Long categoryId) {
+    public Result<?> listAll(
+            @RequestParam(required = false) Long page,
+            @RequestParam(required = false) Long size,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long categoryId) {
+        if (page != null) {
+            return testCaseService.page(page, size == null ? 20 : size, keyword, categoryId);
+        }
+
         if (categoryId != null) {
             return testCaseService.listByCategoryId(categoryId);
         }
