@@ -524,7 +524,7 @@ UNIQUE KEY on (suite_id, case_id)
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| GET | `/api/testcases` | 查询全部用例（支持 `?categoryId=` 筛选） |
+| GET | `/api/testcases` | 查询用例列表（支持 `?page/size/keyword/categoryId`，不传 page 返回全量数组兼容旧行为） |
 | GET | `/api/testcases/{id}` | 查询单个用例 |
 | POST | `/api/testcases` | 新建用例 |
 | PUT | `/api/testcases/{id}` | 修改用例 |

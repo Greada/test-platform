@@ -13,9 +13,10 @@
 - ✅ **阶段一安全加固完成**（后端 B1.1~B1.7/B1.9 + 前端 F1.1~F1.6 + 基建 I1.1~I1.3；验收 12 勾 11）
 - ✅ **阶段二数据治理完成**（Flyway V1/V2/V3 落地双路径验证 + 软删 + 索引 + 冗余脚本清理 + B2.7 外键约束；B2.3/B2.11-B2.14 全部完成）
 - ✅ **B3.19 IDOR 数据隔离完成**（`5f56052`：V5__creator_id 迁移 + 全 Service 归属校验 + 98 测试适配 + 真机 8 项越权实测全通过）
+- ✅ **B3.9+B3.1 后端分页切片完成**（`a9ba39f`：MybatisPlusConfig 分页插件 + PageResult + TestCase page/size/keyword/categoryId 接口、listAll 兼容保留；106 测试全绿 + 真机分页/关键词/钳制/兼容路径实测；前端 F3.1 与其余 3 列表未动）
 - ➕ 顺带完成：Maven 零告警、CVE 可达高危清零（Boot 3.3.6→3.3.13）、前端 dist 出库、本地 MySQL 3306 密码重置（root/1234，与 learn 环境一致）
 
-**下次开工入口**（按序）：① B3.9+B3.1 分页（MybatisPlusConfig 分页插件 + list 接口 page/size 参数 + 前端 el-pagination，F3.1 同步）→ ② B3.10/B3.11 N+1 修复 → ③ B3.4 DTO 层 → ④ B3.17 异常处理补全。
+**下次开工入口**（按序）：① F3.1 前端分页（TestCaseList 接 page/size/keyword + el-pagination，搜索/分类筛选改后端参数）+ B3.9 其余列表（Execution/TestSuite/Report）分页后端复制 → ② B3.10/B3.11 N+1 修复 → ③ B3.4 DTO 层 → ④ B3.17 异常处理补全。
 
 **环境矩阵（本机现状，换设备需重建的项标注 ✚）**：
 
@@ -119,10 +120,11 @@ test-platform/
 - 判断命令成败看**退出码**而非输出文本：PowerShell 管道后 `$?` 取的是末端命令的，bash 下用 `${PIPESTATUS[0]}`；GBK 乱码会让 grep 误判
 - Spring Security 自定义 Filter 挂链：锚点必须用注册表标准类（如 `LogoutFilter`，自定义类报 "does not have a registered order"）；`@Component` Filter 会被 Boot 自动注册进 Servlet 全局链 + Security 链**跑两遍**，需 `FilterRegistrationBean.setEnabled(false)` 关闭自动注册
 - JWT secret 相关：`signingKey()` 若先做 SHA-256 预哈希，空/短 secret 也能生成合法密钥——长度校验必须在原始 secret 上做（JwtUtil `@PostConstruct` 已守卫）
+- MyBatis-Plus wrapper 单测断言：`getSqlSegment()` 做 contains 易子串撞车（恒有的 `ORDER BY` 含 `OR`），且锁不住括号嵌套——`and(w -> ...or()...)` 若被改平铺，OR 优先级会击穿 creator_id 隔离（IDOR 回归）而 contains 照样绿。应用 `getTargetSql()` 全串 assertEquals + `getParamNameValuePairs().containsValue()` 验绑定值
 
 ## 注意事项
 
-- **有测试可正常编译运行**：`backend/src/test/java/` 下 8 个测试文件共 **98 个单元测试**（含 UrlValidatorTest 7 条），`mvn test` 全部通过
+- **有测试可正常编译运行**：`backend/src/test/java/` 下 8 个测试文件共 **106 个单元测试**（含 UrlValidatorTest 7 条、TestCaseServiceTest 18 条），`mvn test` 全部通过
 - **Flyway 已接管 schema（B2.1 起）**：db/migration 下 V1（8 表快照）/V2（种子）/V3（软删+索引）；**新变更 = 新建 Vn 脚本，禁改历史脚本**（checksum 校验会拒启动）；存量库自动 baseline（version=2）
 - **软删已生效**：TestCase/TestSuite/TestCategory/User 的 deleteById 实际是 `UPDATE deleted=1`，查询自动 `WHERE deleted=0`；手工 SQL 不受保护
 - **有 CI/CD**：Jenkinsfile（7 阶段 Pipeline）+ docker-compose.yml（生产）/ docker-compose.test.yml（测试）+ scripts/pr-poller.sh（PR 轮询）+ scripts/pr-report.sh（状态回写）。详见 `test-platform/docs/本地部署与CICD搭建指南.md`

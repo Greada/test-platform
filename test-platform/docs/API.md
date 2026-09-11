@@ -24,13 +24,48 @@ Base URL: `http://localhost:8080/api`
 
 ## 测试用例接口
 
-### 查询全部用例
+### 查询用例列表（分页/兼容双模式）
 
 ```
 GET /testcases
 ```
 
-**响应示例**
+**参数**
+
+| 参数 | 位置 | 类型 | 必填 | 说明 |
+|---|---|---|---|---|
+| page | query | Long | 否 | 页码（从 1 开始，<1 钳制为 1）。**传此参数即进入分页模式，data 返回 PageResult 结构**；不传则返回全量数组（兼容旧行为） |
+| size | query | Long | 否 | 每页条数，分页模式默认 20，范围 1~100（越界钳制，与分页插件 maxLimit 一致） |
+| keyword | query | String | 否 | 用例编号/名称模糊匹配（LIKE %kw%），仅分页模式生效；空白字符串视为未传 |
+| categoryId | query | Long | 否 | 分类筛选，两种模式均生效 |
+
+**分页响应示例**（`GET /testcases?page=1&size=5`，records 按 id 倒序）
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "records": [
+      {
+        "id": 1,
+        "testNo": "TC-001",
+        "name": "HTTP GET 请求",
+        "requestUrl": "https://httpbin.org/get",
+        "requestMethod": "GET",
+        "expectedResult": "{\"url\":\"https://httpbin.org/get\"}",
+        "createTime": "2026-05-24T12:07:15",
+        "updateTime": "2026-05-24T12:07:15"
+      }
+    ],
+    "total": 12,
+    "page": 1,
+    "size": 5
+  }
+}
+```
+
+**兼容响应示例**（不传 `page` 时 data 仍为数组）
 
 ```json
 {
@@ -840,7 +875,7 @@ GET /testcases?categoryId={id}
 
 | 参数 | 位置 | 类型 | 必填 | 说明 |
 |---|---|---|---|---|
-| categoryId | query | Long | 否 | 分类 ID，不传则返回全部用例 |
+| categoryId | query | Long | 否 | 分类 ID，不传则返回全部用例；可与 `page/size/keyword` 组合走分页模式（见「查询用例列表」） |
 
 **响应示例**
 
