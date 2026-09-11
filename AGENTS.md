@@ -13,10 +13,11 @@
 - ✅ **阶段一安全加固完成**（后端 B1.1~B1.7/B1.9 + 前端 F1.1~F1.6 + 基建 I1.1~I1.3；验收 12 勾 11）
 - ✅ **阶段二数据治理完成**（Flyway V1/V2/V3 落地双路径验证 + 软删 + 索引 + 冗余脚本清理 + B2.7 外键约束；B2.3/B2.11-B2.14 全部完成）
 - ✅ **B3.19 IDOR 数据隔离完成**（`5f56052`：V5__creator_id 迁移 + 全 Service 归属校验 + 98 测试适配 + 真机 8 项越权实测全通过）
-- ✅ **B3.9+B3.1 后端分页切片完成**（`a9ba39f`：MybatisPlusConfig 分页插件 + PageResult + TestCase page/size/keyword/categoryId 接口、listAll 兼容保留；106 测试全绿 + 真机分页/关键词/钳制/兼容路径实测；前端 F3.1 与其余 3 列表未动）
+- ✅ **B3.9+B3.1 后端分页切片完成**（`a9ba39f`：MybatisPlusConfig 分页插件 + PageResult + TestCase page/size/keyword/categoryId 接口、listAll 兼容保留；106 测试全绿 + 真机分页/关键词/钳制/兼容路径实测）
+- ✅ **F3.1 前端分页（TestCaseList）+ F3.2 搜索防抖完成**（`2282db6`：搜索/分类筛选改走后端参数 + el-pagination + 300ms 防抖 + 删除/导入页码兜底；其余 3 列表待 B3.9 后端复制后再接）
 - ➕ 顺带完成：Maven 零告警、CVE 可达高危清零（Boot 3.3.6→3.3.13）、前端 dist 出库、本地 MySQL 3306 密码重置（root/1234，与 learn 环境一致）
 
-**下次开工入口**（按序）：① F3.1 前端分页（TestCaseList 接 page/size/keyword + el-pagination，搜索/分类筛选改后端参数）+ B3.9 其余列表（Execution/TestSuite/Report）分页后端复制 → ② B3.10/B3.11 N+1 修复 → ③ B3.4 DTO 层 → ④ B3.17 异常处理补全。
+**下次开工入口**（按序）：① B3.9 其余列表（Execution/TestSuite/Report）分页后端复制 + 对应前端接线（F3.1 收尾）→ ② B3.10/B3.11 N+1 修复 → ③ B3.4 DTO 层 → ④ B3.17 异常处理补全。
 
 **环境矩阵（本机现状，换设备需重建的项标注 ✚）**：
 
@@ -125,6 +126,7 @@ test-platform/
 ## 注意事项
 
 - **有测试可正常编译运行**：`backend/src/test/java/` 下 8 个测试文件共 **106 个单元测试**（含 UrlValidatorTest 7 条、TestCaseServiceTest 18 条），`mvn test` 全部通过
+- **TestCase 列表搜索/筛选已后端化**（F3.1）：TestCaseList 不再全量拉取做前端 computed 过滤，keyword/categoryId 均走 `GET /api/testcases?page&size&keyword&categoryId`（始终带 page 参数，否则后端走兼容路径返回数组、前端解析 records 会 undefined）；搜索防抖 300ms；其余 3 个列表仍为前端全量加载
 - **Flyway 已接管 schema（B2.1 起）**：db/migration 下 V1（8 表快照）/V2（种子）/V3（软删+索引）；**新变更 = 新建 Vn 脚本，禁改历史脚本**（checksum 校验会拒启动）；存量库自动 baseline（version=2）
 - **软删已生效**：TestCase/TestSuite/TestCategory/User 的 deleteById 实际是 `UPDATE deleted=1`，查询自动 `WHERE deleted=0`；手工 SQL 不受保护
 - **有 CI/CD**：Jenkinsfile（7 阶段 Pipeline）+ docker-compose.yml（生产）/ docker-compose.test.yml（测试）+ scripts/pr-poller.sh（PR 轮询）+ scripts/pr-report.sh（状态回写）。详见 `test-platform/docs/本地部署与CICD搭建指南.md`
