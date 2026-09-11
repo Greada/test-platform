@@ -1,12 +1,12 @@
 <template>
   <div style="padding: 20px; max-width: 900px; margin: 0 auto; line-height: 1.8">
-    <h1>全功能测试平台 V3.2 — 文档</h1>
+    <h1>全功能测试平台 — 文档</h1>
     <el-alert title="docs/ 目录下还有更多文档可供阅读" type="info" :closable="false" show-icon style="margin-bottom: 20px"/>
 
     <el-divider/>
 
     <h2>项目定位</h2>
-    <p>一站式测试管理平台 V3.2，聚焦测试用例管理、执行、报告、日志展示、测试套件、执行报告统计、JSON Diff 分析、错误模式聚合、分类管理、AI 智能生成预期结果、OpenAPI 批量导入与 JWT 权限管理。</p>
+    <p>一站式测试管理平台，聚焦测试用例管理、执行、报告、日志展示、测试套件、执行报告统计、JSON Diff 分析、错误模式聚合、分类管理、AI 智能生成预期结果、OpenAPI 批量导入、JWT 权限管理、Jenkins CI/CD 与构建看板；优化工程已落地安全加固、Flyway 数据治理、按用户数据隔离（IDOR）与 TestCase 列表分页。</p>
 
     <h2>技术栈</h2>
     <el-table :data="techStack" border stripe size="small" style="width: 100%">
@@ -77,6 +77,13 @@
     <h2>OpenAPI 批量导入 (V3.1)</h2>
     <p>粘贴 Swagger/OpenAPI JSON，后端解析所有端点并调用 AI 填充预期结果，预览后批量入库。</p>
 
+    <h2>列表分页与后端搜索（优化工程 F3.1/F3.2）</h2>
+    <p>用例列表为后端分页：<code>GET /api/testcases?page&amp;size&amp;keyword&amp;categoryId</code> 返回 PageResult（records/total/page/size），前端 el-pagination 翻页；搜索/分类筛选下沉后端，搜索输入 300ms 防抖。</p>
+    <p>每页上限 100（服务端钳制）；不传 page 参数保持旧行为返回全量数组。执行记录/套件/报告列表的分页改造进行中。</p>
+
+    <h2>数据隔离（优化工程 B3.19）</h2>
+    <p>业务表带 creator_id，查询/修改/删除均校验归属；越权访问返回 404（不暴露资源存在性）。</p>
+
     <h3>匹配示例</h3>
     <el-table :data="matchExamples" border stripe size="small" style="width: 100%">
       <el-table-column prop="expected" label="预期结果"/>
@@ -100,12 +107,12 @@
     <el-descriptions :column="1" border>
       <el-descriptions-item label="后端">运行 <code>TestPlatformApplication.main()</code>，监听 <code>http://localhost:8080</code></el-descriptions-item>
       <el-descriptions-item label="前端">在 <code>frontend/</code> 目录执行 <code>npm run dev</code>，访问 <code>http://localhost:3000</code></el-descriptions-item>
-      <el-descriptions-item label="数据库初始化">依次执行 <code>init_v1.sql → init_v2.sql → init_v3.sql → init_v4.sql → insert_test_case_v1.sql</code>（连接信息见后端 <code>application.yml</code> 配置）</el-descriptions-item>
+      <el-descriptions-item label="数据库初始化">建空库即可（<code>CREATE DATABASE test_platform DEFAULT CHARSET utf8mb4;</code>），后端启动时 Flyway 自动执行 V1~V5 迁移（建表+种子+软删/索引+外键+creator_id）；手工 sql/ 脚本已降级为存量维护路径</el-descriptions-item>
       <el-descriptions-item label="AI 集成">启动前设置环境变量 <code>AGNES_API_KEY</code></el-descriptions-item>
     </el-descriptions>
 
     <div style="margin-top: 40px; text-align: center; color: #999; font-size: 13px">
-      测试平台 V3.2 &copy; 2026
+      测试平台 &copy; 2026
     </div>
   </div>
 </template>
@@ -113,21 +120,21 @@
 <script setup>
 const docNav = [
   { file: 'docs/PROJECT_INTRO.md', desc: '项目介绍（文档入口）' },
-  { file: 'docs/API.md', desc: 'API 接口文档' },
+  { file: 'docs/API.md', desc: 'API 接口文档（含分页契约）' },
   { file: 'docs/sql.md', desc: '数据库 ER 图与表结构' },
-  { file: 'docs/进度报告.md', desc: '项目进度总览、里程碑、功能统计' },
-  { file: 'docs/开发进度.md', desc: '分阶段详细任务跟踪与修复记录' },
-  { file: 'docs/阶段总结报告.md', desc: 'V3.1 阶段总结、技术决策、经验教训' },
-  { file: 'docs/resume.html', desc: '开发恢复指南' },
+  { file: 'docs/优化计划.md', desc: '优化工程：135 项核查 + 分阶段执行状态（续接开发必读）' },
+  { file: 'docs/本地部署与CICD搭建指南.md', desc: 'Docker / Jenkins / PR 流水线搭建' },
+  { file: 'docs/进度报告.md 等三份', desc: '（史料）V1~V4 开发期进度/总结，内容已过时，以根 AGENTS.md 与优化计划为准' },
 ]
 
 const techStack = [
   { layer: '语言', tech: 'Java', version: '17' },
-  { layer: '框架', tech: 'Spring Boot', version: '3.3.6' },
-  { layer: 'ORM', tech: 'MyBatis-Plus', version: '3.5.9' },
-  { layer: '数据库', tech: 'MySQL', version: '5.7+ (驱动 8.0.33)' },
-  { layer: '前端', tech: 'Vue 3 + Element Plus', version: '-' },
-  { layer: '构建', tech: 'Maven (父子模块)', version: '-' },
+  { layer: '框架', tech: 'Spring Boot', version: '3.3.13' },
+  { layer: 'ORM', tech: 'MyBatis-Plus', version: '3.5.9（含分页插件）' },
+  { layer: '数据库', tech: 'MySQL', version: '5.7+' },
+  { layer: '数据库迁移', tech: 'Flyway', version: '10.10（V1~V5 启动自动执行）' },
+  { layer: '前端', tech: 'Vue 3 + Element Plus', version: 'Vite 5' },
+  { layer: '构建/部署', tech: 'Maven (父子模块) + Docker + Jenkins', version: '-' },
 ]
 
 const progress = [
@@ -138,10 +145,13 @@ const progress = [
   { phase: 'V3', content: '分类管理（树状 3 层）', status: '已完成' },
   { phase: 'V3.1', content: 'AI 智能生成预期结果 + OpenAPI 批量导入', status: '已完成' },
   { phase: 'V3.2', content: 'JWT 权限管理（登录/注册/路由守卫）', status: '已完成' },
+  { phase: 'V3.3/V3.4', content: 'Jenkins CI/CD 部署 + PR 构建流水线（Gitee 轮询/状态回写）', status: '已完成' },
+  { phase: 'V4', content: 'CI Build 构建记录持久化 + 前端看板', status: '已完成' },
+  { phase: '优化工程', content: '安全加固 + Flyway 数据治理 + IDOR 数据隔离 + TestCase 前后端分页已完成；其余列表分页/N+1/DTO 进行中', status: '进行中' },
 ]
 
 const apiList = [
-  { method: 'GET', path: '/api/testcases', desc: '查询全部用例' },
+  { method: 'GET', path: '/api/testcases', desc: '查询用例列表（?page/size/keyword/categoryId 分页；不传 page 兼容返回全量数组）' },
   { method: 'GET', path: '/api/testcases/{id}', desc: '查询单个用例' },
   { method: 'POST', path: '/api/testcases', desc: '新建用例' },
   { method: 'PUT', path: '/api/testcases/{id}', desc: '修改用例' },
@@ -174,6 +184,9 @@ const apiList = [
   { method: 'POST', path: '/api/auth/login', desc: '用户登录 (V3.2)' },
   { method: 'POST', path: '/api/auth/register', desc: '用户注册 (V3.2)' },
   { method: 'GET', path: '/api/auth/me', desc: '获取当前用户 (V3.2)' },
+  { method: 'POST', path: '/api/ci/builds', desc: 'CI 构建回写（X-CI-Token 机器令牌）(V4)' },
+  { method: 'GET', path: '/api/ci/builds', desc: 'CI 构建记录列表 (V4)' },
+  { method: 'GET', path: '/api/ci/builds/latest', desc: '最新构建 (V4)' },
 ]
 
 const matchExamples = [
@@ -199,93 +212,42 @@ const seedData = [
 ]
 
 const projectStructure = `test-platform/
-├── pom.xml
-├── docs/
-│   ├── PROJECT_INTRO.md
-│   ├── API.md
-│   ├── sql.md
-│   ├── 进度报告.md
-│   ├── 开发进度.md
-│   ├── 阶段总结报告.md
-│   └── resume.html
+├── pom.xml                                      # Maven 父模块
+├── docs/                                        # PROJECT_INTRO / API / sql / 优化计划 / 部署指南 (+史料三份)
+├── docker-compose.yml / .test.yml / .learn.yml  # 生产 / 测试 / learn 环境
+├── Jenkinsfile / Jenkinsfile-learn              # CI/CD 流水线
+├── scripts/                                     # PR 轮询 / 状态回写脚本
+├── docker/init/init.sql                         # 容器首启初始化(可重入)
 ├── backend/
 │   ├── pom.xml
 │   └── src/main/
 │       ├── java/com/testplatform/
 │       │   ├── TestPlatformApplication.java
 │       │   ├── common/
-│       │   │   ├── Result.java
-│       │   │   ├── HttpResult.java
-│       │   │   ├── JsonDiffResult.java      # V2.2
-│       │   │   ├── ErrorPatternItem.java    # V2.2
-│       │   │   ├── ErrorPatternResult.java  # V2.2
-│       │   │   ├── EndpointDef.java         # V3.1
-│       │   │   └── exception/
+│       │   │   ├── Result.java / HttpResult.java
+│       │   │   ├── PageResult.java                  # 分页封装(优化工程)
+│       │   │   ├── JsonDiffResult.java / ErrorPattern*.java / EndpointDef.java
+│       │   │   └── exception/GlobalExceptionHandler.java
 │       │   ├── config/
-│       │   │   ├── CorsConfig.java
-│       │   │   ├── SecurityConfig.java
-│       │   │   ├── RestTemplateConfig.java
-│       │   │   ├── JwtUtil.java              # V3.2
-│       │   │   ├── JwtAuthFilter.java        # V3.2
-│       │   │   ├── PasswordEncoderConfig.java# V3.2
-│       │   │   └── AiConfig.java            # V3.1
-│       │   ├── controller/
-│       │   │   ├── AuthController.java       # V3.2
-│       │   │   ├── AiController.java        # V3.1
-│       │   │   ├── CategoryController.java  # V3
-│       │   │   ├── TestCaseController.java
-│       │   │   ├── ExecutionController.java
-│       │   │   ├── TestSuiteController.java
-│       │   │   └── ExecutionReportController.java
-│       │   ├── entity/
-│       │   │   ├── User.java                # V3.2
-│       │   │   ├── TestCase.java
-│       │   │   ├── ExecutionRecord.java
-│       │   │   ├── TestSuite.java
-│       │   │   ├── TestSuiteCase.java
-│       │   │   └── ExecutionReport.java
-│       │   ├── mapper/
-│       │   │   ├── UserMapper.java          # V3.2
-│       │   ├── service/
-│       │   │   ├── UserService.java         # V3.2
-│       │   │   ├── AiService.java           # V3.1
-│       │   │   ├── CategoryService.java     # V3
-│       │   │   ├── ...
-│       │   │   ├── JsonDiffService.java     # V2.2
-│       │   │   └── ErrorPatternService.java # V2.2
-│       │       └── util/
-│       │           ├── OpenApiParser.java       # V3.1
-│       │           └── SchemaToJsonGenerator.java # V3.1
+│       │   │   ├── SecurityConfig / CorsConfig / RestTemplateConfig / AiConfig
+│       │   │   ├── JwtUtil / JwtAuthFilter / PasswordEncoderConfig
+│       │   │   ├── CiAuthFilter.java                # CI 机器令牌(V4)
+│       │   │   └── MybatisPlusConfig.java           # 分页插件(优化工程)
+│       │   ├── controller/                          # Auth/TestCase/Execution/TestSuite/Report/Category/Ai/Ci 8 个
+│       │   ├── entity/                              # User/TestCase/ExecutionRecord/TestSuite(Case)/Report/Category/CiBuild
+│       │   ├── mapper/                              # 8 个 Mapper
+│       │   ├── service/ + impl/                     # 11 个 Service
+│       │   └── util/                                # UrlValidator(SSRF)/SecurityUtils(IDOR)/OpenApiParser/SchemaToJsonGenerator
 │       └── resources/
-│           ├── application.yml
-│           └── sql/
-│               ├── init_v1.sql
-│               ├── init_v2.sql
-│               ├── init_v3.sql
-│               └── insert_test_case_v1.sql
-├── frontend/
-│   ├── index.html
-│   ├── package.json
-│   ├── vite.config.js
-│   └── src/
-│       ├── main.js
-│       ├── App.vue
-│       ├── api/
-│       │   ├── index.js
-│       │   └── auth.js                      # V3.2
-│       ├── router/
-│       ├── components/
-│       │   ├── CategoryTree.vue             # V3
-│       │   ├── CategoryDialog.vue            # V3
-│       │   ├── JsonDiffViewer.vue           # V2.2
-│       │   └── ErrorPatternCard.vue         # V2.2
-│       └── views/
-│           ├── Login.vue                    # V3.2
-│           ├── TestCaseList.vue
-│           ├── TestCaseEdit.vue
-│           ├── DocView.vue
-│           ├── TestSuiteList.vue
-│           ├── TestSuiteDetail.vue
-│           ├── ExecutionReportList.vue
-│           └── ExecutionReportDetail.vue`
+│           ├── application*.yml
+│           ├── db/migration/                        # Flyway V1~V5(schema 权威来源)
+│           └── sql/                                 # 旧手工脚本(已降级为存量维护)
+└── frontend/
+    └── src/
+        ├── main.js / App.vue / router/
+        ├── api/                                     # index.js / auth.js / ci.js
+        ├── composables/useConfirmDelete.js / utils/format.js
+        ├── components/                              # CategoryTree/CategoryDialog/JsonDiffViewer/ErrorPatternCard
+        └── views/                                   # Login/TestCaseList(已分页)/TestCaseEdit/ExecutionList
+                                                     # /TestSuiteList(Detail)/ExecutionReportList(Detail)/DocView/CiStatus`
 </script>

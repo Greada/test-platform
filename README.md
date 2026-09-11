@@ -47,7 +47,7 @@ cd frontend && npm install && npm run dev
 | V3.3 | Jenkins CI/CD 自动化部署（Pipeline + crontab 自动触发） |
 | V4 | CI Build 构建记录持久化 + 前端看板 |
 | Docker | 容器化部署（Dockerfile + Nginx + docker-compose） |
-| 优化工程 | 安全加固（阶段一✅）+ Flyway 数据治理（阶段二✅）+ IDOR 数据隔离（B3.19✅，阶段三进行中），详见 [docs/优化计划.md](test-platform/docs/优化计划.md) |
+| 优化工程 | 安全加固（阶段一✅）+ Flyway 数据治理（阶段二✅）+ IDOR 数据隔离（B3.19✅）+ TestCase 前后端分页切片（B3.9/B3.1/F3.1/F3.2✅，阶段三进行中），详见 [docs/优化计划.md](test-platform/docs/优化计划.md) |
 
 ---
 

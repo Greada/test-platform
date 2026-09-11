@@ -267,7 +267,7 @@ const remove = useConfirmDelete(suiteApi.delete, fetchList)
 
 ### 3.2 `TestCaseList.vue` — 测试用例管理（核心页面）
 
-**职责**：用例 CRUD + 执行 + 历史日志 + 分类筛选 + OpenAPI 批量导入。这是最复杂的页面（449 行 + 4 个弹窗）。
+**职责**：用例 CRUD + 执行 + 历史日志 + 分类筛选 + 后端分页/搜索 + OpenAPI 批量导入。这是最复杂的页面（484 行 + 4 个弹窗）。
 
 **布局**：左右结构
 
@@ -278,14 +278,15 @@ const remove = useConfirmDelete(suiteApi.delete, fetchList)
 │   - GET 请求          │ │ ┌─ 列表模式 ─┐  或  ┌─ 编辑面板 ─┐            │
 │   - POST 请求         │ │ │  el-table   │      │TestCaseEdit│            │
 │ - 认证模块            │ │ │  + 操作栏   │      │ (内联)     │            │
-│ [管理分类]            │ │ └────────────┘      └────────────┘            │
+│ [管理分类]            │ │ │ el-pagination│     └────────────┘            │
+│                          │ │ └────────────┘                                 │
 └───────────────────────┘ └────────────────────────────────────────────────┘
 ```
 
 **核心特性**：
 
 1. **编辑模式切换**：不跳路由，用 `editingCase` / `creating` ref 切换显示列表或内联的 `TestCaseEditPanel`，保存/取消时回到列表。
-2. **筛选 + 搜索**：`filteredAndSearchedList` 为 computed，先按 `selectedCategory` 过滤，再按 `testNo` / `name` 关键词搜索。
+2. **分页 + 筛选 + 搜索（后端化，优化工程 F3.1/F3.2，`2282db6`）**：`fetchList` 带 `page/size/keyword/categoryId` 请求 `GET /api/testcases`，解析 PageResult（records/total）；`el-pagination` 翻页，搜索 `watch`+300ms 防抖；筛选/搜索/改页容量时重置 `page=1`，删除导致当前页超界时自动钳到最后一页（原 `filteredAndSearchedList` 前端 computed 过滤已删除）。
 3. **执行按钮 loading**：每行按钮绑定 `loadingId === row.id`，避免多行同时转圈。
 4. **OpenAPI 导入**：粘贴 JSON → 选择 AI/本地 → 解析预览（不入库） → 确认后批量保存。
 5. **跳转修复流程**：`onMounted` 检测 `route.query.editId && route.query.fix`，从 localStorage 读 `fix_expected`（来自 Diff 报告），自动打开编辑面板并回填新预期结果。
@@ -709,7 +710,7 @@ Dockerfile 多阶段：
 | `components/JsonDiffViewer.vue` | 134 | Diff 查看器 |
 | `components/ErrorPatternCard.vue` | 40 | 错误模式卡片 |
 | `views/Login.vue` | 147 | 登录 / 注册 |
-| `views/TestCaseList.vue` | 449 | 用例管理（最复杂） |
+| `views/TestCaseList.vue` | 484 | 用例管理（最复杂，后端分页） |
 | `views/TestCaseEdit.vue` | 221 | 用例编辑面板 |
 | `views/ExecutionList.vue` | 122 | 执行记录 |
 | `views/TestSuiteList.vue` | 149 | 套件列表 |
@@ -719,7 +720,7 @@ Dockerfile 多阶段：
 | `views/DocView.vue` | 294 | 文档嵌入 |
 | `views/CiStatus.vue` | 184 | CI 看板 |
 
-合计约 **2652 行**前端源代码（不含 dist）。
+合计约 **2687 行**前端源代码（不含 dist）。
 
 ---
 
@@ -728,11 +729,11 @@ Dockerfile 多阶段：
 1. 引入 ESLint + Prettier（全仓库无代码规范工具）。
 2. Element Plus 全量引入改为按需引入（unplugin-vue-components），减少主 chunk 357 kB。
 3. 引入 Pinia 管理跨页面状态（目前依赖 localStorage，无法触发组件响应式）。
-4. 表格加分页（`TestCaseList`、`TestSuiteDetail` 当前全量加载，随用例增长会有性能问题）。
+4. 表格加分页（`TestCaseList` 已完成后端分页 `2282db6`；`TestSuiteDetail` 及其余 3 个列表仍全量加载，待 B3.9 后端分页复制后接入）。
 5. `api/ci.js` 导出风格与 `api/index.js` 统一为对象导出。
 6. 引入 Vitest + Vue Test Utils 增加单元测试覆盖。
 7. Token 改用 httpOnly cookie（需后端配合），消除 XSS 窃取风险。
 
 ---
 
-*本文档基于项目实际代码生成，反映 2026-08-05 的前端工程全貌。*
+*本文档基于项目实际代码生成，反映 2026-08-05 的前端工程全貌；2026-09-11 更新 TestCaseList 后端分页与搜索防抖（F3.1/F3.2，`2282db6`）。*
